@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   users-db:
     image: postgres:13
@@ -8,7 +6,7 @@ services:
       POSTGRES_PASSWORD: users_password
       POSTGRES_DB: users_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - users-db-data:/var/lib/postgresql/data
 
