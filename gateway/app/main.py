@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware # middleware для разр�
 import uvicorn
 import os
 import sys
+from fastapi.openapi.utils import get_openapi
 
 # Добавляем путь к app в Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,6 +31,33 @@ app.add_middleware(
 Роутер auth добавляет эндпоинты с префиксом /auth
 """
 app.include_router(auth.router)
+
+# Добавляем OAuth2 схему, чтобы появилась кнопка Authorize
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    openapi_schema["components"]["securitySchemes"] = {
+        "OAuth2PasswordBearer": {
+            "type": "oauth2",
+            "flows": {
+                "password": {
+                    "tokenUrl": "/auth/login",
+                    "scopes": {}
+                }
+            }
+        }
+    }
+    openapi_schema["security"] = [{"OAuth2PasswordBearer": []}]
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 """
 Health check эндпоинт

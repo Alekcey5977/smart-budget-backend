@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 import httpx
 import os
 from typing import Dict, Any
+from fastapi.security import OAuth2PasswordBearer
+from fastapi import Form
 
 from app.dependencies import get_current_user # Импортируем dependency
 
@@ -10,6 +12,9 @@ router = APIRouter(
     prefix="/auth",
     tags=["authentication"]
 )
+
+# Подключаем схему безопасности — теперь Swagger покажет кнопку Authorize 🔒
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 # Получаем URL сервиса пользователей из переменных окружения
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
@@ -52,7 +57,10 @@ async def register(user_data: Dict[Any, Any]):
             )
         
 @router.post("/login")
-async def login(credentials: Dict[Any, Any]):
+async def login(
+    username: str = Form(...),
+    password: str = Form(...)
+):
     """
     Аутентификация пользователя
     Принимает email и пароль, возвращает JWT токен
@@ -64,22 +72,18 @@ async def login(credentials: Dict[Any, Any]):
     """
     async with httpx.AsyncClient() as client:
         try:
-            # Проксируем запрос к users-service
             response = await client.post(
                 f"{USERS_SERVICE_URL}/users/login",
-                json=credentials,
+                json={"email": username, "password": password},
                 timeout=15.0
             )
-            
+
             if response.status_code >= 400:
                 error_detail = response.json().get("detail", "Login failed")
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=error_detail
-                )
-            
+                raise HTTPException(status_code=response.status_code, detail=error_detail)
+
             return response.json()
-            
+
         except httpx.ConnectError:
             raise HTTPException(
                 status_code=503,

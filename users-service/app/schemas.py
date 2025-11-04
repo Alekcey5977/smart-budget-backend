@@ -7,20 +7,23 @@ class UserBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 class UserCreate(UserBase):
     password: str
 
 
 class UserUpdate(BaseModel):
-    first_name: str = None
-    last_name: str = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
-    updated_at: datetime = None
+    updated_at: Optional[datetime] = None
 
 
 class Token(BaseModel):

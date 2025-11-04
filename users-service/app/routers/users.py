@@ -1,8 +1,8 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas import UserResponse, Token, UserUpdate
-from app.repository.user_repository import UserRepository, UserCreate
+from app.schemas import UserResponse, Token, UserUpdate, UserCreate, UserLogin
+from app.repository.user_repository import UserRepository
 from app.database import get_db
 from app.auth import create_access_token, get_password_hash, verify_password, verify_token
 
@@ -38,14 +38,13 @@ async def register(
 # Авторизация пользователя
 @router.post("/login", response_model=Token)
 async def login(
-    email: str,
-    password: str,
+    user_data: UserLogin,
     user_repo: UserRepository = Depends(get_user_repository)
 ):
     
-    user = await user_repo.get_by_email(email)
+    user = await user_repo.get_by_email(user_data.email)
     
-    if not user or not verify_password(password, user.hashed_password):
+    if not user or not verify_password(user_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
