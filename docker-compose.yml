@@ -17,7 +17,7 @@ services:
     depends_on:
       - users-db
     environment:
-      DATABASE_URL: "postgresql://users_user:users_password@users-db:5432/users_db"
+      DATABASE_URL: "postgresql+asyncpg://users_user:users_password@users-db:5432/users_db"
       SERVICE_PORT: "8001"
       JWT_SECRET_KEY: "change_this_secret_key_in_production"
 
