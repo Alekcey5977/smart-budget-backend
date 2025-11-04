@@ -1,2 +1,9 @@
 fastapi==0.104.1
 uvicorn==0.24.0
+psycopg2-binary==2.9.7
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+sqlalchemy[asyncio]
+asyncpg
+python-dotenv
