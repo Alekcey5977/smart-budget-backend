@@ -55,12 +55,12 @@ async def register(user_data: Dict[Any, Any]):
                 status_code=503,
                 detail="Users service is currently unavailable. Please try again later."
             )
-        
-@router.post("/login")
-async def login(
-    username: str = Form(...),
-    password: str = Form(...)
-):
+
+# ----------------------------
+# Вход пользователя
+# ----------------------------
+@router.post("/login", response_model=Token)
+async def login(user_data: UserLogin):
     """
     Аутентификация пользователя
     Принимает email и пароль, возвращает JWT токен
