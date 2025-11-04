@@ -1,22 +1,20 @@
 import httpx
 from fastapi import Depends, HTTPException, Header
 import os
-from typing import Optional
+from typing import Optional, Dict, Any
 
 # Получаем URL сервиса пользователей из переменных окружения
 # Формат: http://users-service:8001
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 
-async def get_current_user(authorization: Optional[str] = Header(None)):
+async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
     """
-    Dependency функция для проверки JWT токена и получения данных пользователя
-    Вызывается автоматически FastAPI при указании в параметрах эндпоинта
-    
-    Flow:
-    1. Извлекает токен из заголовка Authorization
-    2. Делает запрос к users-service для проверки токена
-    3. Возвращает данные пользователя если токен валиден
-    4. Бросает исключение если токен невалиден или сервис недоступен
+    Dependency для проверки JWT токена и получения данных пользователя.
+    Возвращает словарь вида:
+    {
+        "token": "<JWT токен>",
+        "user": {данные пользователя из users-service}
+    }
     """
 
     # Проверяем наличие заголовка авторизации
@@ -48,7 +46,8 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
 
             # Если users-service вернул 200 - токен валиден
             if response.status_code == 200:
-                return response.json()  # Возвращаем данные пользователя
+                user_data = response.json()
+                return {"token": token, "user": user_data}  # Возвращаем данные пользователя
             
             # Если users-service вернул ошибку - пробрасываем ее
             else:

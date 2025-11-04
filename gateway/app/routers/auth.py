@@ -103,6 +103,30 @@ async def get_me(current_user: Dict[Any, Any] = Depends(get_current_user)):
     """
     return current_user
 
+@router.put("/me")
+async def update_me(update_data: Dict[str, str], current: Dict[str, Any] = Depends(get_current_user)):
+    """
+    Обновление профиля текущего пользователя
+    """
+    token = current["token"]
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.put(
+                f"{USERS_SERVICE_URL}/users/me",
+                json=update_data,
+                params={"token": token},  # передаем токен корректно
+                timeout=15.0
+            )
+
+            if response.status_code >= 400:
+                detail = response.json().get("detail", "Update failed")
+                raise HTTPException(status_code=response.status_code, detail=detail)
+
+            return response.json()
+
+        except httpx.ConnectError:
+            raise HTTPException(status_code=503, detail="Users service unavailable")
+
 @router.get("/test")
 async def test_auth_router():
     """
