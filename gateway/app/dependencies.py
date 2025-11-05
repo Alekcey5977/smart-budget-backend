@@ -3,8 +3,6 @@ from fastapi import Depends, HTTPException, Header
 import os
 from typing import Optional, Dict, Any
 
-# Получаем URL сервиса пользователей из переменных окружения
-# Формат: http://users-service:8001
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 
 async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
@@ -73,19 +71,3 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[
                 status_code=500,
                 detail=f"Internal server error: {str(e)}"
             )
-        
-# Дополнительная dependency для опциональной аутентификации
-# Для того чтобы можно было сделать эндпоинты доступными и для аутентифицированных и для неаутентифицированных пользователей, например @router.get("/")
-async def get_optional_user(authorization: Optional[str] = Header(None)):
-    """
-    Опциональная проверка пользователя
-    Возвращает данные пользователя если токен есть и валиден,
-    возвращает None если токена нет или невалиден
-    """
-    if authorization is None:
-        return None
-        
-    try:
-        return await get_current_user(authorization)
-    except HTTPException:
-        return None
