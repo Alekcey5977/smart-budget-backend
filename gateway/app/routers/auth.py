@@ -1,21 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Header, Form
+from fastapi import APIRouter, Depends, HTTPException, Form
 import httpx
 import os
-from typing import Dict
+from typing import Dict, Any
 from fastapi.security import OAuth2PasswordBearer
 
-from app.schemas import UserCreate, UserUpdate, UserLogin, Token, UserResponse
-from app.dependencies import get_current_user # Импортируем dependency
 from app.dependencies import get_current_user
-
 
 router = APIRouter(
     prefix="/auth",
     tags=["authentication"]
 )
 
-# Подключаем схему безопасности — теперь Swagger покажет кнопку Authorize
-
+# Подключаем схему безопасности для Swagger
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
@@ -23,190 +19,96 @@ USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 # ----------------------------
 # Регистрация пользователя
 # ----------------------------
-@router.post("/register", response_model=UserResponse)
-async def register(user_data: UserCreate):
+@router.post("/register")
+async def register(user_data: Dict[str, str]):
     """
-<<<<<<< HEAD
     Регистрация нового пользователя.
-    
-    **Поля для ввода (JSON):**
-    - email: EmailStr
-    - password: str
-    
-    Проксирует запрос в users-service и возвращает результат.
 
-    Регистрация нового пользователя.\n
-    Принимает данные пользователя и проксирует запрос в users-service.
-
-    Параметры запроса (JSON):
-    Можно передавать одно или несколько значений.
-    Примеры полей:
+    **Параметры запроса (JSON)**:
     - `email` (str) — электронная почта пользователя
     - `password` (str) — пароль пользователя
 
-     Пример запроса:
+    Пример запроса:
     ```json
     {
         "email": "example@gmail.com",
         "password": "1234"
     }
     ```
-    Возвращает:\n
-    Словарь с данными пользователя.
+
+    Возвращает:
+    Словарь с данными пользователя, как от users-service.
     """
     async with httpx.AsyncClient() as client:
         try:
-            # Проксируем запрос к users-service
             response = await client.post(
-                f"{USERS_SERVICE_URL}/users/register",  # Эндпоинт регистрации
-                json=user_data.dict(),
-                timeout=30.0                            # Увеличенный таймаут для регистрации
+                f"{USERS_SERVICE_URL}/users/register",
+                json=user_data,
+                timeout=30.0
             )
-            
-            # Если users-service вернул ошибку - пробрасываем ее
             if response.status_code >= 400:
-                error_detail = response.json().get("detail", "Registration failed")
                 raise HTTPException(
                     status_code=response.status_code,
-                    detail=error_detail
+                    detail=response.json().get("detail", "Registration failed")
                 )
-            
-            # Возвращаем успешный ответ от users-service
             return response.json()
-            
         except httpx.ConnectError:
-            raise HTTPException(
-                status_code=503,
-                detail="Users service is currently unavailable. Please try again later."
-            )
+            raise HTTPException(status_code=503, detail="Users service unavailable")
 
 # ----------------------------
-# Вход пользователя
+# Логин пользователя
 # ----------------------------
-@router.post("/login", response_model=Token)
-async def login(
-    username: str = Form(...),
-    password: str = Form(...)
-):
+@router.post("/login")
+async def login(username: str = Form(...), password: str = Form(...)):
     """
-    Аутентификация пользователя.
-    
-    **Поля для ввода (JSON):**
-    - email: EmailStr
-    - password: str
-    
-    Возвращает JWT токен:
-    - access_token
-    - token_type
+    Аутентификация пользователя через form-data.
 
-    Логин пользователя.\n
-    Принимает email и пароль, возвращает JWT токен для дальнейшей аутентификации.\n
+    **Поля для ввода**:
+    - `username` — email
+    - `password` — пароль
 
-    Процесс работы:
-    1. Получает учетные данные (email и пароль) от клиента.
-    2. Отправляет их в users-service для проверки подлинности.
-    3. Если аутентификация успешна, возвращает JWT токен.
-    4. В случае ошибки возвращает соответствующий HTTP статус и сообщение.
+    Возвращает JWT токен с полями:
+    - `access_token`
+    - `token_type`
     """
-
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{USERS_SERVICE_URL}/users/login",
             json={"email": username, "password": password},
             timeout=15.0
         )
-
-        if response.status_code >= 400:
-            error_detail = response.json().get("detail", "Login failed")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
-            
-        response.raise_for_status()
-
-        return response.json()
-
-# ----------------------------
-# Получение данных текущего пользователя
-# ----------------------------
-@router.get("/me", response_model=UserResponse)
-async def get_me(current_user: Dict = Depends(get_current_user)):
-    """
-    Получение данных текущего пользователя.
-    """
-    return current_user["user"]  # <-- возвращаем только данные пользователя
-
-# ----------------------------
-# Обновление профиля текущего пользователя
-# ---------------------------
-@router.put("/me", response_model=UserResponse)
-async def update_me(update_data: UserUpdate, current_user: Dict = Depends(get_current_user)):
-    """
-    Обновление профиля текущего пользователя.
-    """
-    token = current_user["token"]
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.put(
-            f"{USERS_SERVICE_URL}/users/me",
-            json=update_data.dict(exclude_unset=True),
-            params={"token": token},
-            timeout=15.0
-        )
         if response.status_code >= 400:
             raise HTTPException(
                 status_code=response.status_code,
-                detail=response.json().get("detail", "Update failed")
+                detail=response.json().get("detail", "Login failed")
             )
-        
-        # Возвращаем только данные пользователя
         return response.json()
-        
 
-@router.get("/test")
-async def test_auth_router():
-    """
-    Тестовый эндпоинт для проверки работы auth роутера
-    """
-    return {
-        "message": "Auth router is working correctly",
-        "status": "success",
-        "service": "gateway-auth"
-    }
-
-#Пока не работает, просто заглушка для будущей функциональности
-@router.post("/refresh")
-async def refresh_token(refresh_data: Dict[str, str]):
-    """
-    Обновление JWT токена (будет добавлено позже)
-    Пока заглушка для будущей функциональности
-    """
-    return {"message": "Token refresh endpoint - to be implemented"}
-
+# ----------------------------
+# Получение текущего пользователя
+# ----------------------------
 @router.get("/me")
 async def get_me(current_user: Dict[Any, Any] = Depends(get_current_user)):
     """
-    Получение информации о текущем пользователе.\n
+    Получение данных текущего пользователя.
 
-    🔒 Требует аутентификацию через встроенный механизм авторизации.\n
-    Пользователь должен быть авторизован и иметь действительный JWT токен.\n
-
-    Возвращает:\n
-        Словарь с информацией о пользователе.
+    🔒 Требуется JWT токен.
     """
     return current_user
 
+# ----------------------------
+# Обновление профиля
+# ----------------------------
 @router.put("/me")
 async def update_me(update_data: Dict[str, str], current: Dict[str, Any] = Depends(get_current_user)):
     """
-    Обновление профиля текущего пользователя.\n
+    Обновление профиля текущего пользователя.
 
-    🔒 Требует авторизацию через встроенный механизм (JWT токен).\n
-    Пользователь должен быть авторизован, токен проверяется автоматически.\n
-
-    Параметры запроса (JSON):
     Можно передавать одно или несколько значений.
+
     Примеры полей:
-    - `first_name` (str) — имя пользователя
-    - `last_name` (str) — фамилия пользователя
+    - `first_name` (str)
+    - `last_name` (str)
 
     Пример запроса с несколькими полями:
     ```json
@@ -224,7 +126,7 @@ async def update_me(update_data: Dict[str, str], current: Dict[str, Any] = Depen
     ```
 
     Возвращает:
-        Словарь с обновленными данными пользователя.
+    Словарь с обновленными данными пользователя.
     """
     token = current["token"]
     async with httpx.AsyncClient() as client:
@@ -232,15 +134,14 @@ async def update_me(update_data: Dict[str, str], current: Dict[str, Any] = Depen
             response = await client.put(
                 f"{USERS_SERVICE_URL}/users/me",
                 json=update_data,
-                params={"token": token},  # передаем токен корректно
+                params={"token": token},
                 timeout=15.0
             )
-
             if response.status_code >= 400:
-                detail = response.json().get("detail", "Update failed")
-                raise HTTPException(status_code=response.status_code, detail=detail)
-
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=response.json().get("detail", "Update failed")
+                )
             return response.json()
-
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Users service unavailable")
