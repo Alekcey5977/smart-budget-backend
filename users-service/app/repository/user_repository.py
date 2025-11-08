@@ -28,6 +28,8 @@ class UserRepository:
         """Создать нового пользователя"""
         db_user = User(
             email=user_data.email,
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
             hashed_password=hashed_password,
         )
         self.db.add(db_user)

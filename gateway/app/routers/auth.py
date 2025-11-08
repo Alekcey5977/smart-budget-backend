@@ -3,6 +3,8 @@ import httpx
 import os
 from typing import Dict, Any
 from fastapi.security import OAuth2PasswordBearer
+from app.schemas import RegisterRequest, UserUpdateRequest
+
 
 from app.dependencies import get_current_user
 
@@ -20,38 +22,56 @@ USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 # Регистрация пользователя
 # ----------------------------
 @router.post("/register")
-async def register(user_data: Dict[str, str]):
+async def register(user_data: RegisterRequest):
     """
     Регистрация нового пользователя.
 
     **Параметры запроса (JSON)**:
+    
+    Поля для ввода:
     - `email` (str) — электронная почта пользователя
     - `password` (str) — пароль пользователя
+    - `first_name` (str) - имя пользователя
+    - `last_name` (str) - фамилия пользователя
 
+    Валидация:
+    - `email` - корректность email вида
+    - `first_name` - не менее 2 и не более 50 символов
+    - `last_name` - не менее 2 и не более 50 символов
     Пример запроса:
     ```json
     {
-        "email": "example@gmail.com",
-        "password": "1234"
+        "email": "user@example.com",
+        "password": "1234",
+        "first_name": "Иван",
+        "last_name": "Иванов"
     }
     ```
 
+
+
     Возвращает:
-    Словарь с данными пользователя, как от users-service.
+    Словарь с данными пользователя.
     """
     async with httpx.AsyncClient() as client:
         try:
+            # Конвертируем Pydantic модель в dict
+            request_data = user_data.model_dump()
+
             response = await client.post(
                 f"{USERS_SERVICE_URL}/users/register",
-                json=user_data,
+                json=request_data,
                 timeout=30.0
             )
+
             if response.status_code >= 400:
+                error_detail = response.json().get("detail", "Registration failed")
                 raise HTTPException(
                     status_code=response.status_code,
-                    detail=response.json().get("detail", "Registration failed")
+                    detail=error_detail
                 )
             return response.json()
+        
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Users service unavailable")
 
@@ -100,17 +120,15 @@ async def get_me(current_user: Dict[Any, Any] = Depends(get_current_user)):
 # Обновление профиля
 # ----------------------------
 @router.put("/me")
-async def update_me(update_data: Dict[str, str], current: Dict[str, Any] = Depends(get_current_user)):
+async def update_me(update_data: UserUpdateRequest, current: Dict[str, Any] = Depends(get_current_user)):
     """
     Обновление профиля текущего пользователя.
-
-    Можно передавать одно или несколько значений.
 
     Примеры полей:
     - `first_name` (str)
     - `last_name` (str)
 
-    Пример запроса с несколькими полями:
+    Пример запроса:
     ```json
     {
         "first_name": "Иван",
@@ -118,12 +136,9 @@ async def update_me(update_data: Dict[str, str], current: Dict[str, Any] = Depen
     }
     ```
 
-    Пример запроса с одним полем:
-    ```json
-    {
-        "first_name": "Борис"
-    }
-    ```
+    Валидация:
+    - `first_name` - не менее 2 и не более 50 символов
+    - `last_name` - не менее 2 и не более 50 символов
 
     Возвращает:
     Словарь с обновленными данными пользователя.
@@ -131,9 +146,12 @@ async def update_me(update_data: Dict[str, str], current: Dict[str, Any] = Depen
     token = current["token"]
     async with httpx.AsyncClient() as client:
         try:
+            # Конвертируем Pydantic модель в dict
+            request_data = update_data.model_dump(exclude_unset=True)
+
             response = await client.put(
                 f"{USERS_SERVICE_URL}/users/me",
-                json=update_data,
+                json=request_data,
                 params={"token": token},
                 timeout=15.0
             )
@@ -143,5 +161,6 @@ async def update_me(update_data: Dict[str, str], current: Dict[str, Any] = Depen
                     detail=response.json().get("detail", "Update failed")
                 )
             return response.json()
+        
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Users service unavailable")

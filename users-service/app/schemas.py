@@ -1,11 +1,23 @@
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 from datetime import datetime
 
 class UserBase(BaseModel):
     email: EmailStr
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str
+    last_name: str
+
+    @field_validator('first_name', 'last_name')
+    @classmethod
+    def validate_name_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError('Name cannot be empty')
+        if len(v) < 2:
+            raise ValueError('Name must be at least 2 characters long')
+        if len(v) > 50:
+            raise ValueError('Name must be less than 50 characters')
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -16,9 +28,21 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str
+    last_name: str
 
+    @field_validator('first_name', 'last_name')
+    @classmethod
+    def validate_name_length(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            v = v.strip()
+            if not v:
+                raise ValueError('Name cannot be empty')
+            if len(v) < 2:
+                raise ValueError('Name must be at least 2 characters long')
+            if len(v) > 50:
+                raise ValueError('Name must be less than 50 characters')
+        return v
 
 class UserResponse(UserBase):
     is_active: bool
