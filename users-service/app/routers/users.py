@@ -116,6 +116,12 @@ async def refresh_token(
                 detail="Invalid token claims"
             )
 
+        user = await user_repo.get_by_id(int(user_id))
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User inactive or not found"
+            )
 
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         new_access_token = create_access_token(
