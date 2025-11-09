@@ -8,7 +8,7 @@ import os
 load_dotenv()
 
 ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")
-REFRESH_SECRET_KEY = os.getenv("")
+REFRESH_SECRET_KEY = os.getenv("REFRESH_SECRET_KEY")
 ALGORITHM = "HS256"
 
 # Хэширование паролей
