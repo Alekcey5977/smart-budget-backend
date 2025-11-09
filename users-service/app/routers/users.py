@@ -6,6 +6,7 @@ from app.schemas import UserResponse, Token, UserUpdate, UserCreate, UserLogin
 from app.repository.user_repository import UserRepository
 from app.database import get_db
 from app.auth import ALGORITHM, REFRESH_SECRET_KEY, create_access_token, create_refresh_token, get_password_hash, verify_password, verify_token
+from app.schemas import oauth2_scheme
 from jose import jwt
 
 
@@ -60,13 +61,21 @@ async def login(
             detail="Inactive user"
         )
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id)}, expires_delta=access_token_expires
-    )
     refresh_token_expires = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     refresh_token = create_refresh_token(
-        data={"sub": str(user.id)}, expires_delta=refresh_token_expires)
+        data={"sub": str(user.id)},
+        expires_delta=refresh_token_expires
+    )
+
+    refresh_payload = jwt.decode(refresh_token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+    refresh_jti = refresh_payload.get("jti")
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=access_token_expires,
+        refresh_jti=refresh_jti
+    )
 
     response.set_cookie(
         key="refresh_token",
@@ -110,11 +119,9 @@ async def refresh_token(
             )
 
         user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token claims"
-            )
+        current_refresh_jti = str(payload.get("jti"))
+        if not user_id or not current_refresh_jti:
+            raise HTTPException(401, "Invalid token claims")
 
         user = await user_repo.get_by_id(int(user_id))
         if not user or not user.is_active:
@@ -123,13 +130,23 @@ async def refresh_token(
                 detail="User inactive or not found"
             )
 
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        new_access_token = create_access_token(
-            data={"sub": user_id}, expires_delta=access_token_expires
+        new_refresh_token = create_refresh_token(
+            data={"sub": user_id},
+            expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
         )
 
-        new_refresh_token = create_refresh_token(
-            data={"sub": user_id}, expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        new_refresh_payload = jwt.decode(
+            new_refresh_token,
+            REFRESH_SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+        new_refresh_jti = new_refresh_payload.get("jti")
+
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        new_access_token = create_access_token(
+            data={"sub": user_id},
+            expires_delta=access_token_expires,
+            refresh_jti=new_refresh_jti
         )
 
         response.set_cookie(
@@ -168,10 +185,14 @@ async def logout(response: Response):
 # Открытие профиля
 @router.get("/me", response_model=UserResponse)
 async def get_current_user(
-    token: str,
-    user_repo: UserRepository = Depends(get_user_repository)
+    request: Request,
+    token: str = Depends(oauth2_scheme),
+    user_repo: UserRepository = Depends(get_user_repository),
 ):
-    payload = verify_token(token)
+    
+    refresh_token = request.cookies.get("refresh_token")
+    payload = verify_token(token, refresh_token_from_cookie=refresh_token)
+    
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -193,10 +214,12 @@ async def get_current_user(
 @router.put("/me", response_model=UserResponse)
 async def update_current_user(
     user_update: UserUpdate,
-    token: str,
+    request: Request,
+    token: str = Depends(oauth2_scheme),
     user_repo: UserRepository = Depends(get_user_repository)
 ):
-    payload = verify_token(token)
+    refresh_token = request.cookies.get("refresh_token")
+    payload = verify_token(token, refresh_token_from_cookie=refresh_token)
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

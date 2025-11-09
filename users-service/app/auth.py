@@ -26,7 +26,7 @@ def get_password_hash(password):
 
 
 # Создание access токена
-def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta = None, refresh_jti: str | None = None) -> str:
     if not isinstance(data, dict):
         raise TypeError("data must be a dict")
     if not data:
@@ -45,6 +45,9 @@ def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
             "iat": int(now.timestamp()),
             "type": "access",
         })
+
+        if refresh_jti is not None:
+            to_encode["refresh_jti"] = str(refresh_jti)
 
         encoded_jwt = jwt.encode(
             to_encode, ACCESS_SECRET_KEY, algorithm=ALGORITHM)
@@ -97,9 +100,28 @@ def create_refresh_token(data: dict, expires_delta: timedelta):
 
 
 # Проверка валидности токена
-def verify_token(token: str):
+def verify_token(token: str, refresh_token_from_cookie: str | None = None):
     try:
         payload = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+        refresh_jti_in_access = str(payload.get("refresh_jti"))
+
+        if refresh_jti_in_access:
+            if not refresh_token_from_cookie:
+                return None
+            try:
+                refresh_payload = jwt.decode(
+                    refresh_token_from_cookie,
+                    REFRESH_SECRET_KEY,
+                    algorithms=[ALGORITHM],
+                    options={"require": ["jti"]}
+                )
+                current_refresh_jti = str(refresh_payload.get("jti"))
+
+                if refresh_jti_in_access != current_refresh_jti:
+                    return None
+            except JWTError:
+                return None
+        return payload 
+
     except JWTError:
         return None
