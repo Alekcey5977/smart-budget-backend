@@ -1,0 +1,35 @@
+services:
+  users-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: users_user
+      POSTGRES_PASSWORD: users_password
+      POSTGRES_DB: users_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
+
+  users-service:
+    build: ./users-service
+    ports:
+      - "8001:8001"
+    depends_on:
+      - users-db
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://users_user:users_password@users-db:5432/users_db"
+      SERVICE_PORT: "8001"
+      JWT_SECRET_KEY: "change_this_secret_key_in_production"
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - users-service
+    environment:
+      GATEWAY_PORT: "8000"
+      USERS_SERVICE_URL: "http://users-service:8001"
+
+volumes:
+  users-db-data:
