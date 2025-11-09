@@ -33,11 +33,14 @@ async def register(user_data: RegisterRequest):
     - `password` (str) — пароль пользователя
     - `first_name` (str) - имя пользователя
     - `last_name` (str) - фамилия пользователя
+    - `patronymic` (str) - отчество пользователя
 
     Валидация:
     - `email` - корректность email вида
     - `first_name` - не менее 2 и не более 50 символов
     - `last_name` - не менее 2 и не более 50 символов
+    - `patronymic` - не менее 2 и не более 50 символов
+
     Пример запроса:
     ```json
     {
@@ -45,6 +48,7 @@ async def register(user_data: RegisterRequest):
         "password": "1234",
         "first_name": "Иван",
         "last_name": "Иванов"
+        "patronymic": "Иванович"
     }
     ```
 
@@ -125,20 +129,24 @@ async def update_me(update_data: UserUpdateRequest, current: Dict[str, Any] = De
     Обновление профиля текущего пользователя.
 
     Примеры полей:
-    - `first_name` (str)
-    - `last_name` (str)
+    - `first_name` (str) - имя пользователя
+    - `last_name` (str) - фамилия пользователя
+    - `patronymic` (str) - отчество пользователя
+
 
     Пример запроса:
     ```json
     {
         "first_name": "Иван",
         "last_name": "Иванов"
+        "patronymic": "Иванович"
     }
     ```
 
     Валидация:
     - `first_name` - не менее 2 и не более 50 символов
     - `last_name` - не менее 2 и не более 50 символов
+    - `patronymic` - не менее 2 и не более 50 символов
 
     Возвращает:
     Словарь с обновленными данными пользователя.

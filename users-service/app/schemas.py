@@ -6,8 +6,9 @@ class UserBase(BaseModel):
     email: EmailStr
     first_name: str
     last_name: str
+    patronymic: str
 
-    @field_validator('first_name', 'last_name')
+    @field_validator('first_name', 'last_name', 'patronymic')
     @classmethod
     def validate_name_not_empty(cls, v: str) -> str:
         v = v.strip()
@@ -30,8 +31,9 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     first_name: str
     last_name: str
+    patronymic: str
 
-    @field_validator('first_name', 'last_name')
+    @field_validator('first_name', 'last_name', 'patronymic')
     @classmethod
     def validate_name_length(cls, v: Optional[str]) -> Optional[str]:
         if v is not None:

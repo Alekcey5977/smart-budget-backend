@@ -5,12 +5,15 @@ class RegisterRequest(BaseModel):
     password: str
     first_name: str
     last_name: str
+    patronymic: str
+
 
 class UserUpdateRequest(BaseModel):
     first_name: str
-    last_name: str 
+    last_name: str
+    patronymic: str
     
-    @field_validator('first_name', 'last_name')
+    @field_validator('first_name', 'last_name', 'patronymic')
     @classmethod
     def validate_name(cls, v: str) -> str:
         v = v.strip()
