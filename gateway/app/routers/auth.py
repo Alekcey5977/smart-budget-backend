@@ -1,20 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 import httpx
 import os
 from typing import Dict, Any
-from fastapi.security import OAuth2PasswordBearer
-from app.schemas import RegisterRequest, UserUpdateRequest
-
-
+from app.schemas import RegisterRequest, UserUpdateRequest, UserLogin
 from app.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/auth",
     tags=["authentication"]
 )
-
-# Подключаем схему безопасности для Swagger
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 
@@ -23,43 +17,8 @@ USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 # ----------------------------
 @router.post("/register")
 async def register(user_data: RegisterRequest):
-    """
-    Регистрация нового пользователя.
-
-    **Параметры запроса (JSON)**:
-    
-    Поля для ввода:
-    - `email` (str) — электронная почта пользователя
-    - `password` (str) — пароль пользователя
-    - `first_name` (str) - имя пользователя
-    - `last_name` (str) - фамилия пользователя
-    - `patronymic` (str) - отчество пользователя
-
-    Валидация:
-    - `email` - корректность email вида
-    - `first_name` - не менее 2 и не более 50 символов
-    - `last_name` - не менее 2 и не более 50 символов
-    - `patronymic` - не менее 2 и не более 50 символов
-
-    Пример запроса:
-    ```json
-    {
-        "email": "user@example.com",
-        "password": "1234",
-        "first_name": "Иван",
-        "last_name": "Иванов"
-        "patronymic": "Иванович"
-    }
-    ```
-
-
-
-    Возвращает:
-    Словарь с данными пользователя.
-    """
     async with httpx.AsyncClient() as client:
         try:
-            # Конвертируем Pydantic модель в dict
             request_data = user_data.model_dump()
 
             response = await client.post(
@@ -83,30 +42,105 @@ async def register(user_data: RegisterRequest):
 # Логин пользователя
 # ----------------------------
 @router.post("/login")
-async def login(username: str = Form(...), password: str = Form(...)):
-    """
-    Аутентификация пользователя через form-data.
-
-    **Поля для ввода**:
-    - `username` — email
-    - `password` — пароль
-
-    Возвращает JWT токен с полями:
-    - `access_token`
-    - `token_type`
-    """
+async def login(
+    response: Response,
+    user_data: UserLogin
+):
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{USERS_SERVICE_URL}/users/login",
-            json={"email": username, "password": password},
-            timeout=15.0
-        )
-        if response.status_code >= 400:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=response.json().get("detail", "Login failed")
+        try:
+            request_data = user_data.model_dump()
+
+            response_internal = await client.post(
+                f"{USERS_SERVICE_URL}/users/login",
+                json=request_data,
+                timeout=15.0
             )
-        return response.json()
+            
+            if response_internal.status_code >= 400:
+                raise HTTPException(
+                    status_code=response_internal.status_code,
+                    detail=response_internal.json().get("detail", "Login failed")
+                )
+            
+            result = response_internal.json()
+            
+            if 'set-cookie' in response_internal.headers:
+                refresh_cookie = response_internal.headers['set-cookie']
+                response.headers['set-cookie'] = refresh_cookie
+
+            return result
+            
+        except httpx.ConnectError:
+            raise HTTPException(status_code=503, detail="Users service unavailable")
+
+# ----------------------------
+# Обновление токена
+# ----------------------------
+@router.post("/refresh")
+async def refresh_token(
+    response: Response,
+    request: Request
+):
+    async with httpx.AsyncClient() as client:
+        try:
+            cookies = {"refresh_token": request.cookies.get("refresh_token", "")}
+            
+            response_internal = await client.post(
+                f"{USERS_SERVICE_URL}/users/refresh",
+                cookies=cookies,
+                timeout=15.0
+            )
+            
+            if response_internal.status_code >= 400:
+                raise HTTPException(
+                    status_code=response_internal.status_code,
+                    detail=response_internal.json().get("detail", "Token refresh failed")
+                )
+            
+            result = response_internal.json()
+            
+            if 'set-cookie' in response_internal.headers:
+                refresh_cookie = response_internal.headers['set-cookie']
+                response.headers['set-cookie'] = refresh_cookie
+
+            return result
+            
+        except httpx.ConnectError:
+            raise HTTPException(status_code=503, detail="Users service unavailable")
+
+# ----------------------------
+# Выход из системы
+# ----------------------------
+@router.post("/logout")
+async def logout(response: Response):
+    async with httpx.AsyncClient() as client:
+        try:
+            response_internal = await client.post(
+                f"{USERS_SERVICE_URL}/users/logout",
+                timeout=10.0
+            )
+            
+            response.delete_cookie(
+                key="refresh_token",
+                secure=False,
+                samesite="strict"
+            )
+            
+            if response_internal.status_code >= 400:
+                raise HTTPException(
+                    status_code=response_internal.status_code,
+                    detail=response_internal.json().get("detail", "Logout failed")
+                )
+            
+            return {"msg": "Logged out"}
+            
+        except httpx.ConnectError:
+            response.delete_cookie(
+                key="refresh_token",
+                secure=False,
+                samesite="strict"
+            )
+            raise HTTPException(status_code=503, detail="Users service unavailable")
 
 # ----------------------------
 # Получение текущего пользователя
@@ -116,57 +150,51 @@ async def get_me(current_user: Dict[Any, Any] = Depends(get_current_user)):
     """
     Получение данных текущего пользователя.
 
-    🔒 Требуется JWT токен.
+    🔒 Требуется JWT токен в заголовке Authorization: Bearer <token>
     """
     return current_user
 
 # ----------------------------
-# Обновление профиля
+# Обновление профиля - ИСПРАВЛЕННАЯ ВЕРСИЯ
 # ----------------------------
 @router.put("/me")
-async def update_me(update_data: UserUpdateRequest, current: Dict[str, Any] = Depends(get_current_user)):
+async def update_me(
+    update_data: UserUpdateRequest, 
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    request: Request = None
+):
     """
     Обновление профиля текущего пользователя.
 
-    Примеры полей:
-    - `first_name` (str) - имя пользователя
-    - `last_name` (str) - фамилия пользователя
-    - `patronymic` (str) - отчество пользователя
-
-
-    Пример запроса:
-    ```json
-    {
-        "first_name": "Иван",
-        "last_name": "Иванов"
-        "patronymic": "Иванович"
-    }
-    ```
-
-    Валидация:
-    - `first_name` - не менее 2 и не более 50 символов
-    - `last_name` - не менее 2 и не более 50 символов
-    - `patronymic` - не менее 2 и не более 50 символов
-
-    Возвращает:
-    Словарь с обновленными данными пользователя.
+    🔒 Требуется JWT токен в заголовке Authorization: Bearer <token>
     """
-    token = current["token"]
     async with httpx.AsyncClient() as client:
         try:
-            # Конвертируем Pydantic модель в dict
             request_data = update_data.model_dump(exclude_unset=True)
-
+            
+            # Получаем refresh_token из cookies запроса
+            refresh_token = request.cookies.get("refresh_token") if request else None
+            
+            # Подготавливаем заголовки и cookies для запроса к User Service
+            headers = {
+                "Authorization": f"Bearer {current_user['token']}",
+                "Content-Type": "application/json"
+            }
+            cookies = {"refresh_token": refresh_token} if refresh_token else {}
+            
             response = await client.put(
                 f"{USERS_SERVICE_URL}/users/me",
                 json=request_data,
-                params={"token": token},
+                headers=headers,
+                cookies=cookies,
                 timeout=15.0
             )
+            
             if response.status_code >= 400:
+                error_detail = response.json().get("detail", "Update failed")
                 raise HTTPException(
                     status_code=response.status_code,
-                    detail=response.json().get("detail", "Update failed")
+                    detail=error_detail
                 )
             return response.json()
         
