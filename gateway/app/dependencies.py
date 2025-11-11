@@ -1,30 +1,30 @@
 import httpx
-from fastapi import Depends, HTTPException, Header, Request
+from fastapi import Depends, HTTPException, Header, Request, Query
+from fastapi.params import Depends as FastAPIDepends
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 
 async def get_current_user(
     request: Request,
-    authorization: str = Header(..., description="Bearer token")
+    token: str = Query(..., description="JWT token for authentication"),
+    authorization: Optional[str] = Header(None, include_in_schema=False)  # Скрываем из Swagger
 ) -> Dict[str, Any]:
     """
-    Dependency для проверки JWT токена и получения данных пользователя.
+    Dependency для проверки JWT токена
     """
-
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authorization header format. Expected: Bearer <token>"
-        )
+    # Приоритет: Header > Query параметр (для обратной совместимости)
+    if authorization and authorization.startswith("Bearer "):
+        token_value = authorization.split(" ")[1]
+    else:
+        token_value = token
     
-    token = authorization.split(" ")[1]
     refresh_token = request.cookies.get("refresh_token")
 
     async with httpx.AsyncClient() as client:
         try:
-            headers = {"Authorization": f"Bearer {token}"}
+            headers = {"Authorization": f"Bearer {token_value}"}
             cookies = {"refresh_token": refresh_token} if refresh_token else {}
             
             response = await client.get(
@@ -36,7 +36,7 @@ async def get_current_user(
 
             if response.status_code == 200:
                 user_data = response.json()
-                return {"token": token, "user": user_data}
+                return {"token": token_value, "user": user_data}
             else:
                 error_detail = response.json().get("detail", "Invalid token")
                 raise HTTPException(
