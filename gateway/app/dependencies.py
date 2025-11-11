@@ -1,6 +1,5 @@
 import httpx
-from fastapi import Depends, HTTPException, Header, Request, Query
-from fastapi.params import Depends as FastAPIDepends
+from fastapi import Depends, HTTPException, Header, Request
 import os
 from typing import Dict, Any, Optional
 
@@ -8,17 +7,25 @@ USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 
 async def get_current_user(
     request: Request,
-    token: str = Query(..., description="JWT token for authentication"),
-    authorization: Optional[str] = Header(None, include_in_schema=False)  # Скрываем из Swagger
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = None  # Делаем параметр опциональным
 ) -> Dict[str, Any]:
     """
     Dependency для проверки JWT токена
     """
-    # Приоритет: Header > Query параметр (для обратной совместимости)
+    
+    # Приоритет: Header > Query параметр
     if authorization and authorization.startswith("Bearer "):
         token_value = authorization.split(" ")[1]
-    else:
+        print(f"🔑 Using token from Authorization header")
+    elif token:
         token_value = token
+        print(f"🔑 Using token from query parameter")
+    else:
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization required. Use Header 'Authorization: Bearer <token>' or query parameter 'token'"
+        )
     
     refresh_token = request.cookies.get("refresh_token")
 
