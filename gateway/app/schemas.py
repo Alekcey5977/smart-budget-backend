@@ -7,6 +7,9 @@ class RegisterRequest(BaseModel):
     last_name: str
     patronymic: str
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 class UserUpdateRequest(BaseModel):
     first_name: str
@@ -24,3 +27,7 @@ class UserUpdateRequest(BaseModel):
         if len(v) > 50:
             raise ValueError('Name must be less than 50 characters')
         return v
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str

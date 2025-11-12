@@ -1,6 +1,11 @@
 from typing import Optional
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 from datetime import datetime
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -59,3 +64,5 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     user_id: int = None
+
+

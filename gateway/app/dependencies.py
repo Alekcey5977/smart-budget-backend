@@ -1,53 +1,49 @@
 import httpx
-from fastapi import Depends, HTTPException, Header
+from fastapi import Depends, HTTPException, Header, Request
 import os
-from typing import Optional, Dict, Any
+from typing import Dict, Any, Optional
 
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 
-async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
+async def get_current_user(
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = None  # Делаем параметр опциональным
+) -> Dict[str, Any]:
     """
-    Dependency для проверки JWT токена и получения данных пользователя.
-    Возвращает словарь вида:
-    {
-        "token": "<JWT токен>",
-        "user": {данные пользователя из users-service}
-    }
+    Dependency для проверки JWT токена
     """
-
-    # Проверяем наличие заголовка авторизации
-    if authorization is None:
+    
+    # Приоритет: Header > Query параметр
+    if authorization and authorization.startswith("Bearer "):
+        token_value = authorization.split(" ")[1]
+        print(f"🔑 Using token from Authorization header")
+    elif token:
+        token_value = token
+        print(f"🔑 Using token from query parameter")
+    else:
         raise HTTPException(
             status_code=401,
-            detail="Authorization header is required"
+            detail="Authorization required. Use Header 'Authorization: Bearer <token>' or query parameter 'token'"
         )
     
-    # Проверяем формат заголовка: должен быть "Bearer {token}"
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authorization header format. Expected: Bearer <token>"
-        )
-    
-    # Извлекаем чистый токен (убираем "Bearer ")
-    token = authorization.split(" ")[1]
+    refresh_token = request.cookies.get("refresh_token")
 
-    # Создаем асинхронный HTTP клиент для запроса к users-service
     async with httpx.AsyncClient() as client:
         try:
-            # Делаем запрос к users-service для проверки токена
+            headers = {"Authorization": f"Bearer {token_value}"}
+            cookies = {"refresh_token": refresh_token} if refresh_token else {}
+            
             response = await client.get(
-                f"{USERS_SERVICE_URL}/users/me",  # Эндпоинт проверки токена
-                params={"token": token},          # Передаем токен как параметр
-                timeout=10.0                      # Таймаут 10 секунд
+                f"{USERS_SERVICE_URL}/users/me",
+                headers=headers,
+                cookies=cookies,
+                timeout=10.0
             )
 
-            # Если users-service вернул 200 - токен валиден
             if response.status_code == 200:
                 user_data = response.json()
-                return {"token": token, "user": user_data}  # Возвращаем данные пользователя
-            
-            # Если users-service вернул ошибку - пробрасываем ее
+                return {"token": token_value, "user": user_data}
             else:
                 error_detail = response.json().get("detail", "Invalid token")
                 raise HTTPException(
@@ -55,7 +51,6 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[
                     detail=error_detail
                 )
             
-        # Обработка ошибок сети (users-service недоступен)
         except httpx.ConnectError:
             raise HTTPException(
                 status_code=503,
