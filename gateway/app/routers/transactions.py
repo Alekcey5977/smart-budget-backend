@@ -100,3 +100,39 @@ async def get_income_transactions(
             
         except httpx.ConnectError:
             raise HTTPException(503, "Transaction service is unavailable")
+        
+# ----------------------------
+# Получение только расходов
+# ----------------------------
+@router.get("/expense")
+async def get_expense_transactions(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Получить только расходные транзакции пользователя
+    """
+
+    user_id = current_user["user_id"] # Берем из токена!
+
+    async with httpx.AsyncClient as client:
+        try:
+            headers = {"X-User-ID": str(user_id)}
+
+            response = await client.get(
+                f"{TRANSACTION_SERVICE_URL}/transactions/expense",
+                headers=headers,
+                timeout=10.0
+            )
+
+            if response.status_code == 200:
+                return response.json()
+            
+            else:
+                error_detail = response.json().get("detail", "Failed to get expense transactions")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=error_detail
+                )
+            
+        except httpx.ConnectError:
+            raise HTTPException(503, "Transaction service is unavailable")
