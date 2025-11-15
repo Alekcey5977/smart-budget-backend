@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_tables, shutdown
 from app.models import *
 from contextlib import asynccontextmanager
-from app.routers import users
 import uvicorn
 
 
@@ -24,7 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(users.router)
 
 
 @app.get("/health")
@@ -32,4 +30,4 @@ async def health():
     return {"status": "healthy", "service": "transactions"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

@@ -1,28 +1,28 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+import uuid
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 
-
-class Base(DeclarativeBase):
+class Transaction_Base(DeclarativeBase):
     pass
 
 
-
-class Category(Base):
+class Category(Transaction_Base):
     __tablename__ = "categories"
     
     mcc = Column(Integer, primary_key=True, index=True)
     group = Column(String(100), nullable=False)
 
-    transactions = relationship("Transactions", back_populates="category")
+    transactions = relationship("Transaction", back_populates="category")
 
 
 
 
-class Transactions(Base):
+class Transaction(Transaction_Base):
     __tablename__ = "transactions"
 
-    user_id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
     amount = Column(Integer, nullable=False)
     category_mcc = Column(Integer, ForeignKey("categories.mcc"), nullable=False)
     date_time = Column(DateTime, nullable=False)
