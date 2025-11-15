@@ -1,10 +1,12 @@
 services:
   users-db:
     image: postgres:13
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: users_user
-      POSTGRES_PASSWORD: users_password
-      POSTGRES_DB: users_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
     volumes:
@@ -15,22 +17,28 @@ services:
     env_file:
       - .env
     ports:
-      - "8001:8001"
+      - "${USERS_SERVICE_PORT}:${USERS_SERVICE_PORT}"
     depends_on:
       - users-db
     environment:
-      DATABASE_URL: "postgresql+asyncpg://users_user:users_password@users-db:5432/users_db"
-      SERVICE_PORT: "8001"
+      DATABASE_URL: ${DATABASE_URL}
+      SERVICE_PORT: ${USERS_SERVICE_PORT}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
 
   gateway:
     build: ./gateway
     ports:
-      - "8000:8000"
+      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     depends_on:
       - users-service
+    env_file:
+      - .env
     environment:
-      GATEWAY_PORT: "8000"
-      USERS_SERVICE_URL: "http://users-service:8001"
+      GATEWAY_PORT: ${GATEWAY_PORT}
+      USERS_SERVICE_URL: ${USERS_SERVICE_URL}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
 
 volumes:
   users-db-data:

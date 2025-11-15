@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, Query
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from app.dependencies import get_current_user
 import httpx
+from datetime import datetime
 
 
 router = APIRouter(
@@ -16,31 +17,84 @@ TRANSACTION_SERVICE_URL = os.getenv("TRANSACTION_SERVICE_URL")
 # Вывод всех транзакций
 # ----------------------------
 @router.get("/")
-async def get_all_transactions(
-    current_user: Dict[str, Any] = Depends(get_current_user)
+async def get_transactions(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    transaction_type: Optional[str] = Query(
+        None,
+        description="Тип транзакции: 'income', 'expense', или None для всех",
+        regex="^(income|expense)?$"),
+
+    category: Optional[str] = Query(
+        None,
+        description="Фильтр по категории"),
+    
+    start_date: Optional[datetime] = Query(
+        None,
+        description="Начальная дата периода"),
+    
+    end_date: Optional[datetime] = Query(
+        None,
+        description="Конечная дата периода"),
+    
+    min_amount: Optional[float] = Query(
+        None,
+        description="Минимальная сумма транзакции"),
+    
+    max_amount: Optional[float] = Query(
+        None,
+        description="Максимальная сумма транзакции"),
+    
+    limit: int = Query(50, ge=1, le=100, description="Лимит записей"),
+
+    offset: int = Query(0, ge=0, description="Смещение")
 ):
     """
-    Получить все транзакции пользователя
+    Получить транзакции пользователя с фильтрацией
     
-    🔒 Защищенный эндпоинт, требует JWT токен
+    Защищенный эндпоинт, требует JWT токен
     
-    ✅ **Пример успешного ответа:**
-    ```json
-    {
-        "transactions": [
-            {
-                "id": 1,
-                "amount": 100.50,
-                "type": "income",
-                "category": "Salary",
-                "description": "Monthly salary",
-                "date": "2024-01-15T10:30:00.000Z"
-            }
-        ]
-    }
+    **Параметры фильтрации:**
+    - `transaction_type`: 'income' (доходы), 'expense' (расходы)
+    - `category`: фильтр по категории
+    - `start_date`, `end_date`: период дат
+    - `min_amount`, `max_amount`: диапазон сумм
+    - `limit`, `offset`: пагинация
+    
+    **Примеры запросов:**
+    
+    ## Все транзакции
+    GET /transactions
+    
+    ## Только доходы
+    GET /transactions?transaction_type=income
+    
+    ## Только расходы за январь 2024
+    GET /transactions?transaction_type=expense&start_date=2024-01-01&end_date=2024-01-31
+    
+    ## Транзакции категории "Еда" с пагинацией
+    GET /transactions?category=Еда&limit=50&offset=0
+    
+    ## Крупные доходы (>5000 руб)
+    GET /transactions?transaction_type=income&min_amount=5000
     """
 
-    user_id = current_user["user_id"] # Берем из токена!
+    # достаем user_id из уже проверенного current_user
+    user_id = current_user["user_id"]
+
+    # Собираем параметры фильтрации
+    params = {
+        "transaction_type": transaction_type,
+        "category": category,
+        "start_date": start_date.isoformat() if start_date else None,
+        "end_date": end_date.isoformat() if end_date else None,
+        "min_amount": min_amount,
+        "max_amo"
+        "unt": max_amount,
+        "limit": limit,
+        "offset": offset
+    }
+
+    clean_params = {k: v for k, v in params.items() if v is not None}
 
     async with httpx.AsyncClient as client:
         try:
@@ -49,6 +103,7 @@ async def get_all_transactions(
             response = await client.get(
                 f"{TRANSACTION_SERVICE_URL}/transactions",
                 headers=headers,
+                params=clean_params,
                 timeout=10.0
             )
 
@@ -64,75 +119,6 @@ async def get_all_transactions(
             
         except httpx.ConnectError:
             raise HTTPException(503, "Transaction service is unavailable")
+        except httpx.TimeoutException:
+            raise HTTPException(504, "Transactions service timeout")
             
-# ----------------------------
-# Получение только доходов
-# ----------------------------
-@router.get("/income")
-async def get_income_transactions(
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
-    """
-    Получить только доходные транзакции пользователя
-    """
-
-    user_id = current_user["user_id"] # Берем из токена!
-
-    async with httpx.AsyncClient as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
-
-            response = await client.get(
-                f"{TRANSACTION_SERVICE_URL}/transactions/income",
-                headers=headers,
-                timeout=10.0
-            )
-
-            if response.status_code == 200:
-                return response.json()
-            
-            else:
-                error_detail = response.json().get("detail", "Failed to get income transactions")
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=error_detail
-                )
-            
-        except httpx.ConnectError:
-            raise HTTPException(503, "Transaction service is unavailable")
-        
-# ----------------------------
-# Получение только расходов
-# ----------------------------
-@router.get("/expense")
-async def get_expense_transactions(
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
-    """
-    Получить только расходные транзакции пользователя
-    """
-
-    user_id = current_user["user_id"] # Берем из токена!
-
-    async with httpx.AsyncClient as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
-
-            response = await client.get(
-                f"{TRANSACTION_SERVICE_URL}/transactions/expense",
-                headers=headers,
-                timeout=10.0
-            )
-
-            if response.status_code == 200:
-                return response.json()
-            
-            else:
-                error_detail = response.json().get("detail", "Failed to get expense transactions")
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=error_detail
-                )
-            
-        except httpx.ConnectError:
-            raise HTTPException(503, "Transaction service is unavailable")

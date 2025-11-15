@@ -2,7 +2,8 @@ import httpx
 from fastapi import Depends, HTTPException, Header, Request
 import os
 from typing import Dict, Any, Optional
-import jwt
+from jose import JWTError, jwt
+
 
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")
@@ -43,7 +44,7 @@ async def get_current_user(
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(401, "Invalid token: missing user ID")
-    except jwt.JWTError as e:
+    except JWTError as e:
         raise HTTPException(401, f"Invalid token: {str(e)}")
 
     async with httpx.AsyncClient() as client:
