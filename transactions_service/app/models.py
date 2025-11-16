@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UUID
+from sqlalchemy import Column, Integer, FLOAT, String, DateTime, ForeignKey, UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 
@@ -23,7 +23,7 @@ class Transaction(Transaction_Base):
 
     id = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, index=True)
-    amount = Column(Integer, nullable=False)
+    amount = Column(FLOAT, nullable=False)
     category_mcc = Column(Integer, ForeignKey("categories.mcc"), nullable=False)
     date_time = Column(DateTime, nullable=False)
     type = Column(String(30), nullable=False)
