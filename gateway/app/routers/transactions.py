@@ -96,7 +96,7 @@ async def get_transactions(
 
     clean_params = {k: v for k, v in params.items() if v is not None}
 
-    async with httpx.AsyncClient as client:
+    async with httpx.AsyncClient() as client:
         try:
             headers = {"X-User-ID": str(user_id)}
 

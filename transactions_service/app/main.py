@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_tables, shutdown
 from app.models import *
 from contextlib import asynccontextmanager
+from app.routers import transactions
 import uvicorn
 
 
@@ -23,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+app.include_router(transactions.router)
 
 @app.get("/health")
 async def health():
