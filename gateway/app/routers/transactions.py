@@ -9,9 +9,9 @@ from datetime import datetime
 router = APIRouter(
     prefix="/transactions",
     tags=["transactions"]
-)
 
-TRANSACTION_SERVICE_URL = os.getenv("TRANSACTION_SERVICE_URL")
+)
+TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL", "http://transactions-service:8002")
 
 # ----------------------------
 # Вывод всех транзакций
@@ -99,14 +99,17 @@ async def get_transactions(
     async with httpx.AsyncClient() as client:
         try:
             headers = {"X-User-ID": str(user_id)}
-
+            print(f"🔔 Gateway: отправляю запрос в {TRANSACTIONS_SERVICE_URL}/transactions")
+            print(f"🔔 Gateway: заголовки {headers}")
             response = await client.get(
-                f"{TRANSACTION_SERVICE_URL}/transactions",
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/",
                 headers=headers,
                 params=clean_params,
                 timeout=10.0
             )
-
+            print(f"🔔 Gateway: статус ответа {response.status_code}")
+            print(f"🔔 Gateway: заголовки ответа {response.headers}")
+            print(f"🔔 Gateway: тело ответа {response.text}")
             if response.status_code == 200:
                 return response.json()
             
@@ -121,4 +124,3 @@ async def get_transactions(
             raise HTTPException(503, "Transaction service is unavailable")
         except httpx.TimeoutException:
             raise HTTPException(504, "Transactions service timeout")
-            

@@ -1,11 +1,12 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from datetime import datetime
+import uuid
 
 # TODO написать схемы для других ручек, например, для создания транзакции вручную
 
 class TransactionBase(BaseModel):
     amount: float
-    category_mcc: str = Field(..., min_length=4, max_length=10)
+    category_mcc: int = Field(..., ge=1000, le=9999)
     date_time: datetime
     type: str
 
@@ -27,10 +28,8 @@ class TransactionBase(BaseModel):
     @classmethod
     def validate_category_mcc(cls, v):
         """Проверка MCC кода"""
-        if not v.isdigit():
-            raise ValueError('MCC code must contain only digits')
-        if len(v) != 4:
-            raise ValueError('MCC code must be 4 digits')
+        if not (1000 <= v <= 9999):
+            raise ValueError('MCC code must be between 1000 and 9999')
         return v
 
     @field_validator('type')
@@ -53,5 +52,5 @@ class TransactionBase(BaseModel):
 
 
 class TransactionResponse(TransactionBase):
-    id: int
+    id: uuid.UUID
     user_id: int
