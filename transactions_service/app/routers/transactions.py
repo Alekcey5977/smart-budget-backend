@@ -18,7 +18,7 @@ async def get_transactions(
         None,
         description="Тип транзакции: 'income', 'expense', или None для всех",
     ),
-    category: Optional[str] = Query(None, description="Фильтр по категории"),
+    category_mcc: Optional[int] = Query(None, description="Фильтр по категории"),
     start_date: Optional[datetime] = Query(
         None, description="Начальная дата периода"),
     end_date: Optional[datetime] = Query(
@@ -36,7 +36,7 @@ async def get_transactions(
     transactions = await repo.get_transactions_with_filters(
         user_id=user_id,
         transaction_type=transaction_type,
-        category=category,
+        category_mcc=category_mcc,
         start_date=start_date,
         end_date=end_date,
         min_amount=min_amount,
@@ -44,8 +44,19 @@ async def get_transactions(
         limit=limit,
         offset=offset
     )
+    result = []
+    for t in transactions:
+        result.append({
+            "id": t.id,
+            "user_id": t.user_id,
+            "amount": t.amount,
+            "category_mcc": t.category_mcc,
+            "category_group": t.category.group if t.category else "Unknown",
+            "date_time": t.date_time,
+            "type": t.type
+        })
 
-    return transactions
+    return result
 
 
 @router.get("/categories")

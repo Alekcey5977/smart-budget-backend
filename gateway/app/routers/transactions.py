@@ -24,7 +24,7 @@ async def get_transactions(
         description="Тип транзакции: 'income', 'expense', или None для всех",
         regex="^(income|expense)?$"),
 
-    category: Optional[str] = Query(
+    category_mcc: Optional[int] = Query(
         None,
         description="Фильтр по категории"),
     
@@ -84,7 +84,7 @@ async def get_transactions(
     # Собираем параметры фильтрации
     params = {
         "transaction_type": transaction_type,
-        "category": category,
+        "category_mcc": category_mcc,
         "start_date": start_date.isoformat() if start_date else None,
         "end_date": end_date.isoformat() if end_date else None,
         "min_amount": min_amount,

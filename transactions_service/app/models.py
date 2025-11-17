@@ -29,3 +29,8 @@ class Transaction(Transaction_Base):
     type = Column(String(30), nullable=False)
 
     category = relationship("Category", back_populates="transactions")
+
+    def category_group(self) -> str:
+        if self.category is None:
+            return "Unknown"
+        return self.category.group

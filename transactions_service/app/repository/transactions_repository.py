@@ -1,8 +1,9 @@
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import datetime
-from app.models import Transaction
+from app.models import Transaction, Category
 
 class TransactionRepository:
     def __init__(self, db: AsyncSession):
@@ -12,7 +13,7 @@ class TransactionRepository:
         self,
         user_id: int,
         transaction_type: Optional[str] = None,
-        category: Optional[str] = None,
+        category_mcc: Optional[int] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         min_amount: Optional[float] = None,
@@ -23,7 +24,8 @@ class TransactionRepository:
         """Основной метод для получения транзакций с фильтрацией"""
         
         # Базовый запрос с фильтрацией по id пользоавтеля
-        query = select(Transaction).where(Transaction.user_id == user_id)
+        query = select(Transaction).where(Transaction.user_id ==
+                                          user_id).options(joinedload(Transaction.category))
 
         # Фильтрация по типу транзакции
         if transaction_type == "income":
@@ -32,11 +34,11 @@ class TransactionRepository:
             query = query.where(Transaction.amount < 0)
         
         # Фильтрация по категории
-        if category:
-            query = query.where(Transaction.category == category)
+        if category_mcc is not None:
+            query = query.where(Transaction.category_mcc == category_mcc)
 
         # Фильтрация по дате
-        if start_date:
+        if start_date is not None:
             query = query.where(Transaction.date_time >= start_date)
         if end_date:
             query = query.where(Transaction.date_time <= end_date)

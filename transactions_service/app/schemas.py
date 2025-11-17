@@ -54,3 +54,4 @@ class TransactionBase(BaseModel):
 class TransactionResponse(TransactionBase):
     id: uuid.UUID
     user_id: int
+    category_group: str
