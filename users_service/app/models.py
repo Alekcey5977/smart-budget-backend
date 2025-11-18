@@ -3,11 +3,11 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import func
 
 
-class Base(DeclarativeBase):
+class User_Base(DeclarativeBase):
     pass
 
 
-class User(Base):
+class User(User_Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, index=True)
