@@ -13,6 +13,9 @@ router = APIRouter(
 )
 TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL", "http://transactions-service:8002")
 
+    # FIXME: посмотреть print, нужно ли его убрать?
+
+
 # ----------------------------
 # Вывод всех транзакций
 # ----------------------------
@@ -24,9 +27,9 @@ async def get_transactions(
         description="Тип транзакции: 'income', 'expense', или None для всех",
         regex="^(income|expense)?$"),
 
-    category_mcc: Optional[int] = Query(
+    category_mcc: Optional[str] = Query(
         None,
-        description="Фильтр по категории"),
+        description="MCC коды категорий через запятую: 5411,5812,5912"),
     
     start_date: Optional[datetime] = Query(
         None,
@@ -81,10 +84,18 @@ async def get_transactions(
     # достаем user_id из уже проверенного current_user
     user_id = current_user["user_id"]
 
+    #Преобразуем строку в список чисел
+    category_mcc_list = None
+    if category_mcc:
+        try:
+            category_mcc_list = [int(mcc.strip()) for mcc in category_mcc.split(",")]
+        except ValueError:
+            raise HTTPException(400, "Invalid MCC codes format")
+        
     # Собираем параметры фильтрации
     params = {
         "transaction_type": transaction_type,
-        "category_mcc": category_mcc,
+        "category_mcc": category_mcc_list,
         "start_date": start_date.isoformat() if start_date else None,
         "end_date": end_date.isoformat() if end_date else None,
         "min_amount": min_amount,
@@ -95,12 +106,15 @@ async def get_transactions(
     }
 
     clean_params = {k: v for k, v in params.items() if v is not None}
+    print(f"🔔 GATEWAY DEBUG: clean_params = {clean_params}")  # 🔥 ДЛЯ ПРОВЕРКИ
 
     async with httpx.AsyncClient() as client:
         try:
             headers = {"X-User-ID": str(user_id)}
             print(f"🔔 Gateway: отправляю запрос в {TRANSACTIONS_SERVICE_URL}/transactions")
             print(f"🔔 Gateway: заголовки {headers}")
+            print(f"🔔 Gateway: параметры {clean_params}")  # 🔥 ВАЖНО: посмотри что здесь
+
             response = await client.get(
                 f"{TRANSACTIONS_SERVICE_URL}/transactions/",
                 headers=headers,

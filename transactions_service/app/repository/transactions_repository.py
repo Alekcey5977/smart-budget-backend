@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from app.models import Transaction, Category
 
@@ -13,7 +13,7 @@ class TransactionRepository:
         self,
         user_id: int,
         transaction_type: Optional[str] = None,
-        category_mcc: Optional[int] = None,
+        category_mcc: Optional[List[str]] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         min_amount: Optional[float] = None,
@@ -33,9 +33,10 @@ class TransactionRepository:
         elif transaction_type == "expense":
             query = query.where(Transaction.amount < 0)
         
-        # Фильтрация по категории
-        if category_mcc is not None:
-            query = query.where(Transaction.category_mcc == category_mcc)
+        # 🔥 Проблема скорее всего здесь - проверь эту строку
+        if category_mcc:
+            print(f"🔔 Filtering by MCC: {category_mcc}")
+            query = query.where(Transaction.category_mcc.in_(category_mcc))
 
         # Фильтрация по дате
         if start_date is not None:
@@ -77,14 +78,15 @@ class TransactionRepository:
 
         return result.scalar_one_or_none()
     
+    # TODO: в разработке
 
-    async def get_user_categories(self, user_id: int):
-        """Получить уникальные категории пользователя"""
+    # async def get_user_categories(self, user_id: int):
+    #     """Получить уникальные категории пользователя"""
 
-        query = select(Transaction.category).where(Transaction.user_id == user_id).distinct()
-        result = await self.db.execute(query)
+    #     query = select(Transaction.category).where(Transaction.user_id == user_id).distinct()
+    #     result = await self.db.execute(query)
 
-        return result.scalars().all()
+    #     return result.scalars().all()
     
 
     
