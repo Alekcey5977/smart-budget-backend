@@ -11,18 +11,19 @@ class UserBase(BaseModel):
     email: EmailStr
     first_name: str
     last_name: str
-    patronymic: str
+    patronymic: Optional[str] = None
 
     @field_validator('first_name', 'last_name', 'patronymic')
     @classmethod
-    def validate_name_not_empty(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError('Name cannot be empty')
-        if len(v) < 2:
-            raise ValueError('Name must be at least 2 characters long')
-        if len(v) > 50:
-            raise ValueError('Name must be less than 50 characters')
+    def validate_name_not_empty(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            v = v.strip()
+            if not v:
+                raise ValueError('Name cannot be empty')
+            if len(v) < 2:
+                raise ValueError('Name must be at least 2 characters long')
+            if len(v) > 50:
+                raise ValueError('Name must be less than 50 characters')
         return v
 
 class UserLogin(BaseModel):
@@ -34,21 +35,34 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    first_name: str
-    last_name: str
-    patronymic: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    patronymic: Optional[str] = None
 
-    @field_validator('first_name', 'last_name', 'patronymic')
+    @field_validator('first_name', 'last_name')
     @classmethod
-    def validate_name_length(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            v = v.strip()
-            if not v:
-                raise ValueError('Name cannot be empty')
-            if len(v) < 2:
-                raise ValueError('Name must be at least 2 characters long')
-            if len(v) > 50:
-                raise ValueError('Name must be less than 50 characters')
+    def validate_name_length(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError('Name cannot be empty')
+        if len(v) < 2:
+            raise ValueError('Name must be at least 2 characters long')
+        if len(v) > 50:
+            raise ValueError('Name must be less than 50 characters')
+        return v
+    
+    @field_validator('patronymic')
+    @classmethod
+    def validate_patronymic(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if not v:  # Пустая строка становится None
+            return None
+        if len(v) < 2:
+            raise ValueError('Patronymic must be at least 2 characters long')
+        if len(v) > 50:
+            raise ValueError('Patronymic must be less than 50 characters')
         return v
 
 class UserResponse(UserBase):
