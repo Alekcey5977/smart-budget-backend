@@ -42,10 +42,13 @@ class UserRepository:
     async def update(self, user_id: int, user_update: UserUpdate):
         """Обновить данные пользователя"""
         db_user = await self.get_by_id(user_id)
-        
+
         if db_user:
             update_data = user_update.model_dump(exclude_unset=True)
             for field, value in update_data.items():
+                # Пустая строка для patronymic означает удаление (NULL в БД)
+                if field == "patronymic" and value == "":
+                    value = None
                 setattr(db_user, field, value)
             await self.db.commit()
             await self.db.refresh(db_user)

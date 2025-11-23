@@ -32,8 +32,8 @@ TRANSACTIONS_SERVICE_URL = os.getenv(
 |----------|-----|----------|
 | `transaction_type` | string | Тип: `income` (доходы) или `expense` (расходы) |
 | `category_ids` | list[int] | Список ID категорий |
-| `start_date` | datetime | Начало периода (ISO 8601) |
-| `end_date` | datetime | Конец периода (ISO 8601) |
+| `start_date` | datetime | Начало периода  |
+| `end_date` | datetime | Конец периода  |
 | `min_amount` | float | Минимальная сумма |
 | `max_amount` | float | Максимальная сумма |
 | `merchant_ids` | list[int] | Список ID мерчантов |
