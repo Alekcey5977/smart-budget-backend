@@ -1,139 +1,194 @@
-from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, Depends, HTTPException
 import os
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from app.dependencies import get_current_user
+from gateway.app.schemas.transaction_schema import TransactionFilterRequest, TransactionResponse, CategoryResponse
 import httpx
-from datetime import datetime
 
 
 router = APIRouter(
     prefix="/transactions",
     tags=["transactions"]
-
 )
-TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL", "http://transactions-service:8002")
 
-    # FIXME: посмотреть print, нужно ли его убрать?
+TRANSACTIONS_SERVICE_URL = os.getenv(
+    "TRANSACTIONS_SERVICE_URL",
+    "http://transactions-service:8002"
+)
 
 
-# ----------------------------
-# Вывод всех транзакций
-# ----------------------------
-@router.get("/")
+@router.post(
+    "/filter",
+    response_model=List[TransactionResponse],
+    summary="Получить транзакции с фильтрацией",
+    description="""
+Получить список транзакций пользователя с возможностью фильтрации.
+
+**Требует авторизации:** JWT токен в заголовке Authorization.
+
+## Параметры фильтрации
+
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `transaction_type` | string | Тип: `income` (доходы) или `expense` (расходы) |
+| `category_ids` | list[int] | Список ID категорий |
+| `start_date` | datetime | Начало периода (ISO 8601) |
+| `end_date` | datetime | Конец периода (ISO 8601) |
+| `min_amount` | float | Минимальная сумма |
+| `max_amount` | float | Максимальная сумма |
+| `merchant_ids` | list[int] | Список ID мерчантов |
+| `limit` | int | Количество записей (1-100, по умолчанию 50) |
+| `offset` | int | Смещение для пагинации |
+
+## Примеры запросов
+
+### Все транзакции (первые 50)
+```json
+{}
+```
+
+### Только расходы
+```json
+{"transaction_type": "expense"}
+```
+
+### Транзакции за период
+```json
+{
+    "start_date": "2024-01-01T00:00:00",
+    "end_date": "2024-01-31T23:59:59"
+}
+```
+
+### Крупные доходы с пагинацией
+```json
+{
+    "transaction_type": "income",
+    "min_amount": 5000,
+    "limit": 20,
+    "offset": 0
+}
+```
+""",
+    responses={
+        200: {
+            "description": "Список транзакций",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "user_id": 1,
+                            "category_id": 5,
+                            "category_name": "Продукты",
+                            "amount": 1500.50,
+                            "created_at": "2024-01-15T14:30:00",
+                            "type": "expense",
+                            "description": "Покупка в супермаркете",
+                            "merchant_id": 10,
+                            "merchant_name": "Пятёрочка"
+                        }
+                    ]
+                }
+            }
+        },
+        401: {"description": "Не авторизован"},
+        503: {"description": "Сервис транзакций недоступен"},
+        504: {"description": "Таймаут сервиса транзакций"}
+    }
+)
 async def get_transactions(
-    current_user: Dict[str, Any] = Depends(get_current_user),
-    transaction_type: Optional[str] = Query(
-        None,
-        description="Тип транзакции: 'income', 'expense', или None для всех",
-        regex="^(income|expense)?$"),
-
-    category_mcc: Optional[str] = Query(
-        None,
-        description="MCC коды категорий через запятую: 5411,5812,5912"),
-    
-    start_date: Optional[datetime] = Query(
-        None,
-        description="Начальная дата периода"),
-    
-    end_date: Optional[datetime] = Query(
-        None,
-        description="Конечная дата периода"),
-    
-    min_amount: Optional[float] = Query(
-        None,
-        description="Минимальная сумма транзакции"),
-    
-    max_amount: Optional[float] = Query(
-        None,
-        description="Максимальная сумма транзакции"),
-    
-    limit: int = Query(50, ge=1, le=100, description="Лимит записей"),
-
-    offset: int = Query(0, ge=0, description="Смещение")
+    filters: TransactionFilterRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """
-    Получить транзакции пользователя с фильтрацией
-    
-    Защищенный эндпоинт, требует JWT токен
-    
-    **Параметры фильтрации:**
-    - `transaction_type`: 'income' (доходы), 'expense' (расходы)
-    - `category`: фильтр по категории
-    - `start_date`, `end_date`: период дат
-    - `min_amount`, `max_amount`: диапазон сумм
-    - `limit`, `offset`: пагинация
-    
-    **Примеры запросов:**
-    
-    ## Все транзакции
-    GET /transactions
-    
-    ## Только доходы
-    GET /transactions?transaction_type=income
-    
-    ## Только расходы за январь 2024
-    GET /transactions?transaction_type=expense&start_date=2024-01-01&end_date=2024-01-31
-    
-    ## Транзакции категории "Еда" с пагинацией
-    GET /transactions?category=Еда&limit=50&offset=0
-    
-    ## Крупные доходы (>5000 руб)
-    GET /transactions?transaction_type=income&min_amount=5000
-    """
+    Получить транзакции пользователя с фильтрацией.
 
-    # достаем user_id из уже проверенного current_user
+    Защищенный эндпоинт, требует JWT токен.
+    Все параметры фильтрации передаются в теле запроса как JSON.
+    """
     user_id = current_user["user_id"]
 
-    #Преобразуем строку в список чисел
-    category_mcc_list = None
-    if category_mcc:
-        try:
-            category_mcc_list = [int(mcc.strip()) for mcc in category_mcc.split(",")]
-        except ValueError:
-            raise HTTPException(400, "Invalid MCC codes format")
-        
-    # Собираем параметры фильтрации
-    params = {
-        "transaction_type": transaction_type,
-        "category_mcc": category_mcc_list,
-        "start_date": start_date.isoformat() if start_date else None,
-        "end_date": end_date.isoformat() if end_date else None,
-        "min_amount": min_amount,
-        "max_amo"
-        "unt": max_amount,
-        "limit": limit,
-        "offset": offset
-    }
-
-    clean_params = {k: v for k, v in params.items() if v is not None}
-    print(f"🔔 GATEWAY DEBUG: clean_params = {clean_params}")  # 🔥 ДЛЯ ПРОВЕРКИ
+    request_data = filters.model_dump(exclude_none=True)
 
     async with httpx.AsyncClient() as client:
         try:
             headers = {"X-User-ID": str(user_id)}
-            print(f"🔔 Gateway: отправляю запрос в {TRANSACTIONS_SERVICE_URL}/transactions")
-            print(f"🔔 Gateway: заголовки {headers}")
-            print(f"🔔 Gateway: параметры {clean_params}")  # 🔥 ВАЖНО: посмотри что здесь
 
-            response = await client.get(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/",
+            response = await client.post(
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/filter",
                 headers=headers,
-                params=clean_params,
+                json=request_data,
                 timeout=10.0
             )
-            print(f"🔔 Gateway: статус ответа {response.status_code}")
-            print(f"🔔 Gateway: заголовки ответа {response.headers}")
-            print(f"🔔 Gateway: тело ответа {response.text}")
+
             if response.status_code == 200:
                 return response.json()
-            
-            else:
-                error_detail = response.json().get("detail", "Failed to get transactions")
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=error_detail
-                )
-            
+
+            error_detail = response.json().get("detail", "Failed to get transactions")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
+        except httpx.ConnectError:
+            raise HTTPException(503, "Transaction service is unavailable")
+        except httpx.TimeoutException:
+            raise HTTPException(504, "Transactions service timeout")
+
+
+@router.get(
+    "/categories",
+    response_model=List[CategoryResponse],
+    summary="Получить все категории",
+    description="""
+Получить список всех доступных категорий транзакций.
+
+**Требует авторизации:** JWT токен в заголовке Authorization.
+
+Возвращает список категорий с их ID и названиями.
+""",
+    responses={
+        200: {
+            "description": "Список категорий",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {"id": 1, "name": "Продукты"},
+                        {"id": 2, "name": "Транспорт"},
+                        {"id": 3, "name": "Развлечения"}
+                    ]
+                }
+            }
+        },
+        401: {"description": "Не авторизован"},
+        503: {"description": "Сервис транзакций недоступен"}
+    }
+)
+async def get_categories(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Получить все категории транзакций.
+
+    Защищенный эндпоинт, требует JWT токен.
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories",
+                timeout=10.0
+            )
+
+            if response.status_code == 200:
+                return response.json()
+
+            error_detail = response.json().get("detail", "Failed to get categories")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         except httpx.ConnectError:
             raise HTTPException(503, "Transaction service is unavailable")
         except httpx.TimeoutException:
