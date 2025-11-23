@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 import os
 from typing import Dict, Any, List
 from app.dependencies import get_current_user
-from gateway.app.schemas.transaction_schema import TransactionFilterRequest, TransactionResponse, CategoryResponse
+from app.schemas.transaction_schema import TransactionFilterRequest, TransactionResponse, CategoryResponse
 import httpx
 
 

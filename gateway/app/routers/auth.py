@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 import httpx
 import os
 from typing import Dict, Any
-from gateway.app.schemas.authorization_schemas import RegisterRequest, UserUpdateRequest, UserLogin
+from app.schemas.authorization_schemas import RegisterRequest, UserUpdateRequest, UserLogin
 from app.dependencies import get_current_user
 
 router = APIRouter(
