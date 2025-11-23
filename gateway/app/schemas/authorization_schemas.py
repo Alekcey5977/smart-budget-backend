@@ -8,7 +8,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=2, description="Пароль (минимум 2 символа)")
     first_name: str
     last_name: str
-    patronymic: Optional[str] = Field(None, description="Отчество (необязательно)")
+    middle_name: Optional[str] = Field(None, description="Отчество (необязательно)")
 
     @field_validator('password')
     @classmethod
@@ -29,18 +29,18 @@ class RegisterRequest(BaseModel):
             raise ValueError('Name must be less than 50 characters')
         return v
 
-    @field_validator('patronymic')
+    @field_validator('middle_name')
     @classmethod
-    def validate_patronymic(cls, v: Optional[str]) -> Optional[str]:
+    def validate_middle_name(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return None
         v = v.strip()
         if not v:
             return None
         if len(v) < 2:
-            raise ValueError('Patronymic must be at least 2 characters long')
+            raise ValueError('Middle name must be at least 2 characters long')
         if len(v) > 50:
-            raise ValueError('Patronymic must be less than 50 characters')
+            raise ValueError('Middle name must be less than 50 characters')
         return v
 
 
@@ -66,7 +66,7 @@ class UserUpdateRequest(BaseModel):
     """
     first_name: Optional[str] = Field(None, description="Имя (2-50 символов)")
     last_name: Optional[str] = Field(None, description="Фамилия (2-50 символов)")
-    patronymic: Optional[str] = Field(None, description="Отчество (пустая строка для удаления)")
+    middle_name: Optional[str] = Field(None, description="Отчество (пустая строка для удаления)")
 
     @field_validator('first_name', 'last_name')
     @classmethod
@@ -82,9 +82,9 @@ class UserUpdateRequest(BaseModel):
             raise ValueError('Name must be less than 50 characters')
         return v
 
-    @field_validator('patronymic')
+    @field_validator('middle_name')
     @classmethod
-    def validate_patronymic(cls, v: Optional[str]) -> Optional[str]:
+    def validate_middle_name(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return None
         v = v.strip()
@@ -92,14 +92,14 @@ class UserUpdateRequest(BaseModel):
         if not v:
             return ""
         if len(v) < 2:
-            raise ValueError('Patronymic must be at least 2 characters long')
+            raise ValueError('Middle name must be at least 2 characters long')
         if len(v) > 50:
-            raise ValueError('Patronymic must be less than 50 characters')
+            raise ValueError('Middle name must be less than 50 characters')
         return v
 
     @model_validator(mode='after')
     def check_at_least_one_field(self):
-        if self.first_name is None and self.last_name is None and self.patronymic is None:
+        if self.first_name is None and self.last_name is None and self.middle_name is None:
             raise ValueError('At least one field must be provided')
         return self
 
