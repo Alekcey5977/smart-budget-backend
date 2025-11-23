@@ -30,7 +30,7 @@ class UserRepository:
             email=user_data.email,
             first_name=user_data.first_name,
             last_name=user_data.last_name,
-            patronymic=user_data.patronymic,
+            middle_name=user_data.middle_name,
             hashed_password=hashed_password,
         )
         self.db.add(db_user)
@@ -42,10 +42,13 @@ class UserRepository:
     async def update(self, user_id: int, user_update: UserUpdate):
         """Обновить данные пользователя"""
         db_user = await self.get_by_id(user_id)
-        
+
         if db_user:
             update_data = user_update.model_dump(exclude_unset=True)
             for field, value in update_data.items():
+                # Пустая строка для middle_name означает удаление (NULL в БД)
+                if field == "middle_name" and value == "":
+                    value = None
                 setattr(db_user, field, value)
             await self.db.commit()
             await self.db.refresh(db_user)

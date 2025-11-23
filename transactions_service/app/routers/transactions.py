@@ -1,90 +1,90 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, List
-from datetime import datetime
+from typing import List
 
 from app.database import get_db
 from app.dependencies import get_user_id_from_header
 from app.repository.transactions_repository import TransactionRepository
-from app.schemas import TransactionResponse
+from app.schemas import TransactionFilterRequest, TransactionResponse, CategoryResponse
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
-    # FIXME: посмотреть print, нужно ли его убрать?
 
-
-@router.get("/", response_model=List[TransactionResponse])
+@router.post(
+    "/filter",
+    response_model=List[TransactionResponse],
+    summary="Получить транзакции с фильтрацией",
+    description="Получить список транзакций пользователя с возможностью фильтрации по различным параметрам."
+)
 async def get_transactions(
+    filters: TransactionFilterRequest,
     user_id: int = Depends(get_user_id_from_header),
-    transaction_type: Optional[str] = Query(
-        None,
-        description="Тип транзакции: 'income', 'expense', или None для всех",
-    ),
-    category_mcc: Optional[List[str]] = Query(None, description="MCC коды через запятую: 5411,5812,5912"),
-    start_date: Optional[datetime] = Query(
-        None, description="Начальная дата периода"),
-    end_date: Optional[datetime] = Query(
-        None, description="Конечная дата периода"),
-    min_amount: Optional[float] = Query(None, description="Минимальная сумма"),
-    max_amount: Optional[float] = Query(
-        None, description="Максимальная сумма"),
-    limit: int = Query(100, ge=1, le=1000),
-    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db)
 ):
-    """Получить транзакции пользователя с фильтрацией"""
+    """
+    Получить транзакции пользователя с фильтрацией.
 
+    Принимает JSON с параметрами фильтрации:
+    - transaction_type: тип транзакции (income/expense)
+    - category_ids: список ID категорий
+    - start_date, end_date: период дат
+    - min_amount, max_amount: диапазон сумм
+    - merchant_ids: список ID мерчантов
+    - limit, offset: пагинация
+    """
     try:
-
-        # ПРЕОБРАЗУЕМ СТРОКИ В ЧИСЛА
-        category_mcc_list = None
-        if category_mcc:
-            try:
-                category_mcc_list = [int(mcc) for mcc in category_mcc]  # Преобразуем каждый элемент
-                print(f"🔔 TRANSACTIONS SERVICE: Converted {category_mcc} -> {category_mcc_list}")
-            except (ValueError, TypeError) as e:
-                print(f"❌ MCC conversion error: {e}")
-                raise HTTPException(400, "Invalid MCC codes format")
-            
         repo = TransactionRepository(db)
         transactions = await repo.get_transactions_with_filters(
             user_id=user_id,
-            transaction_type=transaction_type,
-            category_mcc=category_mcc_list,
-            start_date=start_date,
-            end_date=end_date,
-            min_amount=min_amount,
-            max_amount=max_amount,
-            limit=limit,
-            offset=offset
+            transaction_type=filters.transaction_type,
+            category_ids=filters.category_ids,
+            start_date=filters.start_date,
+            end_date=filters.end_date,
+            min_amount=filters.min_amount,
+            max_amount=filters.max_amount,
+            merchant_ids=filters.merchant_ids,
+            limit=filters.limit,
+            offset=filters.offset
         )
-        
+
         result = []
         for t in transactions:
             result.append({
                 "id": t.id,
                 "user_id": t.user_id,
+                "category_id": t.category_id,
+                "category_name": t.category.name if t.category else None,
                 "amount": t.amount,
-                "category_mcc": t.category_mcc,
-                "category_group": t.category.group if t.category else "Unknown",
-                "date_time": t.date_time,
-                "type": t.type
+                "created_at": t.created_at,
+                "type": t.type,
+                "description": t.description,
+                "merchant_id": t.merchant_id,
+                "merchant_name": t.merchant.name if t.merchant else None
             })
         return result
-        
+
     except Exception as e:
-        print(f"❌ Error in get_transactions: {e}")
         raise HTTPException(500, f"Internal server error: {str(e)}")
 
 
-    # TODO: в разработке
+@router.get(
+    "/categories",
+    response_model=List[CategoryResponse],
+    summary="Получить все категории",
+    description="Получить список всех доступных категорий транзакций."
+)
+async def get_categories(
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить все категории транзакций.
 
-# @router.get("/categories")
-# async def get_categories(
-#     user_id: int = Depends(get_user_id_from_header),
-#     db: AsyncSession = Depends(get_db)
-# ):
-#     """Получить уникальные категории пользователя"""
-#     repo = TransactionRepository(db)
-#     categories = await repo.get_user_categories(user_id)
-#     return {"categories": categories}
+    Возвращает список всех категорий с их ID и названиями.
+    """
+    try:
+        repo = TransactionRepository(db)
+        categories = await repo.get_all_categories()
+        return categories
+
+    except Exception as e:
+        raise HTTPException(500, f"Internal server error: {str(e)}")

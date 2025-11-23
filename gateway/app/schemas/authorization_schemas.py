@@ -1,18 +1,21 @@
-from typing import Optional
-from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
-from datetime import datetime
+from typing import Optional
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
-
-
-class UserBase(BaseModel):
-    """Базовая схема пользователя"""
+class RegisterRequest(BaseModel):
+    """Схема запроса регистрации пользователя"""
     email: EmailStr
+    password: str = Field(..., min_length=2, description="Пароль (минимум 2 символа)")
     first_name: str
     last_name: str
-    middle_name: Optional[str] = None
+    middle_name: Optional[str] = Field(None, description="Отчество (необязательно)")
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 2:
+            raise ValueError('Password must be at least 2 characters long')
+        return v
 
     @field_validator('first_name', 'last_name')
     @classmethod
@@ -54,21 +57,9 @@ class UserLogin(BaseModel):
         return v
 
 
-class UserCreate(UserBase):
-    """Схема создания пользователя"""
-    password: str = Field(..., min_length=2, description="Пароль (минимум 2 символа)")
-
-    @field_validator('password')
-    @classmethod
-    def validate_password(cls, v: str) -> str:
-        if len(v) < 2:
-            raise ValueError('Password must be at least 2 characters long')
-        return v
-
-
-class UserUpdate(BaseModel):
+class UserUpdateRequest(BaseModel):
     """
-    Схема обновления профиля пользователя.
+    Схема запроса обновления профиля.
 
     Все поля опциональные - можно обновить одно, несколько или все.
     Отчество можно установить как пустую строку для удаления.
@@ -113,23 +104,7 @@ class UserUpdate(BaseModel):
         return self
 
 
-class UserResponse(BaseModel):
-    """Схема ответа с данными пользователя"""
-    email: EmailStr
-    first_name: str
-    last_name: str
-    middle_name: Optional[str] = None
-    is_active: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-
-class Token(BaseModel):
-    """Схема токена"""
+class TokenResponse(BaseModel):
+    """Схема ответа с токеном"""
     access_token: str
     token_type: str
-
-
-class TokenData(BaseModel):
-    """Схема данных токена"""
-    user_id: int = None
