@@ -3,11 +3,11 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import func
 
 
-class Base(DeclarativeBase):
+class User_Base(DeclarativeBase):
     pass
 
 
-class User(Base):
+class User(User_Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, index=True)
@@ -15,7 +15,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
-    patronymic = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
+    middle_name = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -1,36 +1,75 @@
 services:
+  # --- Users Microservice ---
   users-db:
     image: postgres:13
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: users_user
-      POSTGRES_PASSWORD: users_password
-      POSTGRES_DB: users_db
+      POSTGRES_USER: ${USERS_DB_USER}
+      POSTGRES_PASSWORD: ${USERS_DB_PASSWORD}
+      POSTGRES_DB: ${USERS_DB_NAME}
     ports:
       - "5433:5432"
     volumes:
       - users-db-data:/var/lib/postgresql/data
 
   users-service:
-    build: ./users-service
+    build: ./users_service
     env_file:
       - .env
     ports:
-      - "8001:8001"
+      - "${USERS_SERVICE_PORT}:${USERS_SERVICE_PORT}"
     depends_on:
       - users-db
     environment:
-      DATABASE_URL: "postgresql+asyncpg://users_user:users_password@users-db:5432/users_db"
-      SERVICE_PORT: "8001"
+      DATABASE_URL: ${USERS_DATABASE_URL}
+      SERVICE_PORT: ${USERS_SERVICE_PORT}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
 
+  # --- Transactions Microservice ---
+  transactions-db:
+    image: postgres:13
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${TRANSACTIONS_DB_USER}
+      POSTGRES_PASSWORD: ${TRANSACTIONS_DB_PASSWORD}
+      POSTGRES_DB: ${TRANSACTIONS_DB_NAME}
+    ports:
+      - "5434:5432"
+    volumes:
+      - transactions-db-data:/var/lib/postgresql/data
+
+  transactions-service:
+    build: ./transactions_service
+    env_file:
+      - .env
+    ports:
+      - "${TRANSACTIONS_SERVICE_PORT}:${TRANSACTIONS_SERVICE_PORT}"
+    depends_on:
+      - transactions-db
+    environment:
+      DATABASE_URL: ${TRANSACTIONS_DATABASE_URL}
+      SERVICE_PORT: ${TRANSACTIONS_SERVICE_PORT}
+
+  # --- API Gateway ---
   gateway:
     build: ./gateway
+    env_file:
+      - .env
     ports:
-      - "8000:8000"
+      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     depends_on:
       - users-service
+      - transactions-service
     environment:
-      GATEWAY_PORT: "8000"
-      USERS_SERVICE_URL: "http://users-service:8001"
+      GATEWAY_PORT: ${GATEWAY_PORT}
+      USERS_SERVICE_URL: ${USERS_SERVICE_URL}
+      TRANSACTIONS_SERVICE_URL: ${TRANSACTIONS_SERVICE_URL}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
 
 volumes:
   users-db-data:
+  transactions-db-data:
