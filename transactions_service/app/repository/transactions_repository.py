@@ -92,22 +92,6 @@ class TransactionRepository:
         result = await self.db.execute(query)
         return result.scalars().all()
 
-    async def create_transaction(self, transaction_data: dict) -> Transaction:
-        """
-        Создание новой транзакции.
-
-        Args:
-            transaction_data: Данные транзакции
-
-        Returns:
-            Созданная транзакция
-        """
-        db_transaction = Transaction(**transaction_data)
-        self.db.add(db_transaction)
-        await self.db.commit()
-        await self.db.refresh(db_transaction)
-        return db_transaction
-
     async def get_transaction_by_id(self, transaction_id: str, user_id: int) -> Optional[Transaction]:
         """
         Получение транзакции по ID.
