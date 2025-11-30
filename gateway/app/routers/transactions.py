@@ -18,7 +18,7 @@ TRANSACTIONS_SERVICE_URL = os.getenv(
 
 
 @router.post(
-    "/filter",
+    "/",
     response_model=List[TransactionResponse],
     summary="Получить транзакции с фильтрацией",
     description="""
@@ -116,7 +116,7 @@ async def get_transactions(
             headers = {"X-User-ID": str(user_id)}
 
             response = await client.post(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/filter",
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/",
                 headers=headers,
                 json=request_data,
                 timeout=10.0
