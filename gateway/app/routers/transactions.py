@@ -110,7 +110,7 @@ async def get_transactions(
     """
     user_id = current_user["user_id"]
 
-    request_data = filters.model_dump(exclude_none=True)
+    request_data = filters.model_dump(exclude_none=True, mode='json')
 
     async with httpx.AsyncClient() as client:
         try:
