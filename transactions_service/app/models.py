@@ -17,6 +17,7 @@ class Category(Transaction_Base):
     name = Column(String(100), nullable=False)
 
     mcc = relationship("MCC_Category", back_populates="category")
+    merchants = relationship("Merchant", back_populates="category")
     transactions = relationship("Transaction", back_populates="category")
 
 
@@ -37,7 +38,9 @@ class Merchant(Transaction_Base):
     id = Column(Integer, nullable=False, primary_key=True, index=True)
     name = Column(String(200), nullable=False)
     inn = Column(String(100), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
 
+    category = relationship("Category", back_populates="merchants")
     transactions = relationship("Transaction", back_populates="merchant")
 
 
