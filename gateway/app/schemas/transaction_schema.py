@@ -36,7 +36,7 @@ class TransactionFilterRequest(BaseModel):
         description="Список ID мерчантов для фильтрации"
     )
     limit: int = Field(
-        50,
+        ...,
         ge=1,
         le=100,
         description="Количество записей на странице"

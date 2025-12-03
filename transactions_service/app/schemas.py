@@ -40,7 +40,7 @@ class TransactionFilterRequest(BaseModel):
         None,
         description="Список ID мерчантов"
     )
-    limit: int = Field(50, ge=1, le=1000)
+    limit: int = Field(..., ge=1, le=1000)
     offset: int = Field(0, ge=0)
 
     @field_validator('transaction_type')
@@ -96,35 +96,3 @@ class MerchantResponse(BaseModel):
     mcc_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
-
-
-# ===========================
-# Create Schemas (для будущего использования)
-# ===========================
-
-class TransactionCreate(BaseModel):
-    """Схема создания транзакции"""
-    category_id: int
-    amount: float
-    type: str
-    description: Optional[str] = None
-    merchant_id: Optional[int] = None
-    created_at: Optional[datetime] = None
-
-    @field_validator('amount')
-    @classmethod
-    def validate_amount(cls, v):
-        if v == 0:
-            raise ValueError('Amount cannot be zero')
-        if abs(v) > 10_000_000:
-            raise ValueError('Amount is too large')
-        if abs(v) < 0.01:
-            raise ValueError('Amount is too small')
-        return v
-
-    @field_validator('type')
-    @classmethod
-    def validate_type(cls, v):
-        if v not in ['income', 'expense']:
-            raise ValueError('Type must be "income" or "expense"')
-        return v

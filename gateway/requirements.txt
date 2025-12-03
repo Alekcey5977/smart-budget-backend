@@ -1,9 +1,8 @@
-fastapi==0.104.1
-uvicorn==0.24.0
-httpx==0.25.2
-python-multipart
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+httpx==0.27.2
+python-multipart==0.0.9
 email-validator==2.1.0
-pydantic==2.12.1
-httpx==0.25.2
+pydantic==2.8.2
 pyjwt==2.8.0
 python-jose[cryptography]==3.3.0
