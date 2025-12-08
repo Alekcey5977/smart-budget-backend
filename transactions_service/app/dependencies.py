@@ -1,4 +1,3 @@
-# app/dependencies/auth.py
 from fastapi import Header, HTTPException
 from typing import Annotated
 

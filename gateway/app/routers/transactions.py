@@ -18,7 +18,7 @@ TRANSACTIONS_SERVICE_URL = os.getenv(
 
 
 @router.post(
-    "/filter",
+    "/",
     response_model=List[TransactionResponse],
     summary="Получить транзакции с фильтрацией",
     description="""
@@ -37,26 +37,27 @@ TRANSACTIONS_SERVICE_URL = os.getenv(
 | `min_amount` | float | Минимальная сумма |
 | `max_amount` | float | Максимальная сумма |
 | `merchant_ids` | list[int] | Список ID мерчантов |
-| `limit` | int | Количество записей (1-100, по умолчанию 50) |
+| `limit` | int | Количество записей (1-100, обязательное) |
 | `offset` | int | Смещение для пагинации |
 
 ## Примеры запросов
 
 ### Все транзакции (первые 50)
 ```json
-{}
+{"limit": 50}
 ```
 
 ### Только расходы
 ```json
-{"transaction_type": "expense"}
+{"transaction_type": "expense", "limit": 50}
 ```
 
 ### Транзакции за период
 ```json
 {
     "start_date": "2024-01-01T00:00:00",
-    "end_date": "2024-01-31T23:59:59"
+    "end_date": "2024-01-31T23:59:59",
+    "limit": 50
 }
 ```
 
@@ -109,14 +110,14 @@ async def get_transactions(
     """
     user_id = current_user["user_id"]
 
-    request_data = filters.model_dump(exclude_none=True)
+    request_data = filters.model_dump(exclude_none=True, mode='json')
 
     async with httpx.AsyncClient() as client:
         try:
             headers = {"X-User-ID": str(user_id)}
 
             response = await client.post(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/filter",
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/",
                 headers=headers,
                 json=request_data,
                 timeout=10.0

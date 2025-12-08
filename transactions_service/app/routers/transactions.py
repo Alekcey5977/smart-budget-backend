@@ -11,7 +11,7 @@ router = APIRouter(prefix="/transactions", tags=["transactions"])
 
 
 @router.post(
-    "/filter",
+    "/",
     response_model=List[TransactionResponse],
     summary="Получить транзакции с фильтрацией",
     description="Получить список транзакций пользователя с возможностью фильтрации по различным параметрам."
