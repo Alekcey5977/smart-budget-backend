@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
@@ -133,3 +134,19 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     """Схема данных токена"""
     user_id: int = None
+
+
+class Bank_AccountCreate(BaseModel):
+    """Схема создания банковского счета"""
+    bank_account_number: str
+    bank_account_name: str | None = None
+    bank: str
+
+
+class Bank_accountResponse(BaseModel):
+    """Схема банковского счета"""
+    bank_account_id: int
+    bank_account_name: str | None
+    currency: str
+    bank: str
+    balance: Decimal

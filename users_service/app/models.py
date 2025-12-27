@@ -29,6 +29,7 @@ class Bank_Accounts(User_Base):
     bank_account_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     bank_account_number = Column(String(34), nullable=False)
+    bank_account_name = Column(String(100), nullable=False)
     currency = Column(String(3), nullable=False)
     bank = Column(String, nullable=False)
     balance = Column(DECIMAL(12, 2), nullable=False, default=0.00)
