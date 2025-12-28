@@ -12,6 +12,16 @@ class Bank_AccountRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def get_account_bank(self, bank_account_hash: str):
+        """Проверка дубликата счёта"""
+        existing = await self.db.execute(
+            select(Bank_Accounts).where(
+                Bank_Accounts.bank_account_hash == bank_account_hash)
+        )
+
+        return existing.scalars().first()
+
+
     async def create(self, user_id: int, bank_account: Bank_AccountCreate):
         """Создать новый банковский счет"""
         account_number = bank_account.bank_account_number.strip()
@@ -19,13 +29,10 @@ class Bank_AccountRepository:
         # Шифрование счёта
         account_hash = hash_account_number(account_number)
 
-        # Проверяем дубликата счёта
-        existing = await self.db.execute(
-            select(Bank_Accounts).where(
-                Bank_Accounts.bank_account_hash == account_hash)
-        )
 
-        if existing.scalars().first():
+        existing_bank_account = await self.get_account_bank(account_hash)
+
+        if existing_bank_account:
             raise HTTPException(
                 status_code=400,
                 detail="Bank account with this number already exists"
@@ -34,7 +41,7 @@ class Bank_AccountRepository:
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.post(
-                    "http://localhost:8004/api/v1/pseudo_bank/validate_account",
+                    "http://localhost:8004/pseudo_bank/validate_account",
                     json={"account_hash": account_hash}
                 )
         except httpx.RequestError as e:
@@ -64,4 +71,5 @@ class Bank_AccountRepository:
         self.db.add(new_account)
         await self.db.commit()
         await self.db.refresh(new_account)
+        
         return new_account

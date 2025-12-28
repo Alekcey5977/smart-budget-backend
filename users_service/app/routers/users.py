@@ -1,14 +1,12 @@
-import httpx
+
 from datetime import timedelta
-from urllib import response
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import UserResponse, Token, UserUpdate, UserCreate, UserLogin
 from app.repository.user_repository import UserRepository, Bank_AccountRepository
 from app.database import get_db
-from app.auth import ALGORITHM, REFRESH_SECRET_KEY, create_access_token, create_refresh_token, get_password_hash, verify_password, verify_token, get_bank_account_number_hash
-from app.schemas import oauth2_scheme, Bank_accountResponse, Bank_AccountCreate
+from app.auth import ALGORITHM, REFRESH_SECRET_KEY, create_access_token, create_refresh_token, get_password_hash, verify_password, verify_token
+from app.schemas import oauth2_scheme
 from jose import jwt
 
 from users_service.app.models import Bank_Accounts
@@ -24,7 +22,7 @@ async def get_user_repository(db: AsyncSession = Depends(get_db)):
     """Dependency для получения репозитория"""
     return UserRepository(db)
 
-
+# Получение репозитория банковских счетов
 async def get_bank_account_repository(db: AsyncSession = Depends(get_db)):
     """Dependency для получения репозитория"""
     return Bank_AccountRepository(db)
@@ -247,38 +245,3 @@ async def update_current_user(
 
     return user
 
-
-# Добавление банковского счета
-@router.post("/me/bank_account", response_model=Bank_accountResponse)
-async def add_bank_account(
-    request: Request,
-    bank_account: Bank_AccountCreate,
-    token: str = Depends(oauth2_scheme),
-    bank_account_repo: Bank_AccountRepository = Depends(get_bank_account_repository),
-    user_repo: UserRepository = Depends(get_user_repository)
-):
-    
-    refresh_token = request.cookies.get("refresh_token")
-    payload = verify_token(token, refresh_token_from_cookie=refresh_token)
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
-    
-    user_id = int(payload.get("sub"))
-    user = await user_repo.get_by_id(user_id)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    account_number = bank_account.bank_account_number
-    if not account_number or len(account_number.strip()) < 16:
-        raise HTTPException(
-            status_code=400,
-            detail="Bank account number must be at least 16 digits"
-        )
-
-    return await bank_account_repo.create(user_id, bank_account)
