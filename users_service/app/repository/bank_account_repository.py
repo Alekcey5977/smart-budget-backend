@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import Bank_AccountCreate
 from app.auth import hash_account_number
 from app.models import User, Bank_Accounts
-from sqlalchemy import DECIMAL
+from decimal import Decimal
 
 
 class Bank_AccountRepository:
@@ -16,7 +16,7 @@ class Bank_AccountRepository:
         """Проверка дубликата счёта"""
         existing = await self.db.execute(
             select(Bank_Accounts).where(
-                Bank_Accounts.bank_account_hash == bank_account_hash)
+                Bank_Accounts.bank_account_number == bank_account_hash)
         )
 
         return existing.scalars().first()
@@ -55,10 +55,13 @@ class Bank_AccountRepository:
             raise HTTPException(400, f"Bank validation failed: {err}")
 
         bank_data = resp.json()
-        balance = DECIMAL(bank_data.get("balance", 0.0))
+        
+        try:
+            balance = Decimal(str(bank_data.get("balance", "0.00")))
+        except (ValueError, TypeError):
+            balance = Decimal("0.00")
         currency = bank_data.get("currency", "RUB")
 
-        # Создаём счёта с реальным балансом
         new_account = Bank_Accounts(
             user_id=user_id,
             bank_account_number=account_hash,
