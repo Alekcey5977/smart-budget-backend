@@ -12,6 +12,6 @@ class TransactionRepository:
         """Получение счёта"""
         existing = await self.db.execute(
             select(Bank_Account).where(
-                Bank_Account.account_number == bank_account_hash)
+                Bank_Account.bank_account_hash == bank_account_hash)
         ).scalars().first()
         return existing

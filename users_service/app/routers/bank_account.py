@@ -26,6 +26,7 @@ async def add_bank_account(
         get_bank_account_repository),
     user_repo: UserRepository = Depends(get_user_repository)
 ):
+    """Добавление счёта в личном кабинете"""
 
     refresh_token = request.cookies.get("refresh_token")
     payload = verify_token(token, refresh_token_from_cookie=refresh_token)

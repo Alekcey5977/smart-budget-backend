@@ -55,8 +55,9 @@ class Bank_Account(Transaction_Base):
     __tablename__ = "bank_accounts"
 
     id = Column(Integer, nullable=False, primary_key=True, index=True)
-    account_number = Column(String(60), nullable=False,
+    bank_account_hash = Column(String(60), nullable=False,
                             unique=True, index=True)
+    bank_account_name = Column(String(100), nullable=False)
     bank_id = Column(Integer, ForeignKey("banks.id"), nullable=False)
     currency = Column(String(3), nullable=False)
     balance = Column(DECIMAL(12, 2), nullable=False, default=0.00)

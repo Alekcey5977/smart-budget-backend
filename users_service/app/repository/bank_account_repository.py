@@ -16,7 +16,7 @@ class Bank_AccountRepository:
         """Проверка дубликата счёта"""
         existing = await self.db.execute(
             select(Bank_Accounts).where(
-                Bank_Accounts.bank_account_number == bank_account_hash)
+                Bank_Accounts. bank_account_hash == bank_account_hash)
         )
 
         return existing.scalars().first()
@@ -64,7 +64,7 @@ class Bank_AccountRepository:
 
         new_account = Bank_Accounts(
             user_id=user_id,
-            bank_account_number=account_hash,
+            bank_account_hash=account_hash,
             bank_account_name=bank_account.bank_account_name,
             currency=currency,
             bank=bank_account.bank,
