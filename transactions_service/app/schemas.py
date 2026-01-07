@@ -96,3 +96,9 @@ class MerchantResponse(BaseModel):
     mcc_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+
+class SyncTriggerRequest(BaseModel):
+    bank_account_hash: str
+    user_id: int

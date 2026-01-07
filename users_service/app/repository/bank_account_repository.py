@@ -1,4 +1,5 @@
 import httpx
+import asyncio
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,29 @@ class Bank_AccountRepository:
         )
 
         return existing.scalars().first()
+    
+    async def trigger_transaction_sync(self, bank_account_hash: str, user_id: int):
+        """Вызов синхронизации данных в transaction_service"""
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                await client.post(
+                    "http://localhost:8002/transactions/trigger_sync",
+                    json={"bank_account_hash": bank_account_hash,
+                          "user_id": user_id}
+                )
+        except Exception as e:
+            print(f"[SYNC ERROR] {e}")
+    
+    
+    async def calling_validate_account(self, bank_account_hash: str):
+        """Вызов валидации счёта в pseudo_bank_service"""
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.post(
+                "http://localhost:8004/pseudo_bank/validate_account",
+                json={"account_hash": bank_account_hash}
+            )
+            return resp
+        
 
 
     async def create(self, user_id: int, bank_account: Bank_AccountCreate):
@@ -38,14 +62,7 @@ class Bank_AccountRepository:
                 detail="Bank account with this number already exists"
             )
 
-        try:
-            async with httpx.AsyncClient(timeout=3.0) as client:
-                resp = await client.post(
-                    "http://localhost:8004/pseudo_bank/validate_account",
-                    json={"account_hash": account_hash}
-                )
-        except httpx.RequestError as e:
-            raise HTTPException(503, "Bank validation service unavailable")
+        resp = await self.calling_validate_account(account_hash)
 
         if resp.status_code == 404:
             raise HTTPException(
@@ -74,5 +91,7 @@ class Bank_AccountRepository:
         self.db.add(new_account)
         await self.db.commit()
         await self.db.refresh(new_account)
+
+        asyncio.create_task(self.trigger_transaction_sync(account_hash, user_id))
         
         return new_account
