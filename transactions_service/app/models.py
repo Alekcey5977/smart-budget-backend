@@ -1,6 +1,6 @@
 from enum import Enum
 import uuid
-from sqlalchemy import Column, Integer, DECIMAL, String, DateTime, ForeignKey, UUID, func
+from sqlalchemy import Boolean, Column, Integer, DECIMAL, String, DateTime, ForeignKey, UUID, func
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy import Enum as SAEnum
 
@@ -58,14 +58,18 @@ class Bank_Account(Transaction_Base):
     __tablename__ = "bank_accounts"
 
     id = Column(Integer, nullable=False, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
     bank_account_hash = Column(String(60), nullable=False,
                                unique=True, index=True)
     bank_account_name = Column(String(100), nullable=False)
     bank_id = Column(Integer, ForeignKey("banks.id"), nullable=False)
     currency = Column(String(3), nullable=False)
     balance = Column(DECIMAL(12, 2), nullable=False, default=0.00)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    last_synced_at = Column(DateTime(timezone=True), nullable=True)
 
     bank = relationship("Bank", back_populates="bank_accounts")
     transactions = relationship("Transaction", back_populates="bank_account")

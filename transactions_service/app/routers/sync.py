@@ -6,28 +6,28 @@ from app.database import get_db
 from app.repository.sync_repository import SyncRepository
 from app.schemas import SyncTriggerRequest
 from app.routers.transactions import router
-from transactions_service.app.models import Bank_Account
-
+from app.models import Bank_Account
 
 
 @router.post("/trigger_sync")
 async def trigger_sync(
     request: SyncTriggerRequest,
-    db: AsyncSession = Depends(get_db)):
-
-    account = await db.execute(
-        select(Bank_Account.id)
-        .where(
-            Bank_Account.bank_account_hash == request.bank_account_hash,
-            Bank_Account.user_id == request.user_id,
-            Bank_Account.is_deleted.is_(False)
-        )
-    )
-    if not account.scalar():
-        raise HTTPException(404, "Account not found or access denied")
-
+    db: AsyncSession = Depends(get_db)
+):
     repo = SyncRepository(db)
-    stats = await repo.sync_by_account(request.bank_account_hash)
+
+    account = await repo.get_or_create_account_stub(
+        request.bank_account_hash, 
+        request.user_id
+    )
+
+    if not await repo.validate_account_access(account, request.user_id):
+        raise HTTPException(
+            status_code=404, 
+            detail="Account not found or access denied"
+        )
+
+
     try:
         stats = await repo.sync_by_account(request.bank_account_hash)
         return {"status": "success", "synced": stats}

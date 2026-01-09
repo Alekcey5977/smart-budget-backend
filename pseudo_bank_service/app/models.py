@@ -55,6 +55,7 @@ class Bank_Account(Transaction_Base):
     __tablename__ = "bank_accounts"
 
     id = Column(Integer, nullable=False, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
     bank_account_hash = Column(String(60), nullable=False,
                             unique=True, index=True)
     bank_account_name = Column(String(100), nullable=False)

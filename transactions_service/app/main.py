@@ -8,14 +8,7 @@ from contextlib import asynccontextmanager
 from app.routers import transactions, sync
 import uvicorn
 
-from transactions_service.app.repository.sync_repository import SyncRepository
-
-
-@asynccontextmanager
-async def life_span(app: FastAPI):
-    await create_tables()
-    yield
-    await shutdown()
+from app.repository.sync_repository import SyncRepository
 
 
 scheduler = AsyncIOScheduler()
@@ -32,16 +25,12 @@ async def periodic_sync():
             print(f"[SCHEDULER] Error: {e}")
 
 
-# 3. Lifespan-менеджер — заменяет @on_event
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    # --- STARTUP ---
+async def life_span(app: FastAPI):
     print("[LIFESPAN] Starting up...")
 
-    # Создаём таблицы
     await create_tables()
 
-    # Первый запуск: начальная синхронизация
     try:
         async with AsyncSessionLocal() as db:
             repo = SyncRepository(db)
@@ -50,14 +39,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[LIFESPAN] Initial sync failed: {e}")
 
-    # Запускаем планировщик
     scheduler.add_job(periodic_sync, IntervalTrigger(minutes=5))
     scheduler.start()
     print("[LIFESPAN] Scheduler started")
 
-    yield  # ← приложение запущено
+    yield
 
-    # --- SHUTDOWN ---
     print("[LIFESPAN] Shutting down...")
     scheduler.shutdown(wait=False)
     print("[LIFESPAN] Scheduler stopped")

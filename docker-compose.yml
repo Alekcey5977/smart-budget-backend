@@ -53,6 +53,32 @@ services:
       DATABASE_URL: ${TRANSACTIONS_DATABASE_URL}
       SERVICE_PORT: ${TRANSACTIONS_SERVICE_PORT}
 
+  # --- Pseudo Bank Microservice ---
+  pseudo-bank-db:
+    image: postgres:13
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${PSEUDO_BANK_DB_USER}
+      POSTGRES_PASSWORD: ${PSEUDO_BANK_DB_PASSWORD}
+      POSTGRES_DB: ${PSEUDO_BANK_DB_NAME}
+    ports:
+      - "5435:5432"
+    volumes:
+      - pseudo-bank-db-data:/var/lib/postgresql/data
+
+  pseudo-bank-service:
+    build: ./pseudo_bank_service
+    env_file:
+      - .env
+    ports:
+      - "${PSEUDO_BANK_SERVICE_PORT}:${PSEUDO_BANK_SERVICE_PORT}"
+    depends_on:
+      - pseudo-bank-db
+    environment:
+      DATABASE_URL: ${PSEUDO_BANK_DATABASE_URL}
+      SERVICE_PORT: ${PSEUDO_BANK_SERVICE_PORT}
+  
   # --- API Gateway ---
   gateway:
     build: ./gateway
@@ -67,9 +93,11 @@ services:
       GATEWAY_PORT: ${GATEWAY_PORT}
       USERS_SERVICE_URL: ${USERS_SERVICE_URL}
       TRANSACTIONS_SERVICE_URL: ${TRANSACTIONS_SERVICE_URL}
+      PSEUDO_BANK_SERVICE_URL: ${PSEUDO_BANK_SERVICE_URL}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
 
 volumes:
   users-db-data:
   transactions-db-data:
+  pseudo-bank-db-data:
