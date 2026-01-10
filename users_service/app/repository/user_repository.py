@@ -1,11 +1,7 @@
-import httpx
-from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import DECIMAL
-from sqlalchemy import and_, select
-from app.models import User, Bank_Accounts
-from app.schemas import UserCreate, UserUpdate, Bank_accountResponse, Bank_AccountCreate
-from app.auth import hash_account_number
+from sqlalchemy import select
+from app.models import User
+from app.schemas import UserCreate, UserUpdate
 
 class UserRepository:
     def __init__(self, db: AsyncSession):

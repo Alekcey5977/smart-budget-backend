@@ -3,13 +3,12 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import UserResponse, Token, UserUpdate, UserCreate, UserLogin
-from app.repository.user_repository import UserRepository, Bank_AccountRepository
+from app.repository.user_repository import UserRepository
+from app.repository.bank_account_repository import Bank_AccountRepository
 from app.database import get_db
 from app.auth import ALGORITHM, REFRESH_SECRET_KEY, create_access_token, create_refresh_token, get_password_hash, verify_password, verify_token
 from app.schemas import oauth2_scheme
 from jose import jwt
-
-from users_service.app.models import Bank_Accounts
 
 
 router = APIRouter(prefix="/users", tags=["users"])

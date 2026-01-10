@@ -2,7 +2,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
-from .models import User_Base, User
+from app.models import User_Base, User
 
 
 # Загружаем переменные из .env файла

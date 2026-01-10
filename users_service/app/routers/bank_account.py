@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.schemas import oauth2_scheme, Bank_accountResponse, Bank_AccountCreate
-from users_service.app.auth import verify_token
-from users_service.app.repository.bank_account_repository import Bank_AccountRepository
-from users_service.app.repository.user_repository import UserRepository
-from users_service.app.routers.users import router, get_bank_account_repository, get_user_repository
-from users_service.app.schemas import Bank_AccountCreate
+from app.auth import verify_token
+from app.repository.bank_account_repository import Bank_AccountRepository
+from app.repository.user_repository import UserRepository
+from app.routers.users import router, get_bank_account_repository, get_user_repository
+from app.schemas import Bank_AccountCreate
 
 
 # Получение репозитория банковских счетов

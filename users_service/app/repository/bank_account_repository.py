@@ -1,12 +1,17 @@
+import os
 import httpx
 import asyncio
+from decimal import Decimal
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import Bank_AccountCreate
-from app.auth import hash_account_number
-from app.models import User, Bank_Accounts
-from decimal import Decimal
+from app.auth import get_bank_account_number_hash
+from app.models import Bank_Accounts
+
+
+TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL")
+PSEUDO_BANK_SERVICE_URL = os.getenv("PSEUDO_BANK_SERVICE_URL")
 
 
 class Bank_AccountRepository:
@@ -27,7 +32,7 @@ class Bank_AccountRepository:
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 await client.post(
-                    "http://localhost:8002/transactions/trigger_sync",
+                    f"{TRANSACTIONS_SERVICE_URL}/transactions/trigger_sync",
                     json={"bank_account_hash": bank_account_hash,
                           "user_id": user_id}
                 )
@@ -39,7 +44,7 @@ class Bank_AccountRepository:
         """Вызов валидации счёта в pseudo_bank_service"""
         async with httpx.AsyncClient(timeout=3.0) as client:
             resp = await client.post(
-                "http://localhost:8004/pseudo_bank/validate_account",
+                f"{PSEUDO_BANK_SERVICE_URL}/pseudo_bank/validate_account",
                 json={"account_hash": bank_account_hash}
             )
             return resp
@@ -51,7 +56,7 @@ class Bank_AccountRepository:
         account_number = bank_account.bank_account_number.strip()
 
         # Шифрование счёта
-        account_hash = hash_account_number(account_number)
+        account_hash = get_bank_account_number_hash(account_number)
 
 
         existing_bank_account = await self.get_account_bank(account_hash)

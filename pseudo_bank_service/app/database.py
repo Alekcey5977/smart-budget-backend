@@ -2,7 +2,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
-from pseudo_bank_service.app.models import Transaction_Base  
+from app.models import Transaction_Base  
 
 
 # Загружаем переменные из .env файла

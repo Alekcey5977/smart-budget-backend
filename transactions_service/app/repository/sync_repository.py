@@ -1,9 +1,12 @@
 from datetime import datetime
+import os
 import httpx
 from typing import Dict
 from sqlalchemy import insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Category, MCC_Category, Merchant, Bank, Bank_Account, Transaction
+
+PSEUDO_BANK_SERVICE_URL = os.getenv("PSEUDO_BANK_SERVICE_URL")
 
 class SyncRepository:
     def __init__(self, db):
@@ -115,7 +118,7 @@ class SyncRepository:
         last_synced = result.scalar()
 
         # Формируем URL с параметром since
-        url = f"http://localhost:8004/pseudo_bank/account/{bank_account_hash}/export"
+        url = f"{PSEUDO_BANK_SERVICE_URL}/account/{bank_account_hash}/export"
         if last_synced:
             url += f"?since={last_synced.isoformat().replace('+00:00', 'Z')}"
 
