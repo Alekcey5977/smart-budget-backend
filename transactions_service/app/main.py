@@ -39,9 +39,9 @@ async def life_span(app: FastAPI):
     except Exception as e:
         print(f"[LIFESPAN] Initial sync failed: {e}")
 
-    scheduler.add_job(periodic_sync, IntervalTrigger(minutes=5))
+    scheduler.add_job(periodic_sync, IntervalTrigger(minutes=10))
     scheduler.start()
-    print("[LIFESPAN] Scheduler started")
+    print("[LIFESPAN] Scheduler started (sync every 10 minutes)")
 
     yield
 

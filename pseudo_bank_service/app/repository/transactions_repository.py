@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 from app.models import Bank_Account, Bank, Transaction, Merchant, Category, MCC_Category
 from app.schemas import (

@@ -39,7 +39,7 @@ class BankCreate(BaseModel):
 class BankAccountCreate(BaseModel):
     """Схема для создания банковского счета"""
     user_id: int
-    bank_account_hash: str = Field(..., max_length=60)
+    bank_account_hash: str = Field(..., max_length=64)
     bank_account_name: str = Field(..., max_length=100)
     bank_id: int
     currency: str = Field(default="RUB", max_length=3)
