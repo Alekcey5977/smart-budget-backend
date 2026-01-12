@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
+import hmac
 import uuid
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -9,6 +11,7 @@ load_dotenv()
 
 ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")
 REFRESH_SECRET_KEY = os.getenv("REFRESH_SECRET_KEY")
+BANK_SECRET_KEY = os.getenv("BANK_SECRET_KEY")
 ALGORITHM = "HS256"
 
 # Хэширование паролей
@@ -125,3 +128,14 @@ def verify_token(token: str, refresh_token_from_cookie: str | None = None):
 
     except JWTError:
         return None
+
+
+# Шифрование номера банковского счета
+def get_bank_account_number_hash(bank_account_number: str):
+    secret_key = BANK_SECRET_KEY.encode("utf-8")
+    return hmac.new(
+        secret_key,
+        bank_account_number.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+
