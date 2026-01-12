@@ -55,8 +55,6 @@ services:
 
   # --- Images Microservice ---
   images-db:
-  # --- Pseudo Bank Microservice ---
-  pseudo-bank-db:
     image: postgres:13
     env_file:
       - .env
@@ -81,11 +79,17 @@ services:
       DATABASE_URL: ${IMAGES_DATABASE_URL}
       SERVICE_PORT: ${IMAGES_SERVICE_PORT}
 
+  # --- Pseudo Bank Microservice ---
+  pseudo-bank-db:
+    image: postgres:13
+    env_file:
+      - .env
+    environment:
       POSTGRES_USER: ${PSEUDO_BANK_DB_USER}
       POSTGRES_PASSWORD: ${PSEUDO_BANK_DB_PASSWORD}
       POSTGRES_DB: ${PSEUDO_BANK_DB_NAME}
     ports:
-      - "5435:5432"
+      - "5436:5432"
     volumes:
       - pseudo-bank-db-data:/var/lib/postgresql/data
 
