@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_tables, shutdown
 from app.models import *
 from contextlib import asynccontextmanager
-from app.routers import users
+from app.routers import users, bank_account
 import uvicorn
 
 
