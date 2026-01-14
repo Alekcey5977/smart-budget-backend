@@ -38,7 +38,7 @@ TRANSACTIONS_SERVICE_URL = os.getenv(
 | `max_amount` | float | Максимальная сумма |
 | `merchant_ids` | list[int] | Список ID мерчантов |
 | `limit` | int | Количество записей (1-100, обязательное) |
-| `offset` | int | Смещение для пагинации |
+| `offset` | int | Смещение для пагинации | 
 
 ## Примеры запросов
 
