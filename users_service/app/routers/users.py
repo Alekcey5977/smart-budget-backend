@@ -1,9 +1,10 @@
+
 from datetime import timedelta
-from urllib import response
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import UserResponse, Token, UserUpdate, UserCreate, UserLogin
 from app.repository.user_repository import UserRepository
+from app.repository.bank_account_repository import Bank_AccountRepository
 from app.database import get_db
 from app.auth import ALGORITHM, REFRESH_SECRET_KEY, create_access_token, create_refresh_token, get_password_hash, verify_password, verify_token
 from app.schemas import oauth2_scheme
@@ -19,6 +20,11 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 async def get_user_repository(db: AsyncSession = Depends(get_db)):
     """Dependency для получения репозитория"""
     return UserRepository(db)
+
+# Получение репозитория банковских счетов
+async def get_bank_account_repository(db: AsyncSession = Depends(get_db)):
+    """Dependency для получения репозитория"""
+    return Bank_AccountRepository(db)
 
 
 # Регистрация пользователя
@@ -171,6 +177,8 @@ async def refresh_token(
             detail="Invalid refresh token"
         )
 
+
+# TODO: secure=False изменить на True в продакшене
 # Выход из системы
 @router.post("/logout")
 async def logout(response: Response):
@@ -235,3 +243,4 @@ async def update_current_user(
         )
 
     return user
+

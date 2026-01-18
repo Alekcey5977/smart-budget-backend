@@ -1,6 +1,6 @@
 from enum import Enum
 import uuid
-from sqlalchemy import Boolean, Column, Integer, DECIMAL, String, DateTime, ForeignKey, UUID, func
+from sqlalchemy import Column, Integer, DECIMAL, String, DateTime, ForeignKey, UUID, func
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy import Enum as SAEnum
 
@@ -9,17 +9,15 @@ class Transaction_Base(DeclarativeBase):
     pass
 
 
-
 class Category(Transaction_Base):
     __tablename__ = "categories"
-    
+
     id = Column(Integer, nullable=False, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
 
     mcc = relationship("MCC_Category", back_populates="category")
     merchants = relationship("Merchant", back_populates="category")
     transactions = relationship("Transaction", back_populates="category")
-
 
 
 class MCC_Category(Transaction_Base):
@@ -44,10 +42,9 @@ class Merchant(Transaction_Base):
     transactions = relationship("Transaction", back_populates="merchant")
 
 
-
 class Bank(Transaction_Base):
     __tablename__ = "banks"
-    
+
     id = Column(Integer, nullable=False, primary_key=True, index=True)
     name = Column(String(50), nullable=False)
 
@@ -60,31 +57,30 @@ class Bank_Account(Transaction_Base):
     id = Column(Integer, nullable=False, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, index=True)
     bank_account_hash = Column(String(64), nullable=False,
-                               unique=True, index=True)
+                            unique=True, index=True)
     bank_account_name = Column(String(100), nullable=False)
     bank_id = Column(Integer, ForeignKey("banks.id"), nullable=False)
     currency = Column(String(3), nullable=False)
     balance = Column(DECIMAL(12, 2), nullable=False, default=0.00)
-    is_deleted = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    last_synced_at = Column(DateTime(timezone=True), nullable=True)
 
     bank = relationship("Bank", back_populates="bank_accounts")
     transactions = relationship("Transaction", back_populates="bank_account")
 
 
-
 class Transaction(Transaction_Base):
     __tablename__ = "transactions"
 
-    id = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), default=uuid.uuid4,
+                nullable=False, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
-    bank_account_id = Column(Integer, ForeignKey("bank_accounts.id"), nullable=False)
+    bank_account_id = Column(Integer, ForeignKey(
+        "bank_accounts.id"), nullable=False)
     amount = Column(DECIMAL(12, 2), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True),
+                        server_default=func.now(), nullable=False)
     type = Column(String(30), nullable=False)
     description = Column(String(200), nullable=True)
     merchant_id = Column(Integer, ForeignKey("merchants.id"), nullable=True)

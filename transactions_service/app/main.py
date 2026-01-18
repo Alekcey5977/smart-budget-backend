@@ -1,17 +1,54 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import create_tables, shutdown
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from app.database import AsyncSessionLocal, create_tables, shutdown
 from app.models import *
 from contextlib import asynccontextmanager
-from app.routers import transactions
+from app.routers import transactions, sync
 import uvicorn
+
+from app.repository.sync_repository import SyncRepository
+
+
+scheduler = AsyncIOScheduler()
+
+
+# 2. Периодическая задача
+async def periodic_sync():
+    async with AsyncSessionLocal() as db:
+        repo = SyncRepository(db)
+        try:
+            result = await repo.sync_incremental()
+            print(f"[SCHEDULER] Incremental sync: {result['synced']}")
+        except Exception as e:
+            print(f"[SCHEDULER] Error: {e}")
 
 
 @asynccontextmanager
 async def life_span(app: FastAPI):
+    print("[LIFESPAN] Starting up...")
+
     await create_tables()
+
+    try:
+        async with AsyncSessionLocal() as db:
+            repo = SyncRepository(db)
+            result = await repo.sync_incremental()
+            print(f"[LIFESPAN] Initial sync: {result['synced']}")
+    except Exception as e:
+        print(f"[LIFESPAN] Initial sync failed: {e}")
+
+    scheduler.add_job(periodic_sync, IntervalTrigger(minutes=10))
+    scheduler.start()
+    print("[LIFESPAN] Scheduler started (sync every 10 minutes)")
+
     yield
-    await shutdown()
+
+    print("[LIFESPAN] Shutting down...")
+    scheduler.shutdown(wait=False)
+    print("[LIFESPAN] Scheduler stopped")
+
 
 
 app = FastAPI(title="Transactions", lifespan=life_span)
@@ -25,6 +62,7 @@ app.add_middleware(
 )
 
 app.include_router(transactions.router)
+app.include_router(sync.router)
 
 @app.get("/health")
 async def health():

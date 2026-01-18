@@ -6,7 +6,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.routers import auth, transactions
+from app.routers import auth, transactions, images, sync, bank_accounts
 
 app = FastAPI(title="Gateway Service", description="Точка входа", version="1.0.0")
 
@@ -20,6 +20,9 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(transactions.router)
+app.include_router(images.router)
+app.include_router(sync.router)
+app.include_router(bank_accounts.router)
 
 @app.get("/health")
 async def health():
