@@ -104,8 +104,7 @@ load-test-images:
 	@echo "Loading test images..."
 	@echo "Make sure services are running (make start)"
 	@echo ""
-	@sleep 2
-	cd testData && python load_test_images.py
+	docker-compose exec -w /app images-service python /testData/load_test_images.py
 	@echo ""
 
 clean:

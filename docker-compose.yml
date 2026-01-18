@@ -78,6 +78,8 @@ services:
     environment:
       DATABASE_URL: ${IMAGES_DATABASE_URL}
       SERVICE_PORT: ${IMAGES_SERVICE_PORT}
+    volumes:
+      - ./testData:/testData
 
   # --- Pseudo Bank Microservice ---
   pseudo-bank-db:
