@@ -1,4 +1,3 @@
-# app/schemas.py
 from pydantic import BaseModel, Field
 from datetime import datetime
 from decimal import Decimal
@@ -7,7 +6,6 @@ from uuid import UUID
 
 class PurposeCreate(BaseModel):
     """Схема для создания цели"""
-    user_id: int
     title: str
     deadline: datetime
     amount: Decimal = Field(..., ge=0)

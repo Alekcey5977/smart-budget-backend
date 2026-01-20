@@ -86,7 +86,7 @@ async def login(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=False,  # True в продакшене
+        secure=False,  # TODO True в продакшене
         samesite="strict",
         max_age=7 * 24 * 3600
     )
