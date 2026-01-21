@@ -12,6 +12,14 @@ class PurposeCreate(BaseModel):
     total_amount: Decimal = Field(0, ge=0)
 
 
+class PurposeUpdate(BaseModel):
+    """Схема для обновления цели"""
+    title: str | None = None
+    deadline: datetime | None = None
+    amount: Decimal | None = Field(None, ge=0)
+    total_amount: Decimal | None = Field(None, ge=0)
+
+
 class PurposeResponse(BaseModel):
     """Схема ответа на запрос цели"""
     id: UUID

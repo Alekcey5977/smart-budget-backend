@@ -1,12 +1,10 @@
-from datetime import datetime
-from decimal import Decimal
 from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.repository.purpose_repository import PurposeRepository
-from app.schemas import PurposeCreate, PurposeResponse
+from app.schemas import PurposeCreate, PurposeResponse, PurposeUpdate
 from app.dependencies import get_user_id_from_header
 
 
@@ -44,23 +42,12 @@ async def get_purposes_by_user(
 @router.put("/update/{purpose_id}", response_model=PurposeResponse)
 async def update_purpose(
     purpose_id: UUID,
-    title: str | None = None,
-    deadline: datetime | None = None,
-    amount: Decimal | None = None,
-    total_amount: Decimal | None = None,
+    purpose_update: PurposeUpdate,
     user_id: int = Depends(get_user_id_from_header),
     repo: PurposeRepository = Depends(get_purpose_repository),
 ):
     """Обновление цели"""
-    update_data = {}
-    if title is not None:
-        update_data["title"] = title
-    if deadline is not None:
-        update_data["deadline"] = deadline
-    if amount is not None:
-        update_data["amount"] = amount
-    if total_amount is not None:
-        update_data["total_amount"] = total_amount
+    update_data = purpose_update.model_dump(exclude_none=True)
 
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -68,7 +55,7 @@ async def update_purpose(
     purpose = await repo.update_purpose(user_id, purpose_id, update_data)
     if not purpose:
         raise HTTPException(status_code=404, detail="Purpose not found")
-    
+
     return purpose
 
 

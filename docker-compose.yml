@@ -106,7 +106,33 @@ services:
     environment:
       DATABASE_URL: ${PSEUDO_BANK_DATABASE_URL}
       SERVICE_PORT: ${PSEUDO_BANK_SERVICE_PORT}
-  
+
+  # --- Purposes Microservice ---
+  purposes-db:
+    image: postgres:13
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${PURPOSES_DB_USER}
+      POSTGRES_PASSWORD: ${PURPOSES_DB_PASSWORD}
+      POSTGRES_DB: ${PURPOSES_DB_NAME}
+    ports:
+      - "5437:5432"
+    volumes:
+      - purposes-db-data:/var/lib/postgresql/data
+
+  purposes-service:
+    build: ./purposes_service
+    env_file:
+      - .env
+    ports:
+      - "${PURPOSES_SERVICE_PORT}:${PURPOSES_SERVICE_PORT}"
+    depends_on:
+      - purposes-db
+    environment:
+      DATABASE_URL: ${PURPOSES_DATABASE_URL}
+      SERVICE_PORT: ${PURPOSES_SERVICE_PORT}
+
   # --- API Gateway ---
   gateway:
     build: ./gateway
@@ -118,12 +144,14 @@ services:
       - users-service
       - transactions-service
       - images-service
+      - purposes-service
     environment:
       GATEWAY_PORT: ${GATEWAY_PORT}
       USERS_SERVICE_URL: ${USERS_SERVICE_URL}
       TRANSACTIONS_SERVICE_URL: ${TRANSACTIONS_SERVICE_URL}
       IMAGES_SERVICE_URL: ${IMAGES_SERVICE_URL}
       PSEUDO_BANK_SERVICE_URL: ${PSEUDO_BANK_SERVICE_URL}
+      PURPOSES_SERVICE_URL: ${PURPOSES_SERVICE_URL}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
 
@@ -132,3 +160,4 @@ volumes:
   transactions-db-data:
   images-db-data:
   pseudo-bank-db-data:
+  purposes-db-data:
