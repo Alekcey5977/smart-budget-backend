@@ -28,7 +28,7 @@ start:
 	docker-compose up -d
 	@echo ""
 	@echo "Waiting for services to be ready..."
-	@sleep 10
+	@sleep 5
 	@echo ""
 	@echo "Services started!"
 	@echo ""
