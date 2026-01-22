@@ -28,7 +28,7 @@ start:
 	docker-compose up -d
 	@echo ""
 	@echo "Waiting for services to be ready..."
-	@sleep 10
+	@sleep 5
 	@echo ""
 	@echo "Services started!"
 	@echo ""
@@ -39,6 +39,7 @@ start:
 	@echo "  Transactions:        http://localhost:8002/docs"
 	@echo "  Images:              http://localhost:8003/docs"
 	@echo "  Pseudo Bank:         http://localhost:8004/docs"
+	@echo "  Purposes Service:    http://localhost:8005/docs"
 	@echo ""
 
 stop:
