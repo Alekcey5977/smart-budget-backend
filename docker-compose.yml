@@ -155,9 +155,20 @@ services:
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
 
+
+# --- Redis ---
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
 volumes:
   users-db-data:
   transactions-db-data:
   images-db-data:
   pseudo-bank-db-data:
   purposes-db-data:
+  redis_data:
