@@ -9,4 +9,4 @@ class DomainEvent(BaseModel):
     event_type: str
     source: str
     timestamp: datetime
-    dict
+    payload: dict
