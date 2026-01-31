@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.repository.notification_repository import NotificationRepository
-from app.schemas import NotificationCreate, NotificationResponse, NotificationRead
+from app.schemas import NotificationResponse, NotificationRead
 from app.dependencies import get_user_id_from_header
 from uuid import UUID
 

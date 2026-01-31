@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import PurposeCreate
 from app.models import Purpose
 from shared.event_publisher import EventPublisher
-from shared.event_shema import DomainEvent
+from shared.event_schema import DomainEvent
 import datetime
 
 class PurposeRepository:

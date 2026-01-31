@@ -2,7 +2,7 @@ import logging
 import asyncio
 import redis.asyncio as redis
 from redis.exceptions import ConnectionError, TimeoutError, ResponseError
-from shared.event_shema import DomainEvent
+from shared.event_schema import DomainEvent
 
 logger = logging.getLogger(__name__)
 

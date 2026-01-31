@@ -122,7 +122,9 @@ services:
       - purposes-db-data:/var/lib/postgresql/data
 
   purposes-service:
-    build: ./purposes_service
+    build:
+      context: .
+      dockerfile: purposes_service/Dockerfile
     env_file:
       - .env
     ports:
@@ -148,7 +150,9 @@ services:
       - notification-db-data:/var/lib/postgresql/data
 
   notification-service:
-    build: ./notification_service
+    build:
+      context: .
+      dockerfile: purposes_service/Dockerfile
     env_file:
       - .env
     ports:
@@ -200,4 +204,5 @@ volumes:
   images-db-data:
   pseudo-bank-db-data:
   purposes-db-data:
+  notification-db-data:
   redis_data:
