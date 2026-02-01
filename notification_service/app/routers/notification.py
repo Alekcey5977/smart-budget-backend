@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.repository.notification_repository import NotificationRepository
-from app.schemas import NotificationResponse, NotificationRead
+from app.schemas import NotificationResponse
 from app.dependencies import get_user_id_from_header
 from uuid import UUID
 
@@ -15,9 +15,9 @@ async def get_notification_repository(db: AsyncSession = Depends(get_db)):
     return NotificationRepository(db)
 
 
-@router.get("/user/{user_id}", response_model=List[NotificationResponse])
+@router.get("/user/me", response_model=List[NotificationResponse])
 async def get_notifications_by_user(
-    user_id: int,
+    user_id: int = Depends(get_user_id_from_header),
     skip: int = 0,
     limit: int = 100,
     repo: NotificationRepository = Depends(get_notification_repository)
@@ -28,9 +28,9 @@ async def get_notifications_by_user(
     return notifications
 
 
-@router.get("/user/{user_id}/unread/count")
+@router.get("/user/me/unread/count")
 async def get_unread_notifications_count(
-    user_id: int,
+    user_id: int = Depends(get_user_id_from_header),
     repo: NotificationRepository = Depends(get_notification_repository)
 ):
     """Получение количества непрочитанных уведомлений пользователя"""
@@ -56,11 +56,11 @@ async def get_notification(
 @router.post("/{notification_id}/mark-as-read")
 async def mark_notification_as_read(
     notification_id: UUID,
-    read_data: NotificationRead,
+    user_id: int = Depends(get_user_id_from_header),
     repo: NotificationRepository = Depends(get_notification_repository)
 ):
     """Отметить уведомление как прочитанное"""
-    notification = await repo.mark_notification_as_read(notification_id, read_data.user_id)
+    notification = await repo.mark_notification_as_read(notification_id, user_id)
     
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found or access denied")

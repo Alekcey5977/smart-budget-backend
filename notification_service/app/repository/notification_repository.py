@@ -21,7 +21,7 @@ class NotificationRepository:
         await self.db.refresh(notification)
         return notification
     
-    async def get_notifications_by_user(self, user_id: str, skip: int = 0, limit: int = 100):
+    async def get_notifications_by_user(self, user_id: int, skip: int = 0, limit: int = 100):
         """Получение уведомлений пользователя"""
         result = await self.db.execute(
             select(Notification)
@@ -40,7 +40,7 @@ class NotificationRepository:
         )
         return result.scalar_one_or_none()
     
-    async def get_unread_notifications_count(self, user_id: str):
+    async def get_unread_notifications_count(self, user_id: int):
         """Получение количества непрочитанных уведомлений"""
         result = await self.db.execute(
             select(func.count(Notification.id))
@@ -48,7 +48,7 @@ class NotificationRepository:
         )
         return result.scalar()
     
-    async def mark_notification_as_read(self, notification_id: UUID, user_id: str):
+    async def mark_notification_as_read(self, notification_id: UUID, user_id: int):
         """Отметить уведомление как прочитанное"""
         stmt = (
             update(Notification)
@@ -60,7 +60,7 @@ class NotificationRepository:
         await self.db.commit()
         return result.scalar_one_or_none()
     
-    async def mark_all_notifications_as_read(self, user_id: str):
+    async def mark_all_notifications_as_read(self, user_id: int):
         """Отметить все уведомления пользователя как прочитанные"""
         stmt = (
             update(Notification)

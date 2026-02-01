@@ -20,7 +20,3 @@ class NotificationResponse(BaseModel):
     is_read: bool
     created_at: datetime    
 
-
-class NotificationRead(BaseModel):
-    """Схема для отметки уведомления как прочитанного"""
-    user_id: int
