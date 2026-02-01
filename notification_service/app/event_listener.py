@@ -82,11 +82,12 @@ class EventListener:
         
     # Словарь для сопоставления типов событий с обработчиками
     _event_handlers = {
-        "transaction.created": "_handle_transaction_created",
         "purpose.created": "_handle_purpose_created",
-        "user.registered": "_handle_user_registered",
         "purpose.progress": "_handle_purpose_progress",
-        "purpose.deleted": "_handle_purpose_deleted"
+        "purpose.deleted": "_handle_purpose_deleted",
+        "user.registered": "_handle_user_registered",
+        "user.updated": "_handle_user_updated",
+        "bank_account.added": "_handle_bank_account_added"
     }
     
     async def _send_notification_websocket(self, user_id: int, notification_data: dict):
@@ -224,3 +225,54 @@ class EventListener:
         
         # Сохраняем уведомление в базу данных
         await self._create_and_broadcast_notification(user_id, title, message)
+
+    async def _handle_user_registered(self, event: DomainEvent):
+        """Обработка события регистрации пользователя"""
+        payload = event.payload
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+        
+        first_name = payload.get("first_name", "Пользователь")
+        
+        title = "Добро пожаловать!"
+        message = f"🎉 Добро пожаловать в Smart Budget, {first_name}!"
+        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
+        
+        # Сохраняем уведомление в базу данных
+        await self._create_and_broadcast_notification(user_id, title, message)
+
+    async def _handle_user_updated(self, event: DomainEvent):
+        """Обработка события обновления данных пользователя"""
+        payload = event.payload
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+        
+        first_name = payload.get("first_name", "Пользователь")
+        last_name = payload.get("last_name", "")
+        
+        title = "Данные обновлены"
+        message = f"✅ Ваши данные успешно обновлены, {first_name} {last_name}"
+        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
+        
+        # Сохраняем уведомление в базу данных
+        await self._create_and_broadcast_notification(user_id, title, message)
+    
+    async def _handle_bank_account_added(self, event: DomainEvent):
+        """Обработка события добавления банковского счёта"""
+        payload = event.payload
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+        
+        bank_name = payload.get("bank_name", "неизвестный банк")
+        
+        title = "Счёт добавлен"
+        message = f"💳 Новый счёт добавлен из банка {bank_name}"
+        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
+        
+        # Сохраняем уведомление в базу данных
+        await self._create_and_broadcast_notification(user_id, title, message)
+
+

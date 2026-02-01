@@ -1,7 +1,11 @@
+from datetime import datetime
+from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import User
 from app.schemas import UserCreate, UserUpdate
+from shared.event_publisher import EventPublisher
+from shared.event_schema import DomainEvent
 
 class UserRepository:
     def __init__(self, db: AsyncSession):
@@ -36,6 +40,26 @@ class UserRepository:
         self.db.add(db_user)
         await self.db.commit()
         await self.db.refresh(db_user)
+
+
+        event_data = {
+            "user_id": db_user.id,
+            "first_name": db_user.first_name,
+            "last_name": db_user.last_name,
+            "middle_name": db_user.middle_name
+        }
+
+        publisher = EventPublisher()
+        event = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="user.registered",
+            source="users-service",
+            timestamp=datetime.datetime.now(),
+            payload=event_data
+        )
+        
+        await publisher.publish(event)
+
         return db_user
     
     
@@ -52,6 +76,24 @@ class UserRepository:
                 setattr(db_user, field, value)
             await self.db.commit()
             await self.db.refresh(db_user)
+
+            # Публикуем событие об обновлении данных пользователя
+            event_data = {
+                "user_id": db_user.id,
+                "first_name": db_user.first_name,
+                "last_name": db_user.last_name,
+                "middle_name": db_user.middle_name
+            }
+            publisher = EventPublisher()
+            event = DomainEvent(
+                event_id=str(uuid4()),
+                event_type="user.updated",
+                source="users-service",
+                timestamp=datetime.datetime.now(),
+                payload=event_data
+            )
+            await publisher.publish(event)
+
         return db_user
     
     

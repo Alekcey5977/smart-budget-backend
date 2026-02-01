@@ -14,7 +14,9 @@ services:
       - users-db-data:/var/lib/postgresql/data
 
   users-service:
-    build: ./users_service
+    build:
+      context: .
+      dockerfile: users_service/Dockerfile
     env_file:
       - .env
     ports:

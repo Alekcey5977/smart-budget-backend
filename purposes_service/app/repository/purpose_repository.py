@@ -26,27 +26,8 @@ class PurposeRepository:
         await self.db.commit()
         await self.db.refresh(purpose)
 
-        # Создаем событие о создании цели
-        event_data = {
-            "user_id": user_id,
-            "purpose_id": str(purpose.id),
-            "name": purpose.title,
-            "target_amount": purpose.total_amount,
-            "current_amount": purpose.amount
-        }
-        
-        # Публикуем событие в Redis Streams
-        publisher = EventPublisher()
-        event = DomainEvent(
-            event_id=str(uuid4()),
-            event_type="purpose.created",
-            source="purposes-service",
-            timestamp=datetime.datetime.now(),
-            payload=event_data
-        )
-        await publisher.publish(event)
 
-        # Проверяем прогресс при создании цели (на случай, если сразу задан прогресс > 0)
+        # Проверяем прогресс при создании цели
         if purpose.total_amount > 0:
             progress_percent = (purpose.amount / purpose.total_amount) * 100
             
@@ -65,6 +46,7 @@ class PurposeRepository:
                     }
                     
                     # Публикуем событие в Redis Streams
+                    publisher = EventPublisher()
                     event_progress = DomainEvent(
                         event_id=str(uuid4()),
                         event_type="purpose.progress",

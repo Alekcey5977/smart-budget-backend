@@ -8,6 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import Bank_AccountCreate
 from app.auth import get_bank_account_number_hash
 from app.models import Bank_Accounts, Bank
+from shared.event_publisher import EventPublisher
+from shared.event_schema import DomainEvent
+from datetime import datetime
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +133,22 @@ class Bank_AccountRepository:
 
         # Загружаем relationship bank для доступа вне сессии
         await self.db.refresh(new_account, ["bank"])
+
+        # Публикуем событие о добавлении банковского счёта
+        event_data = {
+            "user_id": user_id,
+            "bank_account_id": new_account.bank_account_id,
+            "bank_name": bank_account.bank
+        }
+        publisher = EventPublisher()
+        event = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="bank_account.added",
+            source="users-service",
+            timestamp=datetime.datetime.now(),
+            payload=event_data
+        )
+        await publisher.publish(event)
 
         # Возвращаем account и hash для фоновой синхронизации
         return new_account, account_hash
