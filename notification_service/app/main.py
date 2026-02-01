@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_tables, shutdown
 from app.models import *
 from contextlib import asynccontextmanager
-from app.routers import notification
+from app.routers import notification, websocket
 import uvicorn
 from app.event_listener import EventListener
 import asyncio
@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(notification.router)
-
+app.include_router(websocket.router)
 
 @app.get("/health")
 async def health():

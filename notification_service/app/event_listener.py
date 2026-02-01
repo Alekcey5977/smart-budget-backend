@@ -1,13 +1,15 @@
 import logging
 import asyncio
 import redis.asyncio as redis
+import json
 from redis.exceptions import ConnectionError, TimeoutError, ResponseError
 from shared.event_schema import DomainEvent
 from shared.event_publisher import EventPublisher
-import json
 from app.database import get_db
 from app.repository.notification_repository import NotificationRepository
-from app.schemas import NotificationCreate
+from app.schemas import NotificationCreate, NotificationResponse
+from app.routers.websocket import active_connections
+
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +88,77 @@ class EventListener:
         "purpose.progress": "_handle_purpose_progress",
         "purpose.deleted": "_handle_purpose_deleted"
     }
+    
+    async def _send_notification_websocket(self, user_id: int, notification_data: dict):
+        """Отправка уведомления по WebSocket, если есть подключения"""
+        if user_id in active_connections:
+            message = json.dumps(notification_data)
+            disconnected = []
+            for ws in active_connections[user_id]:
+                try:
+                    await ws.send_text(message)
+                except Exception as e:
+                    logger.warning(
+                        f"Ошибка отправки WebSocket пользователю {user_id}: {e}")
+                    disconnected.append(ws)
+
+            # Удаляем разорванные соединения
+            for ws in disconnected:
+                active_connections[user_id].remove(ws)
+            if not active_connections[user_id]:
+                del active_connections[user_id]
+
+
+    async def _create_and_broadcast_notification(
+        self,
+        user_id: int,
+        title: str,
+        body: str
+    ):
+        """Создаёт уведомление в БД и рассылает по WebSocket"""
+        
+        # Сохраняем в БД
+        async with get_db() as db:
+            repo = NotificationRepository(db)
+            notification_data = NotificationCreate(
+                user_id=user_id,
+                title=title,
+                body=body
+            )
+            saved = await repo.create_notification(notification_data)
+
+        # Формируем payload
+        ws_payload = self.build_notification_payload(saved, is_read=False)
+
+        # Рассылаем по WebSocket
+        await self._send_notification_websocket(user_id, ws_payload)
+
+        logger.info(f"✅ Уведомление сохранено и отправлено пользователю {user_id}")
+
+
+    def build_notification_payload(self, saved, is_read: bool = False) -> dict:
+        """Создание объекта уведомления"""
+        return {
+            "id": str(saved.id),
+            "user_id": saved.user_id,
+            "title": saved.title,
+            "body": saved.body,
+            "created_at": saved.created_at.isoformat(),
+            "is_read": is_read,
+        }
+    
+    def _extract_user_id(self, payload: dict) -> int | None:
+        """Извлекает и валидирует user_id из payload события."""
+        raw_user_id = payload.get("user_id")
+        if raw_user_id is None:
+            logger.error("Отсутствует user_id в событии")
+            return None
+
+        try:
+            return int(raw_user_id)
+        except (TypeError, ValueError):
+            logger.error(f"Некорректный user_id в событии: {raw_user_id}")
+            return None
 
     async def handle_event(self, event: DomainEvent):
         """Обработка конкретного события"""
@@ -103,7 +176,10 @@ class EventListener:
     async def _handle_purpose_progress(self, event: DomainEvent):
         """Обработка события прогресса цели"""
         payload = event.payload
-        user_id = payload.get("user_id")
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+        
         purpose_name = payload.get("purpose_name")
         progress_percent = payload.get("progress_percent")
         threshold = payload.get("threshold")
@@ -113,21 +189,15 @@ class EventListener:
         logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
         
         # Сохраняем уведомление в базу данных
-        async with get_db() as db:
-            repo = NotificationRepository(db)
-            notification_data = NotificationCreate(
-                user_id=str(user_id),
-                title=title,
-                body=message
-            )
-            await repo.create_notification(notification_data)
-            
-        logger.info(f"✅ Уведомление сохранено в базу данных для пользователя {user_id}")
+        await self._create_and_broadcast_notification(user_id, title, message)
     
     async def _handle_purpose_created(self, event: DomainEvent):
         """Обработка события создания цели"""
         payload = event.payload
-        user_id = payload.get("user_id")
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+        
         purpose_name = payload.get("name", "неизвестная цель")
         target_amount = payload.get("target_amount")
         
@@ -136,21 +206,15 @@ class EventListener:
         logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
         
         # Сохраняем уведомление в базу данных
-        async with get_db() as db:
-            repo = NotificationRepository(db)
-            notification_data = NotificationCreate(
-                user_id=str(user_id),
-                title=title,
-                body=message
-            )
-            await repo.create_notification(notification_data)
-            
-        logger.info(f"✅ Уведомление сохранено в базу данных для пользователя {user_id}")
+        await self._create_and_broadcast_notification(user_id, title, message)
         
     async def _handle_purpose_deleted(self, event: DomainEvent):
         """Обработка события удаления цели"""
         payload = event.payload
-        user_id = payload.get("user_id")
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+        
         purpose_name = payload.get("name", "неизвестная цель")
         target_amount = payload.get("target_amount")
         
@@ -159,13 +223,4 @@ class EventListener:
         logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
         
         # Сохраняем уведомление в базу данных
-        async with get_db() as db:
-            repo = NotificationRepository(db)
-            notification_data = NotificationCreate(
-                user_id=str(user_id),
-                title=title,
-                body=message
-            )
-            await repo.create_notification(notification_data)
-            
-        logger.info(f"✅ Уведомление об удалении цели сохранено в базу данных для пользователя {user_id}")
+        await self._create_and_broadcast_notification(user_id, title, message)
