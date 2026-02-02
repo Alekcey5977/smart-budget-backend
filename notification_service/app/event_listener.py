@@ -6,7 +6,7 @@ import json
 from redis.exceptions import ConnectionError, TimeoutError, ResponseError
 from shared.event_schema import DomainEvent
 from shared.event_publisher import EventPublisher
-from app.database import get_db
+from app.database import get_db_session
 from app.repository.notification_repository import NotificationRepository
 from app.schemas import NotificationCreate, NotificationResponse
 from app.routers.websocket import active_connections
@@ -120,7 +120,7 @@ class EventListener:
         """Создаёт уведомление в БД и рассылает по WebSocket"""
         
         # Сохраняем в БД
-        async with get_db() as db:
+        async with get_db_session() as db:
             repo = NotificationRepository(db)
             notification_data = NotificationCreate(
                 user_id=user_id,

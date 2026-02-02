@@ -54,7 +54,7 @@ class UserRepository:
             event_id=str(uuid4()),
             event_type="user.registered",
             source="users-service",
-            timestamp=datetime.datetime.now(),
+            timestamp=datetime.now(),
             payload=event_data
         )
         
@@ -89,7 +89,7 @@ class UserRepository:
                 event_id=str(uuid4()),
                 event_type="user.updated",
                 source="users-service",
-                timestamp=datetime.datetime.now(),
+                timestamp=datetime.now(),
                 payload=event_data
             )
             await publisher.publish(event)

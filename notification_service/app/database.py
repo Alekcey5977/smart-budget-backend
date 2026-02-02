@@ -1,3 +1,4 @@
+from sqlalchemy.ext.asyncio import AsyncSession
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
@@ -52,3 +53,8 @@ async def create_tables():
 # Асинхронное закрытие соединений при остановке
 async def shutdown():
     await engine.dispose()
+
+
+def get_db_session() -> AsyncSession:
+    """Создаёт и возвращает новую сессию БД (для фоновых задач)"""
+    return AsyncSessionLocal()
