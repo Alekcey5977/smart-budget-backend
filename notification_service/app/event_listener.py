@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import os
 import redis.asyncio as redis
 import json
 from redis.exceptions import ConnectionError, TimeoutError, ResponseError
@@ -12,11 +13,11 @@ from app.routers.websocket import active_connections
 
 
 logger = logging.getLogger(__name__)
-
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 
 class EventListener:
     def __init__(self):
-        self.redis = redis.from_url("redis://localhost:6379")
+        self.redis = redis.from_url(REDIS_URL)
         self.publisher = EventPublisher()
     
     async def listen(self):

@@ -5,4 +5,6 @@ asyncpg==0.29.0
 python-dotenv==1.0.1
 pydantic==2.8.2
 psycopg2-binary==2.9.9
+python-jose[cryptography]==3.3.0
+PyJWT==2.8.0
 redis==7.1.0

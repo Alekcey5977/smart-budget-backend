@@ -23,11 +23,13 @@ services:
       - "${USERS_SERVICE_PORT}:${USERS_SERVICE_PORT}"
     depends_on:
       - users-db
+      - redis
     environment:
       DATABASE_URL: ${USERS_DATABASE_URL}
       SERVICE_PORT: ${USERS_SERVICE_PORT}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
 
   # --- Transactions Microservice ---
   transactions-db:
@@ -133,9 +135,11 @@ services:
       - "${PURPOSES_SERVICE_PORT}:${PURPOSES_SERVICE_PORT}"
     depends_on:
       - purposes-db
+      - redis
     environment:
       DATABASE_URL: ${PURPOSES_DATABASE_URL}
       SERVICE_PORT: ${PURPOSES_SERVICE_PORT}
+      REDIS_URL: ${REDIS_URL}
 
   # --- Notification Microservice ---
   notification-db:
@@ -154,7 +158,7 @@ services:
   notification-service:
     build:
       context: .
-      dockerfile: purposes_service/Dockerfile
+      dockerfile: notification_service/Dockerfile
     env_file:
       - .env
     ports:
@@ -165,6 +169,7 @@ services:
     environment:
       DATABASE_URL: ${NOTIFICATION_DATABASE_URL}
       SERVICE_PORT: ${NOTIFICATION_SERVICE_PORT}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
 
   # --- API Gateway ---

@@ -1,15 +1,16 @@
 import logging
 import asyncio
+import os
 import redis.asyncio as redis
 from redis.exceptions import ConnectionError, TimeoutError, ResponseError
 from shared.event_schema import DomainEvent
 
 logger = logging.getLogger(__name__)
-
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 
 class EventPublisher:
     def __init__(self):
-        self.redis = redis.from_url("redis://localhost:6379")
+        self.redis = redis.from_url(REDIS_URL)
 
     async def publish(self, event: DomainEvent):
         try:
