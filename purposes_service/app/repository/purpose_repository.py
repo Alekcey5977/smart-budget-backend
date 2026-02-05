@@ -51,7 +51,7 @@ class PurposeRepository:
                         event_id=str(uuid4()),
                         event_type="purpose.progress",
                         source="purposes-service",
-                        timestamp=datetime.datetime.now(),
+                        timestamp=datetime.now(),
                         payload=event_data_progress
                     )
                     await publisher.publish(event_progress)
@@ -121,7 +121,7 @@ class PurposeRepository:
                             event_id=str(uuid4()),
                             event_type="purpose.progress",
                             source="purposes-service",
-                            timestamp=datetime.datetime.now(),
+                            timestamp=datetime.now(),
                             payload=event_data
                         )
                         await publisher.publish(event)
@@ -165,7 +165,7 @@ class PurposeRepository:
             event_id=str(uuid4()),
             event_type="purpose.deleted",
             source="purposes-service",
-            timestamp=datetime.datetime.now(),
+            timestamp=datetime.now(),
             payload=event_data
         )
         await publisher.publish(event)

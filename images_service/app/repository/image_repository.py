@@ -1,6 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from typing import Optional
+from shared.event_publisher import EventPublisher
+from shared.event_schema import DomainEvent
+from datetime import datetime
+from uuid import uuid4
 import uuid
 
 from app.models import Image, EntityType
@@ -81,6 +85,21 @@ class ImageRepository:
         self.db.add(user_avatar)
         await self.db.flush()
         await self.db.refresh(user_avatar)
+
+
+        # Публикуем событие о смене аватара
+        publisher = EventPublisher()
+        event = DomainEvent(
+            event_id=uuid4(),
+            event_type="user.avatar.updated",
+            source="images-service",
+            timestamp=datetime.now(),
+            payload={
+                "user_id": user_id,
+                "avatar_id": str(avatar_id)
+            }
+        )
+        await publisher.publish(event)
 
         return user_avatar
 

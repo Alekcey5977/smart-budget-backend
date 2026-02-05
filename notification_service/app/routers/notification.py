@@ -77,3 +77,18 @@ async def mark_all_notifications_as_read(
     await repo.mark_all_notifications_as_read(user_id)
     
     return {"status": "success", "message": "All notifications marked as read"}
+
+
+@router.delete("/{notification_id}")
+async def delete_notification(
+    notification_id: UUID,
+    user_id: int = Depends(get_user_id_from_header),
+    repo: NotificationRepository = Depends(get_notification_repository)
+):
+    """Удаление уведомления"""
+    deleted_notification = await repo.delete_notification(notification_id, user_id)
+    
+    if deleted_notification is None:
+        raise HTTPException(status_code=404, detail="Notification not found or access denied")
+    
+    return deleted_notification

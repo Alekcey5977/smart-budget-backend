@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, func
+from sqlalchemy import delete, select, update, func
 from app.models import Notification
 from app.schemas import NotificationCreate
 from uuid import UUID
@@ -68,5 +68,13 @@ class NotificationRepository:
             .values(is_read=True)
         )
         result = await self.db.execute(stmt)
+        await self.db.commit()
+        return result.rowcount
+    
+    async def delete_notification(self, notification_id: UUID):
+        """Удаление уведомления"""
+        result = await self.db.execute(
+            delete(Notification).where(Notification.id == notification_id)
+        )
         await self.db.commit()
         return result.rowcount

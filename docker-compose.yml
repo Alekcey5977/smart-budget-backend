@@ -72,13 +72,16 @@ services:
       - images-db-data:/var/lib/postgresql/data
 
   images-service:
-    build: ./images_service
+    build:
+      context: .
+      dockerfile: images_service/Dockerfile
     env_file:
       - .env
     ports:
       - "${IMAGES_SERVICE_PORT}:${IMAGES_SERVICE_PORT}"
     depends_on:
       - images-db
+      - redis
     environment:
       DATABASE_URL: ${IMAGES_DATABASE_URL}
       SERVICE_PORT: ${IMAGES_SERVICE_PORT}

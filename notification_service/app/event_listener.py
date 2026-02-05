@@ -88,7 +88,9 @@ class EventListener:
         "purpose.deleted": "_handle_purpose_deleted",
         "user.registered": "_handle_user_registered",
         "user.updated": "_handle_user_updated",
-        "bank_account.added": "_handle_bank_account_added"
+        "bank_account.added": "_handle_bank_account_added",
+        "bank_account.deleted": "_handle_bank_account_deleted",
+        "user.avatar.updated": "_handle_user_avatar_updated",
     }
     
     async def _send_notification_websocket(self, user_id: int, notification_data: dict):
@@ -275,5 +277,33 @@ class EventListener:
         
         # Сохраняем уведомление в базу данных
         await self._create_and_broadcast_notification(user_id, title, message)
-
-
+        
+    async def _handle_bank_account_deleted(self, event: DomainEvent):
+        """Обработка события удаления банковского счёта"""
+        payload = event.payload
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+        
+        bank_name = payload.get("bank_name", "неизвестный банк")
+        
+        title = "Счёт удалён"
+        message = f"🗑️ Счёт из банка {bank_name} был удалён"
+        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
+        
+        # Сохраняем уведомление в базу данных
+        await self._create_and_broadcast_notification(user_id, title, message)
+        
+    async def _handle_user_avatar_updated(self, event: DomainEvent):
+        """Обработка события обновления аватара пользователя"""
+        payload = event.payload
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+        
+        title = "Аватар обновлён"
+        message = f"✅ Вы успешно обновили свой аватар"
+        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
+        
+        # Сохраняем уведомление в базу данных
+        await self._create_and_broadcast_notification(user_id, title, message)

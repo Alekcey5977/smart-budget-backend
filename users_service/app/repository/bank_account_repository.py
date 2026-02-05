@@ -145,7 +145,7 @@ class Bank_AccountRepository:
             event_id=str(uuid4()),
             event_type="bank_account.added",
             source="users-service",
-            timestamp=datetime.datetime.now(),
+            timestamp=datetime.now(),
             payload=event_data
         )
         await publisher.publish(event)
@@ -179,4 +179,20 @@ class Bank_AccountRepository:
 
         await self.db.delete(account)
         await self.db.commit()
+
+        event_data = {
+            "user_id": user_id,
+            "bank_account_id": account.bank_account_id,
+            "bank_name": account.bank.name
+        }
+        publisher = EventPublisher()
+        event = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="bank_account.deleted",
+            source="users-service",
+            timestamp=datetime.now(),
+            payload=event_data
+        )
+        await publisher.publish(event)
+
         return account
