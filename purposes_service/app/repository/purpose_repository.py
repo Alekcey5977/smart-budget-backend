@@ -5,7 +5,7 @@ from app.schemas import PurposeCreate
 from app.models import Purpose
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
-import datetime
+from datetime import datetime
 
 class PurposeRepository:
     def __init__(self, db: AsyncSession):
@@ -18,7 +18,7 @@ class PurposeRepository:
             user_id=user_id,
             title=purpose_data.title,
             deadline=purpose_data.deadline,
-            amount=purpose_data.amount,
+            amount=0,  # При создании всегда 0
             total_amount=purpose_data.total_amount,
         )
 
@@ -26,6 +26,25 @@ class PurposeRepository:
         await self.db.commit()
         await self.db.refresh(purpose)
 
+        # Публикуем событие о создании цели
+        event_data_created = {
+            "user_id": user_id,
+            "purpose_id": str(purpose.id),
+            "name": purpose.title,
+            "target_amount": str(purpose.total_amount),
+            "current_amount": str(purpose.amount),
+            "deadline": purpose.deadline.isoformat()
+        }
+
+        publisher = EventPublisher()
+        event_created = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="purpose.created",
+            source="purposes-service",
+            timestamp=datetime.now(),
+            payload=event_data_created
+        )
+        await publisher.publish(event_created)
 
         # Проверяем прогресс при создании цели
         if purpose.total_amount > 0:
@@ -96,16 +115,20 @@ class PurposeRepository:
         
         # Проверяем прогресс только если сумма изменилась
         if "amount" in update_data or "total_amount" in update_data:
+            print(f"[DEBUG] Обнаружено изменение суммы. update_data: {update_data}")
             # Пересчитываем прогресс
             if new_total_amount > 0:
+                old_progress = (purpose.amount / purpose.total_amount) * 100
                 progress_percent = (new_amount / new_total_amount) * 100
-                
+                print(f"[DEBUG] Старый прогресс: {old_progress}%, Новый прогресс: {progress_percent}%")
+
                 # Проверяем пороги для уведомлений (25%, 50%, 80%, 100%)
                 thresholds = [25, 50, 80, 100]
-                
+
                 for threshold in thresholds:
                     # Проверяем, пересекли ли мы этот порог (были ниже или стали выше)
-                    if (purpose.amount / purpose.total_amount) * 100 < threshold and progress_percent >= threshold:
+                    if old_progress < threshold and progress_percent >= threshold:
+                        print(f"[DEBUG] Порог {threshold}% пересечен! Публикуем событие")
                         # Создаем событие для уведомления
                         event_data = {
                             "user_id": user_id,

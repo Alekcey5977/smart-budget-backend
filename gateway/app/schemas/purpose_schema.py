@@ -9,8 +9,7 @@ class PurposeCreate(BaseModel):
     """Схема для создания цели"""
     title: str = Field(..., min_length=1, max_length=200, description="Название цели")
     deadline: datetime = Field(..., description="Дедлайн достижения цели")
-    amount: Decimal = Field(..., ge=0, description="Текущая накопленная сумма")
-    total_amount: Decimal = Field(0, ge=0, description="Целевая сумма")
+    total_amount: Decimal = Field(..., gt=0, description="Целевая сумма (должна быть больше 0)")
 
     @field_validator('deadline')
     @classmethod
@@ -20,19 +19,11 @@ class PurposeCreate(BaseModel):
             raise ValueError('Дедлайн должен быть в будущем')
         return v
 
-    @model_validator(mode='after')
-    def validate_amount_less_than_total(self) -> Self:
-        """Проверка, что накопленная сумма не превышает целевую"""
-        if self.amount > self.total_amount:
-            raise ValueError('Накопленная сумма не может превышать целевую сумму')
-        return self
-
     class Config:
         json_schema_extra = {
             "example": {
                 "title": "Отпуск в Турции",
                 "deadline": "2026-07-01T00:00:00",
-                "amount": 15000.00,
                 "total_amount": 100000.00
             }
         }
@@ -43,7 +34,7 @@ class PurposeUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=200, description="Новое название цели")
     deadline: datetime | None = Field(None, description="Новый дедлайн")
     amount: Decimal | None = Field(None, ge=0, description="Новая накопленная сумма")
-    total_amount: Decimal | None = Field(None, ge=0, description="Новая целевая сумма")
+    total_amount: Decimal | None = Field(None, gt=0, description="Новая целевая сумма")
 
     @field_validator('deadline')
     @classmethod
