@@ -166,8 +166,12 @@ class Bank_AccountRepository:
 
     async def delete(self, bank_account_id: int, user_id: int):
         """Удалить банковский счет пользователя"""
+        from sqlalchemy.orm import selectinload
+
         result = await self.db.execute(
-            select(Bank_Accounts).where(
+            select(Bank_Accounts)
+            .options(selectinload(Bank_Accounts.bank))
+            .where(
                 Bank_Accounts.bank_account_id == bank_account_id,
                 Bank_Accounts.user_id == user_id
             )
@@ -177,13 +181,18 @@ class Bank_AccountRepository:
         if not account:
             return None
 
+        # Сохраняем данные ДО удаления для события
+        bank_account_id_saved = account.bank_account_id
+        bank_name_saved = account.bank.name
+
         await self.db.delete(account)
         await self.db.commit()
 
+        # Публикуем событие используя СОХРАНЕННЫЕ данные
         event_data = {
             "user_id": user_id,
-            "bank_account_id": account.bank_account_id,
-            "bank_name": account.bank.name
+            "bank_account_id": bank_account_id_saved,
+            "bank_name": bank_name_saved
         }
         publisher = EventPublisher()
         event = DomainEvent(
