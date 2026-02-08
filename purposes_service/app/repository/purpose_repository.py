@@ -95,14 +95,18 @@ class PurposeRepository:
         
         if not purpose:
             return None
-            
+
+        # Сохраняем старые значения ДО обновления (для проверки порогов)
+        old_amount = purpose.amount
+        old_total_amount = purpose.total_amount
+
         # Обновляем дату изменения
         update_data["updated_at"] = func.now()
-        
+
         # Формируем обновленные данные (остаются прежними, если не переданы)
         new_amount = update_data.get("amount", purpose.amount)
         new_total_amount = update_data.get("total_amount", purpose.total_amount)
-        
+
         # Выполняем обновление
         stmt = (
             update(Purpose)
@@ -112,13 +116,13 @@ class PurposeRepository:
         )
         result = await self.db.execute(stmt)
         await self.db.commit()
-        
+
         # Проверяем прогресс только если сумма изменилась
         if "amount" in update_data or "total_amount" in update_data:
             print(f"[DEBUG] Обнаружено изменение суммы. update_data: {update_data}")
-            # Пересчитываем прогресс
-            if new_total_amount > 0:
-                old_progress = (purpose.amount / purpose.total_amount) * 100
+            # Пересчитываем прогресс используя СОХРАНЕННЫЕ старые значения
+            if new_total_amount > 0 and old_total_amount > 0:
+                old_progress = (old_amount / old_total_amount) * 100
                 progress_percent = (new_amount / new_total_amount) * 100
                 print(f"[DEBUG] Старый прогресс: {old_progress}%, Новый прогресс: {progress_percent}%")
 
@@ -168,11 +172,10 @@ class PurposeRepository:
         stmt = (
             delete(Purpose)
             .where((Purpose.id == purpose_id) & (Purpose.user_id == user_id))
-            .returning(Purpose)
         )
-        result = await self.db.execute(stmt)
+        await self.db.execute(stmt)
         await self.db.commit()
-        
+
         # Создаем событие об удалении цели
         event_data = {
             "user_id": user_id,
@@ -181,7 +184,7 @@ class PurposeRepository:
             "target_amount": purpose.total_amount,
             "current_amount": purpose.amount
         }
-        
+
         # Публикуем событие в Redis Streams
         publisher = EventPublisher()
         event = DomainEvent(
@@ -192,5 +195,6 @@ class PurposeRepository:
             payload=event_data
         )
         await publisher.publish(event)
-        
-        return result.scalar_one_or_none()
+
+        # Возвращаем объект, который был загружен до удаления
+        return purpose
