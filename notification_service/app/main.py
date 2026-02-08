@@ -7,17 +7,36 @@ from app.routers import notification, websocket
 import uvicorn
 from app.event_listener import EventListener
 import asyncio
+import logging
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
 @asynccontextmanager
 async def life_span(app: FastAPI):
     await create_tables()
-    
+
     # Запускаем прослушиватель событий в фоновом режиме
     event_listener = EventListener()
-    asyncio.create_task(event_listener.listen())
-    
+    listener_task = asyncio.create_task(event_listener.listen())
+
+    # Сохраняем ссылку на задачу, чтобы она не была удалена GC
+    app.state.listener_task = listener_task
+
     yield
+
+    # Отменяем задачу при остановке сервиса
+    if not listener_task.done():
+        listener_task.cancel()
+        try:
+            await listener_task
+        except asyncio.CancelledError:
+            pass
+
     await shutdown()
 
 

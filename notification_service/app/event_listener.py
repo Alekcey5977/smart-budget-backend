@@ -17,69 +17,88 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 
 class EventListener:
     def __init__(self):
-        self.redis = redis.from_url(REDIS_URL)
         self.publisher = EventPublisher()
-    
+
     async def listen(self):
         """Начать прослушивание потока событий"""
-        try:
-            # Создаем поток, если он не существует
+        redis_client = None
+
+        while True:
             try:
-                await self.redis.xgroup_create("domain-events", "notification-group", id="0", mkstream=True)
-                logger.info("✅ Группа потребителей 'notification-group' создана")
-            except ResponseError as e:
-                if "BUSYGROUP" in str(e):
-                    logger.info("Группа потребителей 'notification-group' уже существует")
-                else:
-                    raise e
-            
-            # ID последнего обработанного сообщения (">" означает новые сообщения)
-            last_id = ">"
-            
-            logger.info("👂 Начинаем прослушивание потока 'domain-events'")
-            
-            while True:
+                # Создаем новое соединение с Redis
+                if redis_client is None:
+                    redis_client = redis.from_url(REDIS_URL, decode_responses=False)
+                    logger.info("🔌 Подключение к Redis установлено")
+
+                # Создаем поток, если он не существует
                 try:
-                    # Получаем сообщения из потока
-                    messages = await self.redis.xreadgroup(
-                        groupname="notification-group",
-                        consumername="notification-service-consumer",
-                        streams={"domain-events": last_id},
-                        count=1,
-                        block=1000
-                    )
-                    
-                    if messages:
-                        # messages имеет вид: [(stream_name, [(message_id, message_data), ...]), ...]
-                        for stream, message_list in messages:
-                            for message_id, message_data in message_list:
-                                try:
-                                    payload_json = message_data.get(b"payload") or message_data.get("payload")
-                                    
-                                    if payload_json:
-                                        event_dict = json.loads(payload_json)
-                                        event = DomainEvent(**event_dict)
-                                        
-                                        logger.info(f"📥 Получено событие: {event.event_type} (ID: {event.event_id})")
-                                        
-                                        # Обрабатываем событие
-                                        await self.handle_event(event)
-                                        
-                                        # Подтверждаем обработку сообщения
-                                        await self.redis.xack("domain-events", "notification-group", message_id)
-                                        
-                                        last_id = message_id
-                                    
-                                except Exception as e:
-                                    logger.error(f"❌ Ошибка обработки сообщения {message_id}: {e}")
-                                    
-                except TimeoutError:
-                    continue
-                
-        except (ConnectionError, TimeoutError) as e:
-            logger.error(f"❌ Не удалось подключиться к Redis: {e}")
-        except Exception as e:
-            logger.error(f"❌ Неизвестная ошибка при прослушивании потока: {e}")
+                    await redis_client.xgroup_create("domain-events", "notification-group", id="0", mkstream=True)
+                    logger.info("✅ Группа потребителей 'notification-group' создана")
+                except ResponseError as e:
+                    if "BUSYGROUP" in str(e):
+                        logger.info("ℹ️ Группа потребителей 'notification-group' уже существует")
+                    else:
+                        raise e
+
+                logger.info("👂 Начинаем прослушивание потока 'domain-events'")
+
+                # Основной цикл обработки событий
+                while True:
+                    try:
+                        # Получаем сообщения из потока (всегда используем ">", чтобы читать только новые)
+                        messages = await redis_client.xreadgroup(
+                            groupname="notification-group",
+                            consumername="notification-service-consumer",
+                            streams={"domain-events": ">"},
+                            count=10,
+                            block=5000
+                        )
+
+                        if messages:
+                            # messages имеет вид: [(stream_name, [(message_id, message_data), ...]), ...]
+                            for stream, message_list in messages:
+                                for message_id, message_data in message_list:
+                                    try:
+                                        payload_json = message_data.get(b"payload") or message_data.get("payload")
+
+                                        if payload_json:
+                                            if isinstance(payload_json, bytes):
+                                                payload_json = payload_json.decode('utf-8')
+
+                                            event_dict = json.loads(payload_json)
+                                            event = DomainEvent(**event_dict)
+
+                                            logger.info(f"📥 Получено событие: {event.event_type} (ID: {event.event_id})")
+
+                                            # Обрабатываем событие
+                                            await self.handle_event(event)
+
+                                            # Подтверждаем обработку сообщения
+                                            await redis_client.xack("domain-events", "notification-group", message_id)
+                                            logger.info(f"✅ Событие {event.event_type} обработано успешно")
+
+                                    except Exception as e:
+                                        logger.error(f"❌ Ошибка обработки сообщения {message_id}: {e}", exc_info=True)
+                                        # Не ACK'аем сообщение при ошибке, чтобы попробовать позже
+
+                    except TimeoutError:
+                        # Таймаут - это нормально, продолжаем слушать
+                        continue
+                    except (ConnectionError, Exception) as e:
+                        logger.error(f"❌ Ошибка соединения с Redis: {e}")
+                        # Закрываем соединение и пересоздадим его
+                        if redis_client:
+                            await redis_client.close()
+                            redis_client = None
+                        await asyncio.sleep(2)  # Ждем перед переподключением
+                        break  # Выходим из внутреннего цикла, чтобы переподключиться
+
+            except Exception as e:
+                logger.error(f"❌ Критическая ошибка Event Listener: {e}", exc_info=True)
+                if redis_client:
+                    await redis_client.close()
+                    redis_client = None
+                await asyncio.sleep(5)  # Ждем перед повтором
         
     # Словарь для сопоставления типов событий с обработчиками
     _event_handlers = {
