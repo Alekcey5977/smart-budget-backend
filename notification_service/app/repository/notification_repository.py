@@ -71,10 +71,12 @@ class NotificationRepository:
         await self.db.commit()
         return result.rowcount
     
-    async def delete_notification(self, notification_id: UUID):
+    async def delete_notification(self, notification_id: UUID, user_id: int):
         """Удаление уведомления"""
-        result = await self.db.execute(
-            delete(Notification).where(Notification.id == notification_id)
+        stmt = (
+            delete(Notification)
+            .where((Notification.id == notification_id) & (Notification.user_id == user_id))
         )
+        result = await self.db.execute(stmt)
         await self.db.commit()
         return result.rowcount

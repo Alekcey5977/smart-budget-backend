@@ -364,7 +364,7 @@ async def mark_all_as_read(
 
 @router.delete(
     "/{notification_id}",
-    response_model=NotificationResponse,
+    response_model=MarkAsReadResponse,
     summary="Удалить уведомление",
     description="""
 Удалить конкретное уведомление.
@@ -375,11 +375,19 @@ async def mark_all_as_read(
 Невозможно удалить чужое уведомление.
 
 Если уведомление не найдено или не принадлежит пользователю, вернется ошибка 404.
-
-Возвращает удаленное уведомление в ответе для возможности отмены операции (undo).
 """,
     responses={
-        200: {"description": "Уведомление успешно удалено, возвращает удаленное уведомление"},
+        200: {
+            "description": "Уведомление успешно удалено",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "Notification deleted"
+                    }
+                }
+            }
+        },
         401: {"description": "Не авторизован"},
         404: {"description": "Уведомление не найдено или доступ запрещен"},
         503: {"description": "Сервис уведомлений недоступен"}

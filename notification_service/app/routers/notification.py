@@ -86,9 +86,9 @@ async def delete_notification(
     repo: NotificationRepository = Depends(get_notification_repository)
 ):
     """Удаление уведомления"""
-    deleted_notification = await repo.delete_notification(notification_id, user_id)
-    
-    if deleted_notification is None:
+    rowcount = await repo.delete_notification(notification_id, user_id)
+
+    if rowcount == 0:
         raise HTTPException(status_code=404, detail="Notification not found or access denied")
-    
-    return deleted_notification
+
+    return {"status": "success", "message": "Notification deleted"}
