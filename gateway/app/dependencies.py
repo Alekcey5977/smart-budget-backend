@@ -88,3 +88,24 @@ async def get_current_user(
                 status_code=500,
                 detail=f"Internal server error: {str(e)}"
             )
+
+def verify_websocket_token(token: str) -> int | None:
+    """
+    Проверка JWT токена для WebSocket соединений.
+
+    Возвращает user_id если токен валиден, иначе None.
+    """
+    try:
+        payload = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=["HS256"])
+
+        if payload.get("type") != "access":
+            return None
+
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
+            return None
+
+        return int(user_id_str)
+
+    except (JWTError, ValueError, TypeError):
+        return None

@@ -14,18 +14,22 @@ services:
       - users-db-data:/var/lib/postgresql/data
 
   users-service:
-    build: ./users_service
+    build:
+      context: .
+      dockerfile: users_service/Dockerfile
     env_file:
       - .env
     ports:
       - "${USERS_SERVICE_PORT}:${USERS_SERVICE_PORT}"
     depends_on:
       - users-db
+      - redis
     environment:
       DATABASE_URL: ${USERS_DATABASE_URL}
       SERVICE_PORT: ${USERS_SERVICE_PORT}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
 
   # --- Transactions Microservice ---
   transactions-db:
@@ -68,13 +72,16 @@ services:
       - images-db-data:/var/lib/postgresql/data
 
   images-service:
-    build: ./images_service
+    build:
+      context: .
+      dockerfile: images_service/Dockerfile
     env_file:
       - .env
     ports:
       - "${IMAGES_SERVICE_PORT}:${IMAGES_SERVICE_PORT}"
     depends_on:
       - images-db
+      - redis
     environment:
       DATABASE_URL: ${IMAGES_DATABASE_URL}
       SERVICE_PORT: ${IMAGES_SERVICE_PORT}
@@ -122,16 +129,51 @@ services:
       - purposes-db-data:/var/lib/postgresql/data
 
   purposes-service:
-    build: ./purposes_service
+    build:
+      context: .
+      dockerfile: purposes_service/Dockerfile
     env_file:
       - .env
     ports:
       - "${PURPOSES_SERVICE_PORT}:${PURPOSES_SERVICE_PORT}"
     depends_on:
       - purposes-db
+      - redis
     environment:
       DATABASE_URL: ${PURPOSES_DATABASE_URL}
       SERVICE_PORT: ${PURPOSES_SERVICE_PORT}
+      REDIS_URL: ${REDIS_URL}
+
+  # --- Notification Microservice ---
+  notification-db:
+    image: postgres:13
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${NOTIFICATION_DB_USER}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      POSTGRES_DB: ${NOTIFICATION_DB_NAME}
+    ports:
+      - "5438:5432"
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification_service/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT}:${NOTIFICATION_SERVICE_PORT}"
+    depends_on:
+      - notification-db
+      - redis
+    environment:
+      DATABASE_URL: ${NOTIFICATION_DATABASE_URL}
+      SERVICE_PORT: ${NOTIFICATION_SERVICE_PORT}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
 
   # --- API Gateway ---
   gateway:
@@ -145,6 +187,7 @@ services:
       - transactions-service
       - images-service
       - purposes-service
+      - notification-service
     environment:
       GATEWAY_PORT: ${GATEWAY_PORT}
       USERS_SERVICE_URL: ${USERS_SERVICE_URL}
@@ -152,8 +195,19 @@ services:
       IMAGES_SERVICE_URL: ${IMAGES_SERVICE_URL}
       PSEUDO_BANK_SERVICE_URL: ${PSEUDO_BANK_SERVICE_URL}
       PURPOSES_SERVICE_URL: ${PURPOSES_SERVICE_URL}
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
+
+
+# --- Redis ---
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
 
 volumes:
   users-db-data:
@@ -161,3 +215,5 @@ volumes:
   images-db-data:
   pseudo-bank-db-data:
   purposes-db-data:
+  notification-db-data:
+  redis_data:

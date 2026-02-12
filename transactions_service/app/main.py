@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -6,7 +7,6 @@ from app.database import AsyncSessionLocal, create_tables, shutdown
 from app.models import *
 from contextlib import asynccontextmanager
 from app.routers import transactions, sync
-import uvicorn
 
 from app.repository.sync_repository import SyncRepository
 
@@ -14,7 +14,7 @@ from app.repository.sync_repository import SyncRepository
 scheduler = AsyncIOScheduler()
 
 
-# 2. Периодическая задача
+#  Периодическая задача
 async def periodic_sync():
     async with AsyncSessionLocal() as db:
         repo = SyncRepository(db)

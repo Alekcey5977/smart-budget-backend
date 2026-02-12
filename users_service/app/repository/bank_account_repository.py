@@ -8,6 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import Bank_AccountCreate
 from app.auth import get_bank_account_number_hash
 from app.models import Bank_Accounts, Bank
+from shared.event_publisher import EventPublisher
+from shared.event_schema import DomainEvent
+from datetime import datetime
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +134,22 @@ class Bank_AccountRepository:
         # Загружаем relationship bank для доступа вне сессии
         await self.db.refresh(new_account, ["bank"])
 
+        # Публикуем событие о добавлении банковского счёта
+        event_data = {
+            "user_id": user_id,
+            "bank_account_id": new_account.bank_account_id,
+            "bank_name": bank_account.bank
+        }
+        publisher = EventPublisher()
+        event = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="bank_account.added",
+            source="users-service",
+            timestamp=datetime.now(),
+            payload=event_data
+        )
+        await publisher.publish(event)
+
         # Возвращаем account и hash для фоновой синхронизации
         return new_account, account_hash
 
@@ -146,8 +166,12 @@ class Bank_AccountRepository:
 
     async def delete(self, bank_account_id: int, user_id: int):
         """Удалить банковский счет пользователя"""
+        from sqlalchemy.orm import selectinload
+
         result = await self.db.execute(
-            select(Bank_Accounts).where(
+            select(Bank_Accounts)
+            .options(selectinload(Bank_Accounts.bank))
+            .where(
                 Bank_Accounts.bank_account_id == bank_account_id,
                 Bank_Accounts.user_id == user_id
             )
@@ -157,6 +181,27 @@ class Bank_AccountRepository:
         if not account:
             return None
 
+        # Сохраняем данные ДО удаления для события
+        bank_account_id_saved = account.bank_account_id
+        bank_name_saved = account.bank.name
+
         await self.db.delete(account)
         await self.db.commit()
+
+        # Публикуем событие используя СОХРАНЕННЫЕ данные
+        event_data = {
+            "user_id": user_id,
+            "bank_account_id": bank_account_id_saved,
+            "bank_name": bank_name_saved
+        }
+        publisher = EventPublisher()
+        event = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="bank_account.deleted",
+            source="users-service",
+            timestamp=datetime.now(),
+            payload=event_data
+        )
+        await publisher.publish(event)
+
         return account

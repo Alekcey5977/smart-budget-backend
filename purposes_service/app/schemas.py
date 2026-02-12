@@ -9,8 +9,7 @@ class PurposeCreate(BaseModel):
     """Схема для создания цели"""
     title: str
     deadline: datetime
-    amount: Decimal = Field(..., ge=0)
-    total_amount: Decimal = Field(0, ge=0)
+    total_amount: Decimal = Field(..., gt=0, description="Целевая сумма (должна быть больше 0)")
 
     @field_validator('deadline')
     @classmethod
@@ -19,13 +18,6 @@ class PurposeCreate(BaseModel):
         if v <= datetime.now():
             raise ValueError('Дедлайн должен быть в будущем')
         return v
-
-    @model_validator(mode='after')
-    def validate_amount_less_than_total(self) -> Self:
-        """Проверка, что накопленная сумма не превышает целевую"""
-        if self.amount > self.total_amount:
-            raise ValueError('Накопленная сумма не может превышать целевую сумму')
-        return self
 
 
 class PurposeUpdate(BaseModel):
