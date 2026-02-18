@@ -10,7 +10,7 @@ from shared.event_schema import DomainEvent
 class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
-
+        self.event_publisher = EventPublisher()
     
     async def get_by_id(self, user_id: int):
         """Получить пользователя по ID"""
@@ -49,7 +49,6 @@ class UserRepository:
             "middle_name": db_user.middle_name
         }
 
-        publisher = EventPublisher()
         event = DomainEvent(
             event_id=str(uuid4()),
             event_type="user.registered",
@@ -58,7 +57,7 @@ class UserRepository:
             payload=event_data
         )
         
-        await publisher.publish(event)
+        await self.event_publisher.publish(event)
 
         return db_user
     
@@ -84,7 +83,7 @@ class UserRepository:
                 "last_name": db_user.last_name,
                 "middle_name": db_user.middle_name
             }
-            publisher = EventPublisher()
+            
             event = DomainEvent(
                 event_id=str(uuid4()),
                 event_type="user.updated",
@@ -92,7 +91,7 @@ class UserRepository:
                 timestamp=datetime.now(),
                 payload=event_data
             )
-            await publisher.publish(event)
+            await self.event_publisher.publish(event)
 
         return db_user
     
