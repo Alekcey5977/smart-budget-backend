@@ -1,16 +1,17 @@
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models import User
-from app.schemas import UserCreate, UserUpdate
+from users_service.app.models import User
+from users_service.app.schemas import UserCreate, UserUpdate
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
 
 class UserRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, event_publisher: Optional[EventPublisher] = None):
         self.db = db
-        self.event_publisher = EventPublisher()
+        self.event_publisher = event_publisher or EventPublisher()
     
     async def get_by_id(self, user_id: int):
         """Получить пользователя по ID"""
