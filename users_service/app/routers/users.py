@@ -1,14 +1,28 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas import UserResponse, Token, UserUpdate, UserCreate, UserLogin
-from app.repository.user_repository import UserRepository
-from app.repository.bank_account_repository import Bank_AccountRepository
-from app.database import get_db
-from app.auth import ALGORITHM, REFRESH_SECRET_KEY, create_access_token, create_refresh_token, get_password_hash, verify_password, verify_token
-from app.schemas import oauth2_scheme
-from jose import jwt
 
+from app.auth import (
+    ALGORITHM,
+    REFRESH_SECRET_KEY,
+    create_access_token,
+    create_refresh_token,
+    get_password_hash,
+    verify_password,
+    verify_token,
+)
+from app.database import get_db
+from app.repository.bank_account_repository import Bank_AccountRepository
+from app.repository.user_repository import UserRepository
+from app.schemas import (
+    Token,
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    UserUpdate,
+    oauth2_scheme,
+)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from jose import jwt
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -170,7 +184,7 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token expired"
         )
-    except jwt.JWTError as e:
+    except jwt.JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token"

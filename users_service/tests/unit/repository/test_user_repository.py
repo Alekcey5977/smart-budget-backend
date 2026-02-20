@@ -1,4 +1,5 @@
 import pytest
+
 from users_service.app.repository.user_repository import UserRepository
 
 
@@ -16,8 +17,9 @@ async def test_create_user_success(
     - Возвращается объект с ID"""
     
     # ========== Arrange ==========
-    from users_service.app.schemas import UserCreate
     from unittest.mock import AsyncMock, MagicMock
+
+    from users_service.app.schemas import UserCreate
 
     user_data = UserCreate(
         email="test@test.com",
@@ -33,7 +35,6 @@ async def test_create_user_success(
         side_effect=lambda obj: setattr(obj, 'id', 1)
     )
 
-    mock_user = MagicMock(id=1, **user_data.model_dump())
 
     # ========== Act ==========
     result = await user_repo.create(user_data, "hashed_pwd_123")

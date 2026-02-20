@@ -8,12 +8,13 @@ PROJECT_ROOT = CURRENT_FILE.parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from users_service.app.schemas import UserCreate, UserUpdate
-from unittest.mock import AsyncMock, MagicMock
-import pytest
-from users_service.app.repository.user_repository import UserRepository
-from shared.event_publisher import EventPublisher
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from shared.event_publisher import EventPublisher
+from users_service.app.repository.user_repository import UserRepository
 
 
 @pytest.fixture

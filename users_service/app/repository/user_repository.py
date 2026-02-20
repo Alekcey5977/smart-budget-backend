@@ -1,12 +1,15 @@
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
-from users_service.app.models import User
-from users_service.app.schemas import UserCreate, UserUpdate
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
+from users_service.app.models import User
+from users_service.app.schemas import UserCreate, UserUpdate
+
 
 class UserRepository:
     def __init__(self, db: AsyncSession, event_publisher: Optional[EventPublisher] = None):

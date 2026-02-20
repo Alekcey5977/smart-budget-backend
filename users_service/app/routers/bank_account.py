@@ -1,12 +1,13 @@
 from typing import List
-from fastapi import Depends, HTTPException, status, Request, BackgroundTasks
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db
-from app.schemas import oauth2_scheme, Bank_accountResponse, Bank_AccountCreate
+
 from app.auth import verify_token
+from app.database import get_db
 from app.repository.bank_account_repository import Bank_AccountRepository
 from app.repository.user_repository import UserRepository
-from app.routers.users import router, get_bank_account_repository, get_user_repository
+from app.routers.users import get_bank_account_repository, get_user_repository, router
+from app.schemas import Bank_AccountCreate, Bank_accountResponse, oauth2_scheme
+from fastapi import BackgroundTasks, Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # Получение репозитория банковских счетов

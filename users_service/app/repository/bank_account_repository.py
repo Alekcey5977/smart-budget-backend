@@ -1,17 +1,19 @@
-import os
-import httpx
 import logging
+import os
+from datetime import datetime
 from decimal import Decimal
+from uuid import uuid4
+
+import httpx
+from app.auth import get_bank_account_number_hash
+from app.models import Bank, Bank_Accounts
+from app.schemas import Bank_AccountCreate
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas import Bank_AccountCreate
-from app.auth import get_bank_account_number_hash
-from app.models import Bank_Accounts, Bank
+
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
-from datetime import datetime
-from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
