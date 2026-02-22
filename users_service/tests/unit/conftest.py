@@ -1,20 +1,18 @@
 # Добавляем корень проекта в sys.path ДО импортов
+import pathlib
 import sys
-from pathlib import Path
-
-CURRENT_FILE = Path(__file__).resolve()
-PROJECT_ROOT = CURRENT_FILE.parents[3]
-
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from shared.event_publisher import EventPublisher
 from users_service.app.repository.user_repository import UserRepository
+
+CURRENT_FILE = pathlib.Path(__file__).resolve()
+PROJECT_ROOT = CURRENT_FILE.parents[3]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 
 @pytest.fixture
