@@ -139,6 +139,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(BaseModel):
     """Схема ответа с данными пользователя"""
+    id: int
     email: EmailStr
     first_name: str
     last_name: str
