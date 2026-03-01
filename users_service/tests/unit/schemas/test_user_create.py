@@ -198,7 +198,7 @@ class TestUserLogin:
         with pytest.raises(ValidationError) as exc_info:
             UserLogin(
                 email="user@example.com",
-                password="short"  # 5 символов
+                password="short"
             )
         assert "String should have at least 8 characters" in str(exc_info.value)
 
