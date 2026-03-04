@@ -1,5 +1,5 @@
 import os
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -8,9 +8,12 @@ from httpx import ASGITransport, AsyncClient
 
 from shared.event_publisher import EventPublisher
 
+# Настройка переменных окружения перед импортом приложения
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["JWT_SECRET_KEY"] = "test_secret_key_for_testing_only"
 os.environ["JWT_REFRESH_SECRET_KEY"] = "test_refresh_secret_key_for_testing"
+os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-url"
+os.environ["TRANSACTIONS_SERVICE_URL"] = "http://fake-transactions-url"
 
 
 @pytest.fixture
@@ -32,6 +35,7 @@ def mock_user_repo():
     repo.deactivate_refresh_token = AsyncMock(return_value=None)
     return repo
 
+
 @pytest.fixture
 def mock_db_session():
     """Мок сессии БД для unit-тестов репозитория"""
@@ -40,7 +44,47 @@ def mock_db_session():
     session.commit = AsyncMock()
     session.refresh = AsyncMock()
     session.add = MagicMock()
+    session.flush = AsyncMock()
+    session.delete = AsyncMock()
     return session
+
+
+@pytest.fixture
+def mock_hash_function():
+    """
+    Патчит функцию хеширования в модуле репозитория.
+    """
+    with patch("app.repository.bank_account_repository.get_bank_account_number_hash") as mock_func:
+        yield mock_func
+
+
+@pytest.fixture
+def bank_account_create_schema():
+    """Схема создания счёта для тестов"""
+    from app.schemas import Bank_AccountCreate
+    return Bank_AccountCreate(
+        bank_account_number="40817810099910004312",
+        bank_account_name="Test Account",
+        bank="Сбербанк"
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_httpx_async_client():
+    """
+    Автоматически мокает httpx.AsyncClient во всех тестах.
+    Предотвращает реальные сетевые вызовы.
+    """
+    with patch("app.repository.bank_account_repository.httpx.AsyncClient") as mock_client:
+        instance = AsyncMock()
+        response = MagicMock()
+        response.status_code = 200
+        response.json.return_value = {"balance": "1000.00", "currency": "RUB"}
+        instance.post.return_value = response
+
+        # Настройка контекстного менеджера (async with ... as client)
+        mock_client.return_value.__aenter__.return_value = instance
+        yield mock_client
 
 
 @pytest.fixture
@@ -49,7 +93,6 @@ def user_repo(mock_db_session, mock_event_publisher):
     from app.repository.user_repository import UserRepository
     return UserRepository(db=mock_db_session, event_publisher=mock_event_publisher)
 
-# --- Фикстуры для тестов ---
 
 @pytest.fixture
 def app():
@@ -92,3 +135,10 @@ def mock_get_current_user(app):
     app.dependency_overrides[get_current_user] = _mock_get_current_user
     yield
     app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture
+def bank_account_repo(mock_db_session, mock_event_publisher):
+    """Экземпляр Bank_AccountRepository с мокнутыми зависимостями"""
+    from app.repository.bank_account_repository import Bank_AccountRepository
+    return Bank_AccountRepository(db=mock_db_session)

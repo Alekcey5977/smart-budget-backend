@@ -1,4 +1,3 @@
-# users_service/tests/init_paths.py
 import sys
 import pathlib
 

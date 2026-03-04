@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 
 import httpx
@@ -113,7 +113,7 @@ class Bank_AccountRepository:
 
         try:
             balance = Decimal(str(bank_data.get("balance", "0.00")))
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, InvalidOperation):
             balance = Decimal("0.00")
         currency = bank_data.get("currency", "RUB")
 
