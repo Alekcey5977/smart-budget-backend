@@ -111,6 +111,26 @@ class PurposeRepository:
         result = await self.db.execute(stmt)
         await self.db.commit()
 
+        updated_purpose = result.scalar_one_or_none()
+
+        # Публикуем событие об обновлении цели
+        event_data_updated = {
+            "user_id": user_id,
+            "purpose_id": str(purpose.id),
+            "name": updated_purpose.title if updated_purpose else purpose.title,
+            "target_amount": str(new_total_amount),
+            "current_amount": str(new_amount),
+        }
+        publisher = EventPublisher()
+        event_updated = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="purpose.updated",
+            source="purposes-service",
+            timestamp=datetime.now(),
+            payload=event_data_updated
+        )
+        await publisher.publish(event_updated)
+
         # Проверяем прогресс только если сумма изменилась
         if "amount" in update_data or "total_amount" in update_data:
             crossed = get_crossed_thresholds(old_amount, old_total_amount, new_amount, new_total_amount)
@@ -133,8 +153,8 @@ class PurposeRepository:
                     payload=event_data
                 )
                 await publisher.publish(event)
-                        
-        return result.scalar_one_or_none()
+
+        return updated_purpose
     
     async def delete_purpose(self, user_id: int, purpose_id: UUID):
         """Удаление цели"""
