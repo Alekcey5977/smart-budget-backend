@@ -1,4 +1,3 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.exc import SQLAlchemyError

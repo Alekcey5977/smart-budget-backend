@@ -1,6 +1,5 @@
 import os
 import jwt
-from jose import JWTError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,5 +21,5 @@ def verify_websocket_token(token: str) -> int | None:
 
         return int(user_id_str)
 
-    except (JWTError, ValueError, TypeError):
+    except (jwt.PyJWTError, ValueError, TypeError):
         return None

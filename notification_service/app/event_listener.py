@@ -5,10 +5,9 @@ import redis.asyncio as redis
 import json
 from redis.exceptions import ConnectionError, TimeoutError, ResponseError
 from shared.event_schema import DomainEvent
-from shared.event_publisher import EventPublisher
 from app.database import get_db_session
 from app.repository.notification_repository import NotificationRepository
-from app.schemas import NotificationCreate, NotificationResponse
+from app.schemas import NotificationCreate
 from app.routers.websocket import active_connections
 
 
@@ -16,9 +15,6 @@ logger = logging.getLogger(__name__)
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 
 class EventListener:
-    def __init__(self):
-        self.publisher = EventPublisher()
-
     async def listen(self):
         """Начать прослушивание потока событий"""
         redis_client = None
@@ -102,14 +98,8 @@ class EventListener:
         
     # Словарь для сопоставления типов событий с обработчиками
     _event_handlers = {
-        "purpose.created": "_handle_purpose_created",
         "purpose.progress": "_handle_purpose_progress",
-        "purpose.deleted": "_handle_purpose_deleted",
         "user.registered": "_handle_user_registered",
-        "user.updated": "_handle_user_updated",
-        "bank_account.added": "_handle_bank_account_added",
-        "bank_account.deleted": "_handle_bank_account_deleted",
-        "user.avatar.updated": "_handle_user_avatar_updated",
     }
     
     async def _send_notification_websocket(self, user_id: int, notification_data: dict):
@@ -214,40 +204,6 @@ class EventListener:
         # Сохраняем уведомление в базу данных
         await self._create_and_broadcast_notification(user_id, title, message)
     
-    async def _handle_purpose_created(self, event: DomainEvent):
-        """Обработка события создания цели"""
-        payload = event.payload
-        user_id = self._extract_user_id(payload)
-        if user_id is None:
-            return
-        
-        purpose_name = payload.get("name", "неизвестная цель")
-        target_amount = payload.get("target_amount")
-        
-        title = "Цель создана"
-        message = f"🎯 Новая цель создана: {purpose_name} ({target_amount} руб)"
-        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
-        
-        # Сохраняем уведомление в базу данных
-        await self._create_and_broadcast_notification(user_id, title, message)
-        
-    async def _handle_purpose_deleted(self, event: DomainEvent):
-        """Обработка события удаления цели"""
-        payload = event.payload
-        user_id = self._extract_user_id(payload)
-        if user_id is None:
-            return
-        
-        purpose_name = payload.get("name", "неизвестная цель")
-        target_amount = payload.get("target_amount")
-        
-        title = "Цель удалена"
-        message = f"🗑️ Цель \"{purpose_name}\" удалена. Было запланировано: {target_amount} руб."
-        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
-        
-        # Сохраняем уведомление в базу данных
-        await self._create_and_broadcast_notification(user_id, title, message)
-
     async def _handle_user_registered(self, event: DomainEvent):
         """Обработка события регистрации пользователя"""
         payload = event.payload
@@ -264,65 +220,3 @@ class EventListener:
         # Сохраняем уведомление в базу данных
         await self._create_and_broadcast_notification(user_id, title, message)
 
-    async def _handle_user_updated(self, event: DomainEvent):
-        """Обработка события обновления данных пользователя"""
-        payload = event.payload
-        user_id = self._extract_user_id(payload)
-        if user_id is None:
-            return
-        
-        first_name = payload.get("first_name", "Пользователь")
-        last_name = payload.get("last_name", "")
-        
-        title = "Данные обновлены"
-        message = f"✅ Ваши данные успешно обновлены, {first_name} {last_name}"
-        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
-        
-        # Сохраняем уведомление в базу данных
-        await self._create_and_broadcast_notification(user_id, title, message)
-    
-    async def _handle_bank_account_added(self, event: DomainEvent):
-        """Обработка события добавления банковского счёта"""
-        payload = event.payload
-        user_id = self._extract_user_id(payload)
-        if user_id is None:
-            return
-        
-        bank_name = payload.get("bank_name", "неизвестный банк")
-        
-        title = "Счёт добавлен"
-        message = f"💳 Новый счёт добавлен из банка {bank_name}"
-        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
-        
-        # Сохраняем уведомление в базу данных
-        await self._create_and_broadcast_notification(user_id, title, message)
-        
-    async def _handle_bank_account_deleted(self, event: DomainEvent):
-        """Обработка события удаления банковского счёта"""
-        payload = event.payload
-        user_id = self._extract_user_id(payload)
-        if user_id is None:
-            return
-        
-        bank_name = payload.get("bank_name", "неизвестный банк")
-        
-        title = "Счёт удалён"
-        message = f"🗑️ Счёт из банка {bank_name} был удалён"
-        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
-        
-        # Сохраняем уведомление в базу данных
-        await self._create_and_broadcast_notification(user_id, title, message)
-        
-    async def _handle_user_avatar_updated(self, event: DomainEvent):
-        """Обработка события обновления аватара пользователя"""
-        payload = event.payload
-        user_id = self._extract_user_id(payload)
-        if user_id is None:
-            return
-        
-        title = "Аватар обновлён"
-        message = f"✅ Вы успешно обновили свой аватар"
-        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
-        
-        # Сохраняем уведомление в базу данных
-        await self._create_and_broadcast_notification(user_id, title, message)

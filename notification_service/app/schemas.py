@@ -1,8 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
 from uuid import UUID
-from typing import Optional
-
 
 class NotificationCreate(BaseModel):
     """Схема для создания уведомления"""

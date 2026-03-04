@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from typing import Dict, List
 from app.auth import verify_websocket_token
 
