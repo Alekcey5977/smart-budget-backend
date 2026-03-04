@@ -20,6 +20,11 @@ NOTIFICATION_SERVICE_URL = os.getenv(
     "http://notification-service:8006"
 ).replace("http://", "ws://").replace("https://", "wss://")
 
+HISTORY_SERVICE_URL = os.getenv(
+    "HISTORY_SERVICE_URL",
+    "http://history-service:8007"
+).replace("http://", "ws://").replace("https://", "wss://")
+
 
 @router.websocket("/notification")
 async def websocket_notification_proxy(
@@ -155,3 +160,75 @@ async def websocket_notification_proxy(
         if backend_ws and not backend_ws.closed:
             await backend_ws.close()
             logger.info(f"🔌 Closed backend WebSocket for user {user_id}")
+
+
+@router.websocket("/history")
+async def websocket_history_proxy(
+    websocket: WebSocket,
+    token: str = Query(..., description="JWT токен для аутентификации")
+):
+    """WebSocket прокси для получения истории действий в реальном времени."""
+    user_id = verify_websocket_token(token)
+    if user_id is None:
+        await websocket.close(code=4001, reason="Invalid or expired token")
+        logger.warning("❌ WebSocket history connection rejected: invalid token")
+        return
+
+    await websocket.accept()
+    logger.info(f"✅ WebSocket history accepted from client (user_id={user_id})")
+
+    history_ws_url = f"{HISTORY_SERVICE_URL}/ws/history?token={token}"
+
+    backend_ws = None
+    try:
+        backend_ws = await ws_connect(history_ws_url)
+        logger.info(f"🔗 Connected to history-service WebSocket for user {user_id}")
+
+        async def forward_to_backend():
+            try:
+                while True:
+                    message = await websocket.receive_text()
+                    await backend_ws.send(message)
+            except WebSocketDisconnect:
+                pass
+            except ConnectionClosed:
+                pass
+
+        async def forward_to_client():
+            try:
+                async for message in backend_ws:
+                    await websocket.send_text(message)
+            except WebSocketDisconnect:
+                pass
+            except ConnectionClosed:
+                pass
+
+        _, pending = await asyncio.wait(
+            [
+                asyncio.create_task(forward_to_backend()),
+                asyncio.create_task(forward_to_client())
+            ],
+            return_when=asyncio.FIRST_COMPLETED
+        )
+
+        for task in pending:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+        logger.info(f"🔌 WebSocket history proxy closed for user {user_id}")
+
+    except ConnectionClosed as e:
+        logger.warning(f"⚠️ History backend WebSocket closed: {e}")
+        await websocket.close(code=1011, reason="Backend connection closed")
+
+    except Exception as e:
+        logger.error(f"❌ WebSocket history proxy error for user {user_id}: {e}")
+        await websocket.close(code=1011, reason=f"Proxy error: {str(e)}")
+
+    finally:
+        if backend_ws and not backend_ws.closed:
+            await backend_ws.close()
+            logger.info(f"🔌 Closed history backend WebSocket for user {user_id}")
