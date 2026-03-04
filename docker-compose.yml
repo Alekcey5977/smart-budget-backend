@@ -175,6 +175,37 @@ services:
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
 
+  # --- History Microservice ---
+  history-db:
+    image: postgres:13
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${HISTORY_DB_USER}
+      POSTGRES_PASSWORD: ${HISTORY_DB_PASSWORD}
+      POSTGRES_DB: ${HISTORY_DB_NAME}
+    ports:
+      - "5439:5432"
+    volumes:
+      - history-db-data:/var/lib/postgresql/data
+
+  history-service:
+    build:
+      context: .
+      dockerfile: history_service/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${HISTORY_SERVICE_PORT}:${HISTORY_SERVICE_PORT}"
+    depends_on:
+      - history-db
+      - redis
+    environment:
+      DATABASE_URL: ${HISTORY_DATABASE_URL}
+      SERVICE_PORT: ${HISTORY_SERVICE_PORT}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
+
   # --- API Gateway ---
   gateway:
     build: ./gateway
@@ -188,6 +219,7 @@ services:
       - images-service
       - purposes-service
       - notification-service
+      - history-service
     environment:
       GATEWAY_PORT: ${GATEWAY_PORT}
       USERS_SERVICE_URL: ${USERS_SERVICE_URL}
@@ -196,6 +228,7 @@ services:
       PSEUDO_BANK_SERVICE_URL: ${PSEUDO_BANK_SERVICE_URL}
       PURPOSES_SERVICE_URL: ${PURPOSES_SERVICE_URL}
       NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL}
+      HISTORY_SERVICE_URL: ${HISTORY_SERVICE_URL}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
 
@@ -216,4 +249,5 @@ volumes:
   pseudo-bank-db-data:
   purposes-db-data:
   notification-db-data:
+  history-db-data:
   redis_data:
