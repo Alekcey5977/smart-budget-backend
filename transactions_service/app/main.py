@@ -1,15 +1,14 @@
+from contextlib import asynccontextmanager
+
 import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from app.database import AsyncSessionLocal, create_tables
+from app.models import *
+from app.repository.sync_repository import SyncRepository
+from app.routers import sync, transactions
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from app.database import AsyncSessionLocal, create_tables, shutdown
-from app.models import *
-from contextlib import asynccontextmanager
-from app.routers import transactions, sync
-
-from app.repository.sync_repository import SyncRepository
-
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 scheduler = AsyncIOScheduler()
 

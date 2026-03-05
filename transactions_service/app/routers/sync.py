@@ -1,13 +1,12 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
+
 from app.database import get_db
 from app.repository.sync_repository import SyncRepository
-from app.schemas import SyncTriggerRequest
 from app.routers.transactions import router
-from app.models import Bank_Account
+from app.schemas import SyncTriggerRequest
+from fastapi import Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
