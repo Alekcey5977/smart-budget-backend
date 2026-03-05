@@ -1,20 +1,15 @@
-import os
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from app.database import get_db
+from app.dependencies import get_user_id_from_header
+from app.models import Category, Merchant, Transaction
+from app.routers import transactions
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 
-
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost/test"
-
-
-from app.database import get_db
-from app.dependencies import get_user_id_from_header
-from app.routers import transactions
-from app.models import Category, Merchant, Transaction
 
 class TestGetTransactions:
     """Тесты для получения транзакций"""
@@ -208,7 +203,7 @@ class TestValidation:
             "/transactions/",
             json={"limit": -5}
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     @pytest.mark.asyncio
     async def test_invalid_transaction_type(self, client):
@@ -217,4 +212,4 @@ class TestValidation:
             "/transactions/",
             json={"limit": 10, "transaction_type": "invalid_type"}
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

@@ -1,3 +1,4 @@
+import os
 import pathlib
 import sys
 from datetime import datetime
@@ -6,6 +7,9 @@ from unittest.mock import AsyncMock
 SERVICE_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
+
+os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost/test"
+os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
 
 from uuid import uuid4
 
@@ -64,3 +68,12 @@ def sample_transaction(sample_category, sample_merchant):
     tx.category = sample_category
     tx.merchant = sample_merchant
     return tx
+
+
+@pytest.fixture
+def sync_repository(mock_db_session):
+    """
+    Фикстура для создания экземпляра SyncRepository с замоканной сессией.
+    """
+    from app.repository.sync_repository import SyncRepository
+    return SyncRepository(db=mock_db_session)
