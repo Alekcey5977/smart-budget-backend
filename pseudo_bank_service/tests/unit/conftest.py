@@ -1,5 +1,3 @@
-# tests/unit/conftest.py
-import os
 import pathlib
 import sys
 from datetime import datetime
@@ -8,24 +6,17 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-
-# --- НАСТРОЙКА ОКРУЖЕНИЯ ---
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost/test"
-os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
 
 SERVICE_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
 
-# ИМПОРТЫ ПРИЛОЖЕНИЯ
 from app.main import app
 from app.repository.transactions_repository import TransactionRepository
 from app.schemas import BankAccountCreate, BankCreate, CategoryCreate, TransactionCreate
 
-
-
 # --- Фикстуры данных ---
+
 @pytest.fixture
 def category_data():
     return {"id": 1, "name": "Продукты"}
@@ -73,11 +64,11 @@ def transaction_data():
         "created_at": datetime.now()
     }
 
-# --- Фикстуры моков БД ---
+# --- Фикстуры моков ---
 
 @pytest.fixture
 def mock_db_session():
-    session = AsyncMock(spec=AsyncSession)
+    session = AsyncMock()
     session.commit = AsyncMock()
     session.refresh = AsyncMock()
     session.add = MagicMock()
@@ -144,14 +135,9 @@ def mock_transaction_repo():
     repo.to_dict = MagicMock(side_effect=default_to_dict)
     return repo
 
-
 @pytest_asyncio.fixture
 async def client(mock_transaction_repo):
-    """
-    Асинхронный клиент с переопределением зависимостей.
-    """
     from app.routers.pseudo_bank import get_transactions_repository
-    
     app.dependency_overrides[get_transactions_repository] = lambda: mock_transaction_repo
     
     transport = ASGITransport(app=app)
