@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from app.repository.bank_account_repository import Bank_AccountRepository
 from app.repository.user_repository import UserRepository
 from httpx import ASGITransport, AsyncClient
 
@@ -33,6 +34,32 @@ def mock_user_repo():
     repo.update = AsyncMock(return_value=None)
     repo.exists_with_email = AsyncMock(return_value=False)
     repo.deactivate_refresh_token = AsyncMock(return_value=None)
+    return repo
+
+
+@pytest.fixture
+def mock_bank_account_repo():
+    """
+    Мок репозитория банковских счетов.
+    """
+    repo = AsyncMock(spec=Bank_AccountRepository)
+
+    # Мок создания счета (возвращает объект счета и хэш)
+    mock_account = MagicMock()
+    mock_account.bank_account_id = 1
+    mock_account.bank_account_name = "Test Account"
+    mock_account.currency = "RUB"
+    mock_account.balance = "100.00"
+
+    # Мок для поля bank
+    mock_bank = MagicMock()
+    mock_bank.name = "Сбербанк"
+    mock_account.bank = mock_bank
+
+    repo.create.return_value = (mock_account, "test_hash")
+    repo.get_all_by_user_id.return_value = [mock_account]
+    repo.delete.return_value = mock_account
+
     return repo
 
 
@@ -104,7 +131,11 @@ def app():
 @pytest_asyncio.fixture(scope="function")
 async def client(app, mock_user_repo):
     """Асинхронный клиент с переопределением зависимостей"""
+    from app.routers.bank_account import router as bank_router
     from app.routers.users import get_user_repository
+
+    # Подключаем роутер
+    app.include_router(bank_router)
 
     async def override_get_user_repo():
         return mock_user_repo
