@@ -1,16 +1,20 @@
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
-from app.models import User
-from app.schemas import UserCreate, UserUpdate
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
+from users_service.app.models import User
+from users_service.app.schemas import UserCreate, UserUpdate
+
 
 class UserRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, event_publisher: Optional[EventPublisher] = None):
         self.db = db
-
+        self.event_publisher = event_publisher or EventPublisher()
     
     async def get_by_id(self, user_id: int):
         """Получить пользователя по ID"""
@@ -49,7 +53,6 @@ class UserRepository:
             "middle_name": db_user.middle_name
         }
 
-        publisher = EventPublisher()
         event = DomainEvent(
             event_id=str(uuid4()),
             event_type="user.registered",
@@ -58,7 +61,7 @@ class UserRepository:
             payload=event_data
         )
         
-        await publisher.publish(event)
+        await self.event_publisher.publish(event)
 
         return db_user
     
@@ -84,7 +87,7 @@ class UserRepository:
                 "last_name": db_user.last_name,
                 "middle_name": db_user.middle_name
             }
-            publisher = EventPublisher()
+            
             event = DomainEvent(
                 event_id=str(uuid4()),
                 event_type="user.updated",
@@ -92,7 +95,7 @@ class UserRepository:
                 timestamp=datetime.now(),
                 payload=event_data
             )
-            await publisher.publish(event)
+            await self.event_publisher.publish(event)
 
         return db_user
     
