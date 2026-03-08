@@ -2,6 +2,16 @@ import os
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
+# ============================================================================
+# 1. НАСТРОЙКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (до импортов app.*)
+# ============================================================================
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["ACCESS_SECRET_KEY"] = "test_access_secret_key_integ"
+os.environ["REFRESH_SECRET_KEY"] = "test_refresh_secret_key_integ"
+os.environ["BANK_SECRET_KEY"] = "test_bank_secret_key_integ"
+os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
+os.environ["TRANSACTIONS_SERVICE_URL"] = "http://fake-transactions-service"
+
 import pytest
 import pytest_asyncio
 from app.auth import ALGORITHM
@@ -12,23 +22,6 @@ from httpx import ASGITransport, AsyncClient
 from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
-
-# ============================================================================
-# 1. НАСТРОЙКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ
-# ============================================================================
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
-os.environ["ACCESS_SECRET_KEY"] = "test_access_secret_key_integ"
-os.environ["REFRESH_SECRET_KEY"] = "test_refresh_secret_key_integ"
-os.environ["BANK_SECRET_KEY"] = "test_bank_secret_key_integ"
-os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
-os.environ["TRANSACTIONS_SERVICE_URL"] = "http://fake-transactions-service"
-
-# ============================================================================
-# ИМПОРТЫ
-# ============================================================================
-from app.models import User  # noqa: F811
-from app.database import User_Base, get_db  # noqa: F811
-from app.auth import ALGORITHM  # noqa: F811
 
 
 TEST_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY")
