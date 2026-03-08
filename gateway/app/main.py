@@ -1,12 +1,23 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 import os
 import sys
 
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.routers import auth, transactions, images, sync, bank_accounts, purposes, notifications, websocket
+from app.routers import (
+    auth,
+    bank_accounts,
+    history,
+    images,
+    notifications,
+    purposes,
+    sync,
+    transactions,
+    websocket,
+)
 
 app = FastAPI(title="Gateway Service", description="Точка входа", version="1.0.0")
 
@@ -25,19 +36,14 @@ app.include_router(sync.router)
 app.include_router(bank_accounts.router)
 app.include_router(purposes.router)
 app.include_router(notifications.router)
+app.include_router(history.router)
 app.include_router(websocket.router)
+
 
 @app.get("/health")
 async def health():
-    return {
-        "status": "healthy", 
-        "service": "gateway",
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "service": "gateway", "version": "1.0.0"}
+
 
 if __name__ == "__main__":
-    uvicorn.run(
-        app, 
-        host="0.0.0.0",
-        port=8000
-    )
+    uvicorn.run(app, host="0.0.0.0", port=8000)

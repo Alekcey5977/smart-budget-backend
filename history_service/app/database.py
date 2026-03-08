@@ -2,22 +2,19 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
-from app.models import Notification_Base
+from app.models import History_Base
 
 
-# Загружаем переменные из .env файла
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Создание асинхронного соединения для БД
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,
     future=True
 )
 
-# Создание асинхронных сессий дл БД
 AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
@@ -25,8 +22,6 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
     autocommit=False
 )
-
-# Асинхронное открытие сессии для эндпоинтов при взаимодействии с БД
 
 
 async def get_db():
@@ -43,13 +38,11 @@ async def get_db():
             await session.close()
 
 
-# Асинхронное создание теаблиц в БД
 async def create_tables():
     async with engine.begin() as conn:
-        await conn.run_sync(Notification_Base.metadata.create_all)
+        await conn.run_sync(History_Base.metadata.create_all)
 
 
-# Асинхронное закрытие соединений при остановке
 async def shutdown():
     await engine.dispose()
 

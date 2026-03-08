@@ -44,7 +44,7 @@ class NotificationRepository:
         """Получение количества непрочитанных уведомлений"""
         result = await self.db.execute(
             select(func.count(Notification.id))
-            .where((Notification.user_id == user_id) & (Notification.is_read == False))
+            .where((Notification.user_id == user_id) & (Notification.is_read == False))  # noqa: E712
         )
         return result.scalar()
     

@@ -3,6 +3,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import PurposeCreate
 from app.models import Purpose
+from app.utils import get_crossed_thresholds
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
 from datetime import datetime
@@ -46,35 +47,28 @@ class PurposeRepository:
         )
         await publisher.publish(event_created)
 
-        # Проверяем прогресс при создании цели
-        if purpose.total_amount > 0:
+        # При создании amount=0, поэтому пороги не пересекаются
+        # (оставлено для совместимости, если amount будет задаваться при создании)
+        crossed = get_crossed_thresholds(0, purpose.total_amount, purpose.amount, purpose.total_amount)
+        for threshold in crossed:
             progress_percent = (purpose.amount / purpose.total_amount) * 100
-            
-            # Проверяем пороги для уведомлений (25%, 50%, 80%, 100%)
-            thresholds = [25, 50, 80, 100]
-            
-            for threshold in thresholds:
-                if progress_percent >= threshold:
-                    # Создаем событие для уведомления
-                    event_data_progress = {
-                        "user_id": user_id,
-                        "purpose_id": str(purpose.id),
-                        "purpose_name": purpose.title,
-                        "progress_percent": round(progress_percent, 2),
-                        "threshold": threshold
-                    }
-                    
-                    # Публикуем событие в Redis Streams
-                    publisher = EventPublisher()
-                    event_progress = DomainEvent(
-                        event_id=str(uuid4()),
-                        event_type="purpose.progress",
-                        source="purposes-service",
-                        timestamp=datetime.now(),
-                        payload=event_data_progress
-                    )
-                    await publisher.publish(event_progress)
-                    
+            event_data_progress = {
+                "user_id": user_id,
+                "purpose_id": str(purpose.id),
+                "purpose_name": purpose.title,
+                "progress_percent": round(progress_percent, 2),
+                "threshold": threshold
+            }
+            publisher = EventPublisher()
+            event_progress = DomainEvent(
+                event_id=str(uuid4()),
+                event_type="purpose.progress",
+                source="purposes-service",
+                timestamp=datetime.now(),
+                payload=event_data_progress
+            )
+            await publisher.publish(event_progress)
+
         return purpose
     
     async def get_purposes_by_user(self, user_id: int):
@@ -117,43 +111,50 @@ class PurposeRepository:
         result = await self.db.execute(stmt)
         await self.db.commit()
 
+        updated_purpose = result.scalar_one_or_none()
+
+        # Публикуем событие об обновлении цели
+        event_data_updated = {
+            "user_id": user_id,
+            "purpose_id": str(purpose.id),
+            "name": updated_purpose.title if updated_purpose else purpose.title,
+            "target_amount": str(new_total_amount),
+            "current_amount": str(new_amount),
+        }
+        publisher = EventPublisher()
+        event_updated = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="purpose.updated",
+            source="purposes-service",
+            timestamp=datetime.now(),
+            payload=event_data_updated
+        )
+        await publisher.publish(event_updated)
+
         # Проверяем прогресс только если сумма изменилась
         if "amount" in update_data or "total_amount" in update_data:
-            print(f"[DEBUG] Обнаружено изменение суммы. update_data: {update_data}")
-            # Пересчитываем прогресс используя СОХРАНЕННЫЕ старые значения
-            if new_total_amount > 0 and old_total_amount > 0:
-                old_progress = (old_amount / old_total_amount) * 100
+            crossed = get_crossed_thresholds(old_amount, old_total_amount, new_amount, new_total_amount)
+
+            for threshold in crossed:
                 progress_percent = (new_amount / new_total_amount) * 100
-                print(f"[DEBUG] Старый прогресс: {old_progress}%, Новый прогресс: {progress_percent}%")
+                event_data = {
+                    "user_id": user_id,
+                    "purpose_id": str(purpose.id),
+                    "purpose_name": purpose.title,
+                    "progress_percent": round(progress_percent, 2),
+                    "threshold": threshold
+                }
+                publisher = EventPublisher()
+                event = DomainEvent(
+                    event_id=str(uuid4()),
+                    event_type="purpose.progress",
+                    source="purposes-service",
+                    timestamp=datetime.now(),
+                    payload=event_data
+                )
+                await publisher.publish(event)
 
-                # Проверяем пороги для уведомлений (25%, 50%, 80%, 100%)
-                thresholds = [25, 50, 80, 100]
-
-                for threshold in thresholds:
-                    # Проверяем, пересекли ли мы этот порог (были ниже или стали выше)
-                    if old_progress < threshold and progress_percent >= threshold:
-                        print(f"[DEBUG] Порог {threshold}% пересечен! Публикуем событие")
-                        # Создаем событие для уведомления
-                        event_data = {
-                            "user_id": user_id,
-                            "purpose_id": str(purpose.id),
-                            "purpose_name": purpose.title,
-                            "progress_percent": round(progress_percent, 2),
-                            "threshold": threshold
-                        }
-                        
-                        # Публикуем событие в Redis Streams
-                        publisher = EventPublisher()
-                        event = DomainEvent(
-                            event_id=str(uuid4()),
-                            event_type="purpose.progress",
-                            source="purposes-service",
-                            timestamp=datetime.now(),
-                            payload=event_data
-                        )
-                        await publisher.publish(event)
-                        
-        return result.scalar_one_or_none()
+        return updated_purpose
     
     async def delete_purpose(self, user_id: int, purpose_id: UUID):
         """Удаление цели"""

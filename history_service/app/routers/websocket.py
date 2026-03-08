@@ -5,13 +5,12 @@ from app.auth import verify_websocket_token
 
 logger = logging.getLogger(__name__)
 
-
 router = APIRouter(prefix="/ws", tags=['websocket'])
 
 active_connections: Dict[int, List[WebSocket]] = {}
 
 
-@router.websocket("/notification")
+@router.websocket("/history")
 async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
     user_id = verify_websocket_token(token)
     if user_id is None:
@@ -27,7 +26,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
     logger.info(f"🔌 WebSocket подключён для пользователя {user_id}")
 
     try:
-        # Удерживаем соединение открытым
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:

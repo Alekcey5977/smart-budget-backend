@@ -41,6 +41,7 @@ start:
 	@echo "  Pseudo Bank:         	http://localhost:8004/docs"
 	@echo "  Purposes Service:    	http://localhost:8005/docs"
 	@echo "  Notifications Service: http://localhost:8006/docs"
+	@echo "  History Service:       http://localhost:8007/docs"
 	@echo ""
 
 stop:
