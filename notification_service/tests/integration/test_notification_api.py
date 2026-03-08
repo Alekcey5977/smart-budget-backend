@@ -126,6 +126,7 @@ class TestGetNotifications:
         assert "Invalid user ID" in response.json()["detail"]
 
 
+
 # ==================== GET /notifications/user/me/unread/count ====================
 
 class TestGetUnreadCount:
@@ -159,6 +160,22 @@ class TestGetUnreadCount:
         """Без X-User-ID → 422."""
         response = await client.get("/notifications/user/me/unread/count")
         assert response.status_code == 422
+
+    async def test_unread_count_decreases_after_mark_read(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        """Прочитанное уведомление не считается непрочитанным."""
+        notif = await create_notification(db_session, user_id=10)
+        await client.post(
+            f"/notifications/{notif.id}/mark-as-read",
+            headers=auth_headers(10),
+        )
+        response = await client.get(
+            "/notifications/user/me/unread/count",
+            headers=auth_headers(10),
+        )
+        assert response.status_code == 200
+        assert response.json()["count"] == 0
 
 
 # ==================== GET /notifications/{id} ====================
