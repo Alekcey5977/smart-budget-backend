@@ -1,6 +1,6 @@
 """
-Unit tests for gateway Pydantic schemas.
-No HTTP or DB — pure validation logic.
+Юнит-тесты для Pydantic-схем gateway.
+Нет HTTP и БД — только логика валидации.
 """
 import pytest
 from pydantic import ValidationError

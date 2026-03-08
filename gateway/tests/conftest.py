@@ -1,8 +1,8 @@
 import os
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
-# Set env vars BEFORE importing any app modules (they read env at module level)
+# Устанавливаем переменные окружения ДО импорта модулей приложения (они читаются на уровне модуля)
 os.environ.setdefault("ACCESS_SECRET_KEY", "test-secret-key-for-gateway")
 os.environ.setdefault("USERS_SERVICE_URL", "http://users-service-test")
 os.environ.setdefault("PURPOSES_SERVICE_URL", "http://purposes-service-test")
@@ -25,7 +25,7 @@ FAKE_USER = {"id": 1, "email": "test@example.com", "first_name": "Тест"}
 
 
 def make_access_token(user_id: str = USER_ID, secret: str = TEST_SECRET) -> str:
-    """Creates a valid JWT access token for tests."""
+    """Создаёт валидный JWT access-токен для тестов."""
     payload = {
         "sub": str(user_id),
         "type": "access",
@@ -35,12 +35,12 @@ def make_access_token(user_id: str = USER_ID, secret: str = TEST_SECRET) -> str:
 
 
 def auth_headers(user_id: str = USER_ID) -> dict:
-    """Returns Authorization: Bearer <token> header dict."""
+    """Возвращает заголовок Authorization: Bearer <token>."""
     return {"Authorization": f"Bearer {make_access_token(user_id)}"}
 
 
 async def mock_get_current_user():
-    """Bypasses JWT validation and users-service call for most router tests."""
+    """Обходит JWT-валидацию и вызов users-service для большинства роутерных тестов."""
     return {
         "token": make_access_token(),
         "user": FAKE_USER,
@@ -54,7 +54,7 @@ def make_mock_http_response(
     content: bytes = None,
     headers: dict = None,
 ):
-    """Creates a MagicMock that behaves like an httpx.Response."""
+    """Создаёт MagicMock, имитирующий httpx.Response."""
     mock_resp = MagicMock()
     mock_resp.status_code = status_code
     if json_data is not None:
@@ -67,7 +67,7 @@ def make_mock_http_response(
 
 @pytest.fixture
 async def client():
-    """HTTP test client with get_current_user overridden (no JWT/users-service)."""
+    """HTTP-клиент с переопределённым get_current_user (без JWT и вызова users-service)."""
     app.dependency_overrides[get_current_user] = mock_get_current_user
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
@@ -76,7 +76,7 @@ async def client():
 
 @pytest.fixture
 async def client_no_auth():
-    """HTTP test client without overriding get_current_user (for 401 tests)."""
+    """HTTP-клиент без переопределения get_current_user (для тестов на 401)."""
     app.dependency_overrides.clear()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
