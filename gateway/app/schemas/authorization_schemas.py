@@ -1,3 +1,4 @@
+import re
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from typing import Optional
 
@@ -5,7 +6,7 @@ from typing import Optional
 class RegisterRequest(BaseModel):
     """Схема запроса регистрации пользователя"""
     email: EmailStr
-    password: str = Field(..., min_length=2, description="Пароль (минимум 2 символа)")
+    password: str = Field(..., min_length=8, description="Пароль (минимум 8 символов)")
     first_name: str
     last_name: str
     middle_name: Optional[str] = Field(None, description="Отчество (необязательно)")
@@ -13,8 +14,18 @@ class RegisterRequest(BaseModel):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 2:
-            raise ValueError('Password must be at least 2 characters long')
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if len(v) > 128:
+            raise ValueError('Password must be at most 128 characters long')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'\d', v):
+            raise ValueError('Password must contain at least one digit')
+        if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?`~]', v):
+            raise ValueError('Password must contain at least one special character')
         return v
 
     @field_validator('first_name', 'last_name')
@@ -47,13 +58,23 @@ class RegisterRequest(BaseModel):
 class UserLogin(BaseModel):
     """Схема запроса авторизации"""
     email: EmailStr
-    password: str = Field(..., min_length=2, description="Пароль (минимум 2 символа)")
+    password: str = Field(..., min_length=8, description="Пароль (минимум 8 символов)")
 
     @field_validator('password')
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 2:
-            raise ValueError('Password must be at least 2 characters long')
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if len(v) > 128:
+            raise ValueError('Password must be at most 128 characters long')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'\d', v):
+            raise ValueError('Password must contain at least one digit')
+        if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?`~]', v):
+            raise ValueError('Password must contain at least one special character')
         return v
 
 
