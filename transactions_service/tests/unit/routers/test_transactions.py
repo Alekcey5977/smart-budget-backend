@@ -203,7 +203,7 @@ class TestValidation:
             "/transactions/",
             json={"limit": -5}
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     @pytest.mark.asyncio
     async def test_invalid_transaction_type(self, client):
@@ -212,4 +212,4 @@ class TestValidation:
             "/transactions/",
             json={"limit": 10, "transaction_type": "invalid_type"}
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
