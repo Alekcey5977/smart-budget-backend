@@ -1,12 +1,12 @@
-from datetime import datetime
-import os
-import httpx
 import logging
+import os
+from datetime import datetime
 from typing import Dict
-from sqlalchemy import select, text, update
+
+import httpx
+from app.models import Bank, Bank_Account, Category, MCC_Category, Merchant, Transaction
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import Category, MCC_Category, Merchant, Bank, Bank_Account, Transaction
 
 logger = logging.getLogger(__name__)
 PSEUDO_BANK_SERVICE_URL = os.getenv("PSEUDO_BANK_SERVICE_URL")
@@ -149,7 +149,7 @@ class SyncRepository:
                 tx["created_at"] = datetime.fromisoformat(
                     tx["created_at"].replace("Z", "+00:00"))
 
-        logger.info(f"[SYNC] Upserting data...")
+        logger.info("[SYNC] Upserting data...")
         stats = {
             "categories": await self.upsert_categories(data.get("categories", [])),
             "mcc": await self.upsert_mcc(data.get("mcc_categories", [])),

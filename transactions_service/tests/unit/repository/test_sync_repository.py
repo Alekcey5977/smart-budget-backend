@@ -1,0 +1,196 @@
+import os
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+PSEUDO_URL = os.getenv("PSEUDO_BANK_SERVICE_URL")
+
+
+class TestSyncRepository:
+    """Тесты для SyncRepository"""
+
+    @pytest.mark.asyncio
+    async def test_get_user_account_hashes(self, sync_repository, mock_db_session):
+        """Тест получения хешей счетов пользователя"""
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = [("hash1",), ("hash2",)]
+        mock_db_session.execute.return_value = mock_result
+
+        hashes = await sync_repository.get_user_account_hashes(123)
+
+        assert hashes == ["hash1", "hash2"]
+        mock_db_session.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_upsert_bank_accounts(self, sync_repository, mock_db_session):
+        """Тест upsert для банковских счетов"""
+        mock_result = MagicMock()
+        mock_result.rowcount = 1
+        mock_db_session.execute.return_value = mock_result
+
+        accounts = [{"bank_account_hash": "h1", "user_id": 1, "balance": 100}]
+        count = await sync_repository.upsert_bank_accounts(accounts)
+
+        assert count == 1
+        mock_db_session.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_sync_by_account_success(self, sync_repository, mock_db_session):
+        """Тест успешной синхронизации счета"""
+        acc_hash = "test_hash"
+        user_id = 123
+
+        # Настраиваем последовательность возвратов для execute
+        # Порядок: Select last_synced -> Insert Category -> Insert MCC -> ... -> Update last_synced
+        # В данном тесте мы передаем полные данные, поэтому будет много вызовов.
+
+        mock_result_ok = MagicMock()
+        mock_result_ok.rowcount = 1
+        mock_result_ok.scalar.return_value = None  # Для первого select
+
+        # Формируем список результатов.
+        # 1. Select last_synced
+        # 2-7. Upserts (categories, mcc, merchants, banks, bank_accounts, transactions)
+        # 8. Update last_synced
+        results = [mock_result_ok] + [mock_result_ok for _ in range(7)]
+        mock_db_session.execute.side_effect = results
+
+        # Мокируем HTTP запрос
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "bank": {"id": 1, "name": "TestBank"},
+            "bank_account": {
+                "bank_account_hash": acc_hash,
+                "user_id": 999,
+                "created_at": "2023-01-01T00:00:00Z",
+                "updated_at": "2023-01-01T00:00:00Z"
+            },
+            "categories": [{"id": 1, "name": "Food"}],
+            "mcc_categories": [{"mcc": 1, "name": "Test"}],
+            "merchants": [{"id": 1, "name": "Shop"}],
+            "transactions": [
+                {
+                    "id": "uuid-tx-1",
+                    "user_id": 999,
+                    "created_at": "2023-01-01T12:00:00Z",
+                    "category_id": 1,
+                    "bank_account_id": 1,
+                    "amount": 100.0,
+                    "type": "expense"
+                }
+            ]
+        }
+
+        mock_client_instance = AsyncMock()
+        mock_client_instance.get.return_value = mock_response
+
+        with patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client:
+            mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+
+            stats = await sync_repository.sync_by_account(acc_hash, user_id)
+
+        assert stats["transactions"] == 1
+        assert stats["categories"] == 1
+        mock_db_session.commit.assert_awaited_once()
+
+        # Проверяем URL
+        expected_url = f"{PSEUDO_URL}/pseudo_bank/account/{acc_hash}/export"
+        mock_client_instance.get.assert_awaited_once_with(expected_url)
+
+    @pytest.mark.asyncio
+    async def test_sync_by_account_not_found(self, sync_repository, mock_db_session):
+        """Тест: счет не найден в pseudo_bank (404)"""
+        mock_select_result = MagicMock()
+        mock_select_result.scalar.return_value = None
+        mock_db_session.execute.return_value = mock_select_result
+
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+
+        mock_client_instance = AsyncMock()
+        mock_client_instance.get.return_value = mock_response
+
+        with patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client:
+            mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+
+            with pytest.raises(ValueError, match="not found in pseudo_bank"):
+                await sync_repository.sync_by_account("missing_hash", 123)
+
+    @pytest.mark.asyncio
+    async def test_sync_incremental(self, sync_repository):
+        """Тест периодической синхронизации всех счетов"""
+        accounts = [("hash1", 1), ("hash2", 2)]
+
+        with patch.object(sync_repository, "get_all_active_account_hashes", new_callable=AsyncMock) as mock_get_hashes, \
+                patch.object(sync_repository, "sync_by_account", new_callable=AsyncMock) as mock_sync_account:
+
+            mock_get_hashes.return_value = accounts
+            mock_sync_account.return_value = {"transactions": 1}
+
+            result = await sync_repository.sync_incremental()
+
+        assert result["synced"]["success"] == 2
+        assert result["synced"]["processed"] == 2
+
+        mock_sync_account.assert_any_await("hash1", 1)
+        mock_sync_account.assert_any_await("hash2", 2)
+
+    @pytest.mark.asyncio
+    async def test_sync_by_account_updates_last_synced(self, sync_repository, mock_db_session):
+        """Тест обновления времени последней синхронизации"""
+        # Сценарий: есть только транзакции, нет категорий/банков (через пустые списки в JSON)
+
+        # 1. Результат для SELECT last_synced
+        mock_select_result = MagicMock()
+        mock_select_result.scalar.return_value = None
+
+        # 2. Результат для INSERT transaction
+        mock_insert_result = MagicMock()
+        mock_insert_result.rowcount = 1
+
+        # 3. Результат для UPDATE last_synced
+        mock_update_result = MagicMock()
+
+        # Ожидаем всего 3 вызова execute:
+        # 1. Select
+        # 2. Insert Transaction (остальные upsert вернут 0, так как списки пусты)
+        # 3. Update last_synced
+        mock_db_session.execute.side_effect = [
+            mock_select_result,
+            mock_insert_result,
+            mock_update_result
+        ]
+
+        tx_time = "2023-05-20T15:00:00Z"
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        # Передаем пустые списки, кроме транзакций
+        mock_response.json.return_value = {
+            "bank": None,
+            "bank_account": None,
+            "categories": [],
+            "mcc_categories": [],
+            "merchants": [],
+            "transactions": [{
+                "id": "uuid", "user_id": 1, "created_at": tx_time,
+                "category_id": 1, "bank_account_id": 1, "amount": 10, "type": "exp"
+            }]
+        }
+
+        mock_client_instance = AsyncMock()
+        mock_client_instance.get.return_value = mock_response
+
+        with patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client:
+            mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+
+            await sync_repository.sync_by_account("h1", 1)
+
+        # ПРОВЕРКА: ожидаем ровно 3 вызова
+        assert mock_db_session.execute.await_count == 3
+
+        # Проверяем, что последний вызов был UPDATE
+        last_call = mock_db_session.execute.await_args_list[-1]
+        # Приводим statement к строке и ищем UPDATE
+        statement_str = str(last_call.args[0])
+        assert "UPDATE" in statement_str.upper() or "update" in statement_str.lower()
