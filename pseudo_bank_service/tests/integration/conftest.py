@@ -1,4 +1,3 @@
-# tests/integration/conftest.py
 import asyncio
 import os
 import sys
