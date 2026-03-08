@@ -1,4 +1,3 @@
-import asyncio
 import os
 import sys
 
@@ -25,13 +24,6 @@ from app.main import app
 from app.models import Transaction_Base
 
 # --- Фикстуры для БД ---
-
-@pytest.fixture(scope="session")
-def event_loop():
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
 
 @pytest_asyncio.fixture(scope="function")
 async def db_engine():
