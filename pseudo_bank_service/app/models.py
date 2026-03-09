@@ -1,8 +1,6 @@
-from enum import Enum
 import uuid
 from sqlalchemy import Column, Integer, DECIMAL, String, DateTime, ForeignKey, UUID, func
 from sqlalchemy.orm import DeclarativeBase, relationship
-from sqlalchemy import Enum as SAEnum
 
 
 class Transaction_Base(DeclarativeBase):

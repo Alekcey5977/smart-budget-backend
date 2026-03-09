@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from app.database import AsyncSessionLocal, create_tables
-from app.models import *
+from app.models import *  # noqa: F403
 from app.repository.sync_repository import SyncRepository
 from app.routers import sync, transactions
 from apscheduler.schedulers.asyncio import AsyncIOScheduler

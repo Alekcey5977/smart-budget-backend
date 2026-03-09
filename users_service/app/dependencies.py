@@ -1,5 +1,5 @@
 import httpx
-from fastapi import Depends, HTTPException, Header, Request
+from fastapi import HTTPException, Header, Request
 import os
 from typing import Dict, Any, Optional
 from jose import JWTError, jwt
@@ -21,10 +21,10 @@ async def get_current_user(
     # Приоритет: Header > Query параметр
     if authorization and authorization.startswith("Bearer "):
         token_value = authorization.split(" ")[1]
-        print(f"🔑 Using token from Authorization header")
+        print("🔑 Using token from Authorization header")
     elif token:
         token_value = token
-        print(f"🔑 Using token from query parameter")
+        print("🔑 Using token from query parameter")
     else:
         raise HTTPException(
             status_code=401,

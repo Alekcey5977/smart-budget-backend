@@ -80,7 +80,7 @@ class Image(Base):
             'ix_images_unique_user_avatar',
             'entity_type', 'entity_id',
             unique=True,
-            postgresql_where=(entity_type == EntityType.USER_AVATAR) & (is_default == False)
+            postgresql_where=(entity_type == EntityType.USER_AVATAR) & (is_default.is_(False))
         ),
     )
 

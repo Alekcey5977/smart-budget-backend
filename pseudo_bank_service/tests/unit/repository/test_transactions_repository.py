@@ -15,7 +15,7 @@ class TestTransactionRepositoryCRUD:
     async def test_create_category_success(self, transaction_repository, mock_db_session, sample_category_create):
         """Тест успешного создания категории"""
 
-        result = await transaction_repository.create_category(sample_category_create)
+        await transaction_repository.create_category(sample_category_create)
 
         # Проверяем, что add был вызван
         mock_db_session.add.assert_called_once()

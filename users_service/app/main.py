@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from app.database import create_tables, shutdown
-from app.models import *
+from app.models import *  # noqa: F403
 from app.routers import users
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

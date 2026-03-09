@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 

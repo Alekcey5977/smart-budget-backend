@@ -1,5 +1,4 @@
 import logging
-import asyncio
 import os
 import redis.asyncio as redis
 from redis.exceptions import ConnectionError, TimeoutError, ResponseError
