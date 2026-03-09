@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
-from users_service.app.models import User
-from users_service.app.schemas import UserCreate, UserUpdate
+from app.models import User
+from app.schemas import UserCreate, UserUpdate
 
 
 class UserRepository:
