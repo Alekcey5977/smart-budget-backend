@@ -5,13 +5,11 @@
 httpx.AsyncClient мокается на уровне роутера для register/login/refresh/logout.
 Для /auth/me тестируется зависимость get_current_user напрямую (без переопределения).
 """
-import pytest
 from unittest.mock import AsyncMock, patch
 
 from tests.conftest import (
     make_mock_http_response,
     make_access_token,
-    TEST_SECRET,
 )
 
 VALID_REGISTER_BODY = {
@@ -147,9 +145,8 @@ class TestRefresh:
             MockClient.return_value.__aenter__.return_value = mock_http
             mock_http.post.return_value = make_mock_http_response(200, json_data=upstream_data)
 
-            response = await client_no_auth.post(
-                "/auth/refresh", cookies={"refresh_token": "some-refresh-token"}
-            )
+            client_no_auth.cookies.set("refresh_token", "some-refresh-token")
+            response = await client_no_auth.post("/auth/refresh")
 
         assert response.status_code == 200
         assert response.json()["access_token"] == "new.token"

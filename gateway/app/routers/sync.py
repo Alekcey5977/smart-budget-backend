@@ -2,7 +2,6 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, Request
 import httpx
 from app.dependencies import get_current_user
-from typing import Dict
 
 router = APIRouter(prefix="/sync", tags=["sync"])
 

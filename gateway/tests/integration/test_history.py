@@ -4,7 +4,6 @@
 Все эндпоинты требуют JWT — get_current_user переопределяется через фикстуру `client`.
 Downstream history-service мокается через patch("app.routers.history.httpx.AsyncClient").
 """
-import pytest
 from unittest.mock import AsyncMock, patch
 
 from tests.conftest import make_mock_http_response, USER_ID
