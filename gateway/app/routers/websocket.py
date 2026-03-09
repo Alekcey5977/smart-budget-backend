@@ -2,7 +2,7 @@ import os
 import asyncio
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from websockets.client import connect as ws_connect
+from websockets import connect as ws_connect
 from websockets.exceptions import ConnectionClosed
 
 from app.dependencies import verify_websocket_token

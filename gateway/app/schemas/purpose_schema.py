@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
@@ -7,6 +7,14 @@ from typing import Self
 
 class PurposeCreate(BaseModel):
     """Схема для создания цели"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "title": "Отпуск в Турции",
+            "deadline": "2026-07-01T00:00:00",
+            "total_amount": 100000.00
+        }
+    })
+
     title: str = Field(..., min_length=1, max_length=200, description="Название цели")
     deadline: datetime = Field(..., description="Дедлайн достижения цели")
     total_amount: Decimal = Field(..., gt=0, description="Целевая сумма (должна быть больше 0)")
@@ -19,18 +27,16 @@ class PurposeCreate(BaseModel):
             raise ValueError('Дедлайн должен быть в будущем')
         return v
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "title": "Отпуск в Турции",
-                "deadline": "2026-07-01T00:00:00",
-                "total_amount": 100000.00
-            }
-        }
-
 
 class PurposeUpdate(BaseModel):
     """Схема для обновления цели"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "title": "Отпуск в Греции",
+            "amount": 25000.00
+        }
+    })
+
     title: str | None = Field(None, min_length=1, max_length=200, description="Новое название цели")
     deadline: datetime | None = Field(None, description="Новый дедлайн")
     amount: Decimal | None = Field(None, ge=0, description="Новая накопленная сумма")
@@ -52,17 +58,22 @@ class PurposeUpdate(BaseModel):
                 raise ValueError('Накопленная сумма не может превышать целевую сумму')
         return self
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "title": "Отпуск в Греции",
-                "amount": 25000.00
-            }
-        }
-
 
 class PurposeResponse(BaseModel):
     """Схема ответа с данными цели"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "user_id": 1,
+            "title": "Отпуск в Турции",
+            "deadline": "2026-07-01T00:00:00",
+            "amount": 15000.00,
+            "total_amount": 100000.00,
+            "created_at": "2026-01-15T10:30:00",
+            "updated_at": "2026-01-20T14:20:00"
+        }
+    })
+
     id: UUID = Field(..., description="UUID цели")
     user_id: int = Field(..., description="ID пользователя")
     title: str = Field(..., description="Название цели")
@@ -71,17 +82,3 @@ class PurposeResponse(BaseModel):
     total_amount: Decimal = Field(..., description="Целевая сумма")
     created_at: datetime = Field(..., description="Дата создания")
     updated_at: datetime | None = Field(None, description="Дата последнего обновления")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "550e8400-e29b-41d4-a716-446655440000",
-                "user_id": 1,
-                "title": "Отпуск в Турции",
-                "deadline": "2026-07-01T00:00:00",
-                "amount": 15000.00,
-                "total_amount": 100000.00,
-                "created_at": "2026-01-15T10:30:00",
-                "updated_at": "2026-01-20T14:20:00"
-            }
-        }
