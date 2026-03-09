@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 import httpx
 import os
-from typing import List
 from app.dependencies import get_current_user
 
 router = APIRouter(
