@@ -11,9 +11,9 @@ SERVICE_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
 
-from app.main import app
-from app.repository.transactions_repository import TransactionRepository
-from app.schemas import BankAccountCreate, BankCreate, CategoryCreate, TransactionCreate
+from app.main import app  # noqa: E402
+from app.repository.transactions_repository import TransactionRepository  # noqa: E402
+from app.schemas import BankAccountCreate, BankCreate, CategoryCreate, TransactionCreate  # noqa: E402
 
 # --- Фикстуры данных ---
 

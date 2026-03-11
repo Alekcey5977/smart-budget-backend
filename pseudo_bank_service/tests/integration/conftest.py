@@ -1,7 +1,6 @@
 import os
 import sys
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
@@ -19,9 +18,9 @@ SERVICE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 if SERVICE_ROOT not in sys.path:
     sys.path.insert(0, SERVICE_ROOT)
 
-from app.database import get_db
-from app.main import app
-from app.models import Transaction_Base
+from app.database import get_db  # noqa: E402
+from app.main import app  # noqa: E402
+from app.models import Transaction_Base  # noqa: E402
 
 # --- Фикстуры для БД ---
 

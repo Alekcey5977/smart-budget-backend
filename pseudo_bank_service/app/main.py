@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_tables, shutdown
-from app.models import *
+from app.models import *  # noqa: F403
 from contextlib import asynccontextmanager
 from app.routers import pseudo_bank
 import uvicorn

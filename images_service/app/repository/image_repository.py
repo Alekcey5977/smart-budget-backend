@@ -29,7 +29,7 @@ class ImageRepository:
             select(Image).where(
                 and_(
                     Image.entity_type == EntityType.USER_AVATAR,
-                    Image.is_default == True
+                    Image.is_default.is_(True)
                 )
             ).order_by(Image.created_at)
         )
@@ -46,7 +46,7 @@ class ImageRepository:
                 and_(
                     Image.entity_type == EntityType.USER_AVATAR,
                     Image.entity_id == str(user_id),
-                    Image.is_default == False
+                    Image.is_default.is_(False)
                 )
             )
         )

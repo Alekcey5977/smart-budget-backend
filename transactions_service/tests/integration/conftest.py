@@ -3,7 +3,6 @@ import pathlib
 import sys
 import uuid
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import String, TypeDecorator
@@ -28,7 +27,7 @@ class UniversalUUID(TypeDecorator):
     def process_result_value(self, value, dialect):
         return value
 
-import sqlalchemy as sa
+import sqlalchemy as sa  # noqa: E402
 
 sa.UUID = UniversalUUID
 
@@ -36,9 +35,9 @@ sa.UUID = UniversalUUID
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
 
-from app.database import Transaction_Base, get_db
-from app.dependencies import get_user_id_from_header
-from app.main import app
+from app.database import Transaction_Base, get_db  # noqa: E402
+from app.dependencies import get_user_id_from_header  # noqa: E402
+from app.main import app  # noqa: E402
 
 # Создаем асинхронный engine для SQLite
 engine = create_async_engine(

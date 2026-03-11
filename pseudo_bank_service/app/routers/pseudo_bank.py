@@ -1,10 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.orm import selectinload
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.models import Transaction, Bank, Merchant, Category, MCC_Category
 from app.schemas import (
     Validate_Bank_Account, CategoryCreate, MCCCategoryCreate,
     MerchantCreate, BankCreate, BankAccountCreate, TransactionCreate

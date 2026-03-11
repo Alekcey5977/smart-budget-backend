@@ -2,8 +2,8 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from app.database import create_tables, shutdown
-from app.models import *
-from app.routers import users
+from app.models import *  # noqa: F403
+from app.routers import bank_account, users
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -26,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(users.router)
+app.include_router(bank_account.router, prefix="/users")
 
 
 @app.get("/health")
