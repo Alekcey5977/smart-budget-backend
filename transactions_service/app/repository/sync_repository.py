@@ -74,11 +74,15 @@ class SyncRepository:
             .on_conflict_do_update(
                 index_elements=["bank_account_hash"],
                 set_=dict(
+                    user_id=excluded.user_id,
                     bank_account_name=excluded.bank_account_name,
                     bank_id=excluded.bank_id,
                     currency=excluded.currency,
                     balance=excluded.balance,
-                    updated_at=excluded.updated_at
+                    updated_at=excluded.updated_at,
+                    # Сбрасываем last_synced_at при смене владельца,
+                    # чтобы следующий sync забрал всю историю заново
+                    last_synced_at=None,
                 )
             )
         )
@@ -89,8 +93,16 @@ class SyncRepository:
         """Добавление транзакций"""
         if not transactions:
             return 0
-        stmt = insert(Transaction).values(
-            transactions).on_conflict_do_nothing(index_elements=["id"])
+        excluded = insert(Transaction).excluded
+        stmt = (
+            insert(Transaction)
+            .values(transactions)
+            .on_conflict_do_update(
+                index_elements=["id"],
+                # При смене владельца счёта транзакции переходят новому пользователю
+                set_=dict(user_id=excluded.user_id)
+            )
+        )
         res = await self.db.execute(stmt)
         return res.rowcount
     
