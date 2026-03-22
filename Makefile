@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db
+.PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e
 
 help:
 	@echo "Smart Budget Backend - Make Commands"
@@ -17,6 +17,11 @@ help:
 	@echo "  make generate-test-data  - Generate test data files"
 	@echo "  make load-test-data      - Load data into pseudo bank"
 	@echo "  make load-test-images    - Load images (avatars, icons)"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test              - Run unit + integration tests for all services"
+	@echo "  make test-unit         - Run only unit tests for all services"
+	@echo "  make test-e2e          - Run E2E tests (requires: make start && make load-test-data)"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean             - Stop services and remove volumes"
@@ -121,6 +126,53 @@ clean:
 	else \
 		echo "Cleanup cancelled"; \
 	fi
+
+test:
+	@echo "Running unit + integration tests for all services..."
+	@echo ""
+	@failed=0; \
+	for service in gateway users_service transactions_service purposes_service notification_service history_service images_service pseudo_bank_service; do \
+		echo "--- $$service ---"; \
+		cd $$service && python -m pytest tests/ -q --tb=short 2>&1; \
+		if [ $$? -ne 0 ]; then failed=1; fi; \
+		cd ..; \
+	done; \
+	echo ""; \
+	if [ $$failed -eq 0 ]; then \
+		echo "All tests passed!"; \
+	else \
+		echo "Some tests failed!"; \
+		exit 1; \
+	fi
+
+test-unit:
+	@echo "Running unit tests for all services..."
+	@echo ""
+	@failed=0; \
+	for service in gateway users_service transactions_service purposes_service notification_service history_service images_service; do \
+		echo "--- $$service ---"; \
+		cd $$service && python -m pytest tests/unit/ -q --tb=short 2>&1; \
+		if [ $$? -ne 0 ]; then failed=1; fi; \
+		cd ..; \
+	done; \
+	echo "--- pseudo_bank_service ---"; \
+	cd pseudo_bank_service && python -m pytest tests/ -q --tb=short 2>&1; \
+	if [ $$? -ne 0 ]; then failed=1; fi; \
+	cd ..; \
+	echo ""; \
+	if [ $$failed -eq 0 ]; then \
+		echo "All unit tests passed!"; \
+	else \
+		echo "Some unit tests failed!"; \
+		exit 1; \
+	fi
+
+test-e2e:
+	@echo "Running E2E tests..."
+	@echo "Requires: make start && make load-test-data"
+	@echo ""
+	python -m pytest e2e_tests/ -v --tb=short
+	@echo ""
 
 reset-db:
 	@echo "=============================================="
