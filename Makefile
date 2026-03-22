@@ -1,4 +1,7 @@
-.PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e
+.PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop
+
+TEST_PROJECT = smartbudget-test
+TEST_COMPOSE = docker-compose -p $(TEST_PROJECT) --env-file .env.test
 
 help:
 	@echo "Smart Budget Backend - Make Commands"
@@ -21,7 +24,9 @@ help:
 	@echo "Testing:"
 	@echo "  make test              - Run unit + integration tests for all services"
 	@echo "  make test-unit         - Run only unit tests for all services"
-	@echo "  make test-e2e          - Run E2E tests (requires: make start && make load-test-data)"
+	@echo "  make test-e2e-start    - Start isolated test stack (separate DBs, ports 18000+)"
+	@echo "  make test-e2e          - Run E2E tests against test stack (port 18000)"
+	@echo "  make test-e2e-stop     - Stop and remove test stack (deletes test data)"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean             - Stop services and remove volumes"
@@ -167,11 +172,44 @@ test-unit:
 		exit 1; \
 	fi
 
-test-e2e:
-	@echo "Running E2E tests..."
-	@echo "Requires: make start && make load-test-data"
+test-e2e-start:
+	@echo "Starting isolated E2E test stack..."
+	@echo "  Gateway:      http://localhost:18000"
+	@echo "  Pseudo Bank:  http://localhost:18004"
 	@echo ""
-	python -m pytest e2e_tests/ -v --tb=short
+	$(TEST_COMPOSE) up -d
+	@echo ""
+	@echo "Waiting for services to be ready..."
+	@echo "Polling pseudo-bank at http://localhost:18004 ..."
+	@for i in $$(seq 1 30); do \
+		if curl -sf http://localhost:18004/health > /dev/null 2>&1; then \
+			echo "Pseudo-bank is ready!"; \
+			break; \
+		fi; \
+		echo "  waiting... ($$i/30)"; \
+		sleep 2; \
+	done
+	@echo ""
+	@echo "Loading test data into pseudo bank..."
+	cd testData && python load_pseudo_bank_data.py http://localhost:18004
+	@echo ""
+	@echo "Loading test images..."
+	$(TEST_COMPOSE) exec -w /app images-service python /testData/load_test_images.py
+	@echo ""
+	@echo "Test stack ready! Run: make test-e2e"
+	@echo ""
+
+test-e2e-stop:
+	@echo "Stopping and removing E2E test stack..."
+	$(TEST_COMPOSE) down -v
+	@echo "Test stack removed (all test data deleted)!"
+	@echo ""
+
+test-e2e:
+	@echo "Running E2E tests against isolated test stack..."
+	@echo "Requires: make test-e2e-start"
+	@echo ""
+	GATEWAY_URL=http://localhost:18000 python -m pytest e2e_tests/ -v --tb=short
 	@echo ""
 
 reset-db:
