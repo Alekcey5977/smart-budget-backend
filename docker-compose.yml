@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${USERS_DB_PASSWORD}
       POSTGRES_DB: ${USERS_DB_NAME}
     ports:
-      - "5433:5432"
+      - "${USERS_DB_HOST_PORT:-5433}:5432"
     volumes:
       - users-db-data:/var/lib/postgresql/data
 
@@ -20,7 +20,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${USERS_SERVICE_PORT}:${USERS_SERVICE_PORT}"
+      - "${USERS_SERVICE_HOST_PORT:-8001}:${USERS_SERVICE_PORT}"
     depends_on:
       - users-db
       - redis
@@ -30,6 +30,7 @@ services:
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
+    restart: on-failure
 
   # --- Transactions Microservice ---
   transactions-db:
@@ -41,7 +42,7 @@ services:
       POSTGRES_PASSWORD: ${TRANSACTIONS_DB_PASSWORD}
       POSTGRES_DB: ${TRANSACTIONS_DB_NAME}
     ports:
-      - "5434:5432"
+      - "${TRANSACTIONS_DB_HOST_PORT:-5434}:5432"
     volumes:
       - transactions-db-data:/var/lib/postgresql/data
 
@@ -50,12 +51,13 @@ services:
     env_file:
       - .env
     ports:
-      - "${TRANSACTIONS_SERVICE_PORT}:${TRANSACTIONS_SERVICE_PORT}"
+      - "${TRANSACTIONS_SERVICE_HOST_PORT:-8002}:${TRANSACTIONS_SERVICE_PORT}"
     depends_on:
       - transactions-db
     environment:
       DATABASE_URL: ${TRANSACTIONS_DATABASE_URL}
       SERVICE_PORT: ${TRANSACTIONS_SERVICE_PORT}
+    restart: on-failure
 
   # --- Images Microservice ---
   images-db:
@@ -67,7 +69,7 @@ services:
       POSTGRES_PASSWORD: ${IMAGES_DB_PASSWORD}
       POSTGRES_DB: ${IMAGES_DB_NAME}
     ports:
-      - "5435:5432"
+      - "${IMAGES_DB_HOST_PORT:-5435}:5432"
     volumes:
       - images-db-data:/var/lib/postgresql/data
 
@@ -78,7 +80,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${IMAGES_SERVICE_PORT}:${IMAGES_SERVICE_PORT}"
+      - "${IMAGES_SERVICE_HOST_PORT:-8003}:${IMAGES_SERVICE_PORT}"
     depends_on:
       - images-db
       - redis
@@ -87,6 +89,7 @@ services:
       SERVICE_PORT: ${IMAGES_SERVICE_PORT}
     volumes:
       - ./testData:/testData
+    restart: on-failure
 
   # --- Pseudo Bank Microservice ---
   pseudo-bank-db:
@@ -98,7 +101,7 @@ services:
       POSTGRES_PASSWORD: ${PSEUDO_BANK_DB_PASSWORD}
       POSTGRES_DB: ${PSEUDO_BANK_DB_NAME}
     ports:
-      - "5436:5432"
+      - "${PSEUDO_BANK_DB_HOST_PORT:-5436}:5432"
     volumes:
       - pseudo-bank-db-data:/var/lib/postgresql/data
 
@@ -107,12 +110,13 @@ services:
     env_file:
       - .env
     ports:
-      - "${PSEUDO_BANK_SERVICE_PORT}:${PSEUDO_BANK_SERVICE_PORT}"
+      - "${PSEUDO_BANK_SERVICE_HOST_PORT:-8004}:${PSEUDO_BANK_SERVICE_PORT}"
     depends_on:
       - pseudo-bank-db
     environment:
       DATABASE_URL: ${PSEUDO_BANK_DATABASE_URL}
       SERVICE_PORT: ${PSEUDO_BANK_SERVICE_PORT}
+    restart: on-failure
 
   # --- Purposes Microservice ---
   purposes-db:
@@ -124,7 +128,7 @@ services:
       POSTGRES_PASSWORD: ${PURPOSES_DB_PASSWORD}
       POSTGRES_DB: ${PURPOSES_DB_NAME}
     ports:
-      - "5437:5432"
+      - "${PURPOSES_DB_HOST_PORT:-5437}:5432"
     volumes:
       - purposes-db-data:/var/lib/postgresql/data
 
@@ -135,7 +139,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${PURPOSES_SERVICE_PORT}:${PURPOSES_SERVICE_PORT}"
+      - "${PURPOSES_SERVICE_HOST_PORT:-8005}:${PURPOSES_SERVICE_PORT}"
     depends_on:
       - purposes-db
       - redis
@@ -143,6 +147,7 @@ services:
       DATABASE_URL: ${PURPOSES_DATABASE_URL}
       SERVICE_PORT: ${PURPOSES_SERVICE_PORT}
       REDIS_URL: ${REDIS_URL}
+    restart: on-failure
 
   # --- Notification Microservice ---
   notification-db:
@@ -154,7 +159,7 @@ services:
       POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
       POSTGRES_DB: ${NOTIFICATION_DB_NAME}
     ports:
-      - "5438:5432"
+      - "${NOTIFICATION_DB_HOST_PORT:-5438}:5432"
     volumes:
       - notification-db-data:/var/lib/postgresql/data
 
@@ -165,7 +170,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${NOTIFICATION_SERVICE_PORT}:${NOTIFICATION_SERVICE_PORT}"
+      - "${NOTIFICATION_SERVICE_HOST_PORT:-8006}:${NOTIFICATION_SERVICE_PORT}"
     depends_on:
       - notification-db
       - redis
@@ -174,6 +179,7 @@ services:
       SERVICE_PORT: ${NOTIFICATION_SERVICE_PORT}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
+    restart: on-failure
 
   # --- History Microservice ---
   history-db:
@@ -185,7 +191,7 @@ services:
       POSTGRES_PASSWORD: ${HISTORY_DB_PASSWORD}
       POSTGRES_DB: ${HISTORY_DB_NAME}
     ports:
-      - "5439:5432"
+      - "${HISTORY_DB_HOST_PORT:-5439}:5432"
     volumes:
       - history-db-data:/var/lib/postgresql/data
 
@@ -196,7 +202,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${HISTORY_SERVICE_PORT}:${HISTORY_SERVICE_PORT}"
+      - "${HISTORY_SERVICE_HOST_PORT:-8007}:${HISTORY_SERVICE_PORT}"
     depends_on:
       - history-db
       - redis
@@ -205,6 +211,7 @@ services:
       SERVICE_PORT: ${HISTORY_SERVICE_PORT}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
+    restart: on-failure
 
   # --- API Gateway ---
   gateway:
@@ -212,7 +219,7 @@ services:
     env_file:
       - .env
     ports:
-      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
+      - "${GATEWAY_HOST_PORT:-8000}:${GATEWAY_PORT}"
     depends_on:
       - users-service
       - transactions-service
@@ -231,13 +238,14 @@ services:
       HISTORY_SERVICE_URL: ${HISTORY_SERVICE_URL}
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
+    restart: on-failure
 
 
 # --- Redis ---
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_HOST_PORT:-6379}:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
