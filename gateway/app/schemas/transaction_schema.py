@@ -68,3 +68,8 @@ class CategoryResponse(BaseModel):
     """Схема ответа категории"""
     id: int
     name: str
+
+
+class UpdateTransactionCategoryRequest(BaseModel):
+    """Схема запроса изменения категории транзакции"""
+    category_id: int = Field(..., gt=0, description="ID новой категории")

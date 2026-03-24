@@ -182,6 +182,115 @@ class TestGetCategories:
         assert response.json() == []
 
 
+class TestUpdateTransactionCategory:
+    """Тесты для изменения категории транзакции"""
+
+    @pytest.fixture
+    def mock_db_session(self):
+        return AsyncMock()
+
+    @pytest.fixture
+    def client(self, mock_db_session):
+        test_app = FastAPI()
+        test_app.include_router(transactions.router)
+        test_app.dependency_overrides[get_db] = lambda: mock_db_session
+        test_app.dependency_overrides[get_user_id_from_header] = lambda: 123
+        return TestClient(test_app)
+
+    @pytest.fixture
+    def sample_transaction(self):
+        tx_id = uuid.uuid4()
+        tx = Transaction(
+            id=tx_id, user_id=123, category_id=2,
+            bank_account_id=1, amount=100.50,
+            created_at=datetime.now(), type="expense"
+        )
+        tx.category = Category(id=2, name="Transport")
+        tx.merchant = None
+        return tx
+
+    @pytest.mark.asyncio
+    async def test_update_category_success(self, client, mock_db_session, sample_transaction):
+        """Тест: успешное изменение категории"""
+        mock_repo = MagicMock()
+        mock_repo.get_category_by_id = AsyncMock(return_value=Category(id=2, name="Transport"))
+        mock_repo.update_transaction_category = AsyncMock(return_value=sample_transaction)
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
+            response = client.patch(
+                f"/transactions/{sample_transaction.id}/category",
+                json={"category_id": 2}
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["category_id"] == 2
+        assert data["category_name"] == "Transport"
+
+    @pytest.mark.asyncio
+    async def test_update_category_transaction_not_found(self, client, mock_db_session):
+        """Тест: транзакция не найдена → 404"""
+        mock_repo = MagicMock()
+        mock_repo.get_category_by_id = AsyncMock(return_value=Category(id=1, name="Food"))
+        mock_repo.update_transaction_category = AsyncMock(return_value=None)
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
+            response = client.patch(
+                f"/transactions/{uuid.uuid4()}/category",
+                json={"category_id": 1}
+            )
+
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_update_category_category_not_found(self, client, mock_db_session):
+        """Тест: категория не существует → 404"""
+        mock_repo = MagicMock()
+        mock_repo.get_category_by_id = AsyncMock(return_value=None)
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
+            response = client.patch(
+                f"/transactions/{uuid.uuid4()}/category",
+                json={"category_id": 999}
+            )
+
+        assert response.status_code == 404
+        mock_repo.update_transaction_category.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_update_category_invalid_category_id(self, client, mock_db_session):
+        """Тест: category_id <= 0 → 422"""
+        response = client.patch(
+            f"/transactions/{uuid.uuid4()}/category",
+            json={"category_id": 0}
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_update_category_missing_body(self, client, mock_db_session):
+        """Тест: отсутствует category_id → 422"""
+        response = client.patch(
+            f"/transactions/{uuid.uuid4()}/category",
+            json={}
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_update_category_internal_error(self, client, mock_db_session):
+        """Тест: неожиданная ошибка → 500"""
+        mock_repo = MagicMock()
+        mock_repo.get_category_by_id = AsyncMock(side_effect=Exception("DB error"))
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
+            response = client.patch(
+                f"/transactions/{uuid.uuid4()}/category",
+                json={"category_id": 1}
+            )
+
+        assert response.status_code == 500
+        assert "Internal server error" in response.json()["detail"]
+
+
 class TestValidation:
     """Тесты валидации данных запроса"""
 

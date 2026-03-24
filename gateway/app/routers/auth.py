@@ -60,7 +60,7 @@ async def register(user_data: RegisterRequest):
     ```json
     {
         "email": "user@example.com",
-        "password": "securepassword123",
+        "password": "StrongPass1!",
         "first_name": "Иван",
         "last_name": "Иванов",
         "middle_name": "Иванович"
@@ -71,7 +71,7 @@ async def register(user_data: RegisterRequest):
     ```json
     {
         "email": "user@example.com",
-        "password": "securepassword123",
+        "password": "StrongPass1!",
         "first_name": "Иван",
         "last_name": "Иванов"
     }

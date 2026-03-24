@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 import httpx
 from app.dependencies import get_current_user
-from app.schemas.transaction_schema import CategoryResponse, TransactionFilterRequest, TransactionResponse
+from app.schemas.transaction_schema import CategoryResponse, TransactionFilterRequest, TransactionResponse, UpdateTransactionCategoryRequest
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(
@@ -131,6 +131,76 @@ async def get_transactions(
                 status_code=response.status_code,
                 detail=error_detail
             )
+
+        except httpx.ConnectError:
+            raise HTTPException(503, "Transaction service is unavailable")
+        except httpx.TimeoutException:
+            raise HTTPException(504, "Transactions service timeout")
+
+
+@router.patch(
+    "/{transaction_id}/category",
+    response_model=TransactionResponse,
+    summary="Изменить категорию транзакции",
+    description="""
+Изменить категорию для конкретной транзакции пользователя.
+
+**Требует авторизации:** JWT токен в заголовке Authorization.
+
+Можно изменить только свою транзакцию. Указанная категория должна существовать.
+""",
+    responses={
+        200: {
+            "description": "Транзакция с обновлённой категорией",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "user_id": 1,
+                        "category_id": 3,
+                        "category_name": "Транспорт",
+                        "amount": 250.00,
+                        "created_at": "2024-01-15T14:30:00",
+                        "type": "expense",
+                        "description": "Такси",
+                        "merchant_id": None,
+                        "merchant_name": None
+                    }
+                }
+            }
+        },
+        401: {"description": "Не авторизован"},
+        404: {"description": "Транзакция или категория не найдена"},
+        503: {"description": "Сервис транзакций недоступен"},
+        504: {"description": "Таймаут сервиса транзакций"}
+    }
+)
+async def update_transaction_category(
+    transaction_id: str,
+    body: UpdateTransactionCategoryRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Изменить категорию транзакции.
+
+    Защищённый эндпоинт, требует JWT токен.
+    """
+    user_id = current_user["user_id"]
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.patch(
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/{transaction_id}/category",
+                headers={"X-User-ID": str(user_id)},
+                json=body.model_dump(),
+                timeout=10.0
+            )
+
+            if response.status_code == 200:
+                return response.json()
+
+            error_detail = response.json().get("detail", "Failed to update transaction category")
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Transaction service is unavailable")

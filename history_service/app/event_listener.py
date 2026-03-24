@@ -96,6 +96,7 @@ class EventListener:
         "purpose.updated": "_handle_purpose_updated",
         "bank_account.added": "_handle_bank_account_added",
         "bank_account.deleted": "_handle_bank_account_deleted",
+        "transaction.category.updated": "_handle_transaction_category_updated",
     }
 
     async def _send_history_websocket(self, user_id: int, entry_data: dict):
@@ -252,6 +253,22 @@ class EventListener:
 
         title = "Счёт добавлен"
         body = f"Банковский счёт {bank_name} добавлен"
+        logger.info(f"📝 История для пользователя {user_id}: {title}")
+
+        await self._create_and_broadcast_entry(user_id, title, body)
+
+    async def _handle_transaction_category_updated(self, event: DomainEvent):
+        """Обработка события изменения категории транзакции"""
+        payload = event.payload
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+
+        old_category = payload.get("old_category_name", "старая категория")
+        new_category = payload.get("new_category_name", "новая категория")
+
+        title = "Категория транзакции изменена"
+        body = f"Категория изменена: «{old_category}» → «{new_category}»"
         logger.info(f"📝 История для пользователя {user_id}: {title}")
 
         await self._create_and_broadcast_entry(user_id, title, body)

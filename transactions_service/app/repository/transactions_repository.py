@@ -116,6 +116,28 @@ class TransactionRepository:
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
+    async def update_transaction_category(
+        self, transaction_id: str, user_id: int, category_id: int
+    ) -> Optional[Transaction]:
+        """
+        Изменить категорию транзакции.
+
+        Args:
+            transaction_id: ID транзакции
+            user_id: ID пользователя (для проверки владельца)
+            category_id: ID новой категории
+
+        Returns:
+            Обновлённая транзакция или None если не найдена
+        """
+        transaction = await self.get_transaction_by_id(transaction_id, user_id)
+        if transaction is None:
+            return None
+        transaction.category_id = category_id
+        await self.db.flush()
+        self.db.expire(transaction)
+        return await self.get_transaction_by_id(transaction_id, user_id)
+
     async def get_category_by_id(self, category_id: int) -> Optional[Category]:
         """
         Получение категории по ID.

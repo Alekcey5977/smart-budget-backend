@@ -5,8 +5,11 @@ from datetime import datetime
 from unittest.mock import AsyncMock
 
 SERVICE_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = SERVICE_ROOT.parent
 if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost/test"
 os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
@@ -15,6 +18,14 @@ from uuid import uuid4  # noqa: E402
 
 import pytest  # noqa: E402
 from app.models import Category, Merchant, Transaction  # noqa: E402
+from unittest.mock import patch  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def mock_event_publisher():
+    with patch("app.routers.transactions.EventPublisher") as mock:
+        mock.return_value.publish = AsyncMock()
+        yield mock
 
 
 @pytest.fixture

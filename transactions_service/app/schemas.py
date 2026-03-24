@@ -99,6 +99,11 @@ class MerchantResponse(BaseModel):
 
 
 
+class UpdateTransactionCategoryRequest(BaseModel):
+    """Схема запроса изменения категории транзакции"""
+    category_id: int = Field(..., gt=0, description="ID новой категории")
+
+
 class SyncTriggerRequest(BaseModel):
     bank_account_hash: str
     user_id: int
