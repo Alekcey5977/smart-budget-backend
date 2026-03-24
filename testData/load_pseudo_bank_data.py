@@ -2,9 +2,10 @@
 Скрипт для загрузки тестовых данных в псевдо банк через API.
 """
 import json
-import requests
 import sys
 import time
+
+import requests
 
 # URL псевдо банка (можно переопределить через аргумент командной строки)
 PSEUDO_BANK_URL = "http://localhost:8004"
@@ -64,7 +65,7 @@ def load_test_data(base_url: str):
 
         except requests.exceptions.ConnectionError:
             print(f"  [ERROR] Cannot connect to {base_url}")
-            print(f"          Make sure the pseudo-bank service is running")
+            print("          Make sure the pseudo-bank service is running")
             return False
         except requests.exceptions.Timeout:
             print(f"  [ERROR] Request timeout for {name}")

@@ -5,8 +5,7 @@
 """
 
 import json
-import base64
-from typing import List, Dict
+from typing import Dict, List
 
 
 def create_avatar_svg(color: str, letter: str) -> str:
@@ -149,9 +148,9 @@ def main():
     print(f"[OK] Created {len(test_data)} records")
     print(f"[OK] File saved: {output_file}")
     print("\nDistribution by type:")
-    print(f"  - Avatars: 10")
-    print(f"  - Categories: 20")
-    print(f"  - Merchants: 20")
+    print("  - Avatars: 10")
+    print("  - Categories: 20")
+    print("  - Merchants: 20")
 
 
 if __name__ == "__main__":

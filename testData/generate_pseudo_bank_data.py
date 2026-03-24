@@ -2,12 +2,11 @@
 Скрипт для генерации тестовых данных для псевдо банка.
 Создает данные с правильными хешами счетов.
 """
-import json
-import hmac
 import hashlib
-from datetime import datetime, timedelta
-import random
+import hmac
+import json
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
 
 # Загружаем .env файл

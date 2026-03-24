@@ -12,8 +12,8 @@ import sys
 # Внутри контейнера модули находятся в /app
 sys.path.insert(0, '/app')
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from app.models import Base, Image, EntityType
+from app.models import Base, EntityType, Image
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 async def load_test_data(database_url: str, json_path: str):
@@ -24,7 +24,7 @@ async def load_test_data(database_url: str, json_path: str):
         database_url: URL подключения к БД
         json_path: Путь к JSON файлу с данными
     """
-    print(f"Connecting to database...")
+    print("Connecting to database...")
 
     # Создание engine и session maker
     engine = create_async_engine(database_url, echo=False)
@@ -75,9 +75,9 @@ async def load_test_data(database_url: str, json_path: str):
 
             print(f"\n[SUCCESS] Inserted {inserted_count} images into database")
             print("\nDistribution:")
-            print(f"  - Avatars: 10 (default presets)")
-            print(f"  - Categories: 20 (with icons)")
-            print(f"  - Merchants: 20 (with logos)")
+            print("  - Avatars: 10 (default presets)")
+            print("  - Categories: 20 (with icons)")
+            print("  - Merchants: 20 (with logos)")
 
         except Exception as e:
             await session.rollback()
