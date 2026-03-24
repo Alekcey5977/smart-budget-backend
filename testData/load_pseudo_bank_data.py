@@ -93,7 +93,7 @@ def load_test_data(base_url: str):
                     account_num = line.split("`")[1]
                     print(f"    Number: {account_num}")
                     in_account = False
-    except:
+    except Exception:
         pass
 
     return True
