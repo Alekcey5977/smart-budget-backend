@@ -1,0 +1,7 @@
+line-length = 120
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+exclude = [".venv", "__pycache__", "migrations"]
