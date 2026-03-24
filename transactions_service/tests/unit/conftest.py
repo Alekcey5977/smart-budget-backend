@@ -14,11 +14,11 @@ if str(PROJECT_ROOT) not in sys.path:
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost/test"
 os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
 
+from unittest.mock import patch  # noqa: E402
 from uuid import uuid4  # noqa: E402
 
 import pytest  # noqa: E402
 from app.models import Category, Merchant, Transaction  # noqa: E402
-from unittest.mock import patch  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
