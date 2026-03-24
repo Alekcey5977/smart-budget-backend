@@ -1,5 +1,6 @@
-from fastapi import Header, HTTPException
 from typing import Annotated
+
+from fastapi import Header, HTTPException
 
 
 async def get_user_id_from_header(

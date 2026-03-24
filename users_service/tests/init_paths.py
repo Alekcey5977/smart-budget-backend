@@ -1,5 +1,5 @@
-import sys
 import pathlib
+import sys
 
 # Вычисляем пути относительно текущего файла
 # Структура: .../smart-budget-backend/users_service/tests/init_paths.py

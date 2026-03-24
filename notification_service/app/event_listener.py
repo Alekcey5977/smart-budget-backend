@@ -1,15 +1,16 @@
-import logging
 import asyncio
-import os
-import redis.asyncio as redis
 import json
-from redis.exceptions import ConnectionError, TimeoutError, ResponseError
-from shared.event_schema import DomainEvent
+import logging
+import os
+
+import redis.asyncio as redis
 from app.database import get_db_session
 from app.repository.notification_repository import NotificationRepository
-from app.schemas import NotificationCreate
 from app.routers.websocket import active_connections
+from app.schemas import NotificationCreate
+from redis.exceptions import ConnectionError, ResponseError, TimeoutError
 
+from shared.event_schema import DomainEvent
 
 logger = logging.getLogger(__name__)
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")

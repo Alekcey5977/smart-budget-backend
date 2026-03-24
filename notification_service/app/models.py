@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import Boolean, Column, String, DateTime, UUID, Text, INTEGER, func
+
+from sqlalchemy import INTEGER, UUID, Boolean, Column, DateTime, String, Text, func
 from sqlalchemy.orm import DeclarativeBase
 
 

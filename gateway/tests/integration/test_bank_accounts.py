@@ -13,7 +13,6 @@ import httpx
 
 from tests.conftest import make_mock_http_response
 
-
 BANK_ACCOUNT_REQUEST = {
     "bank_account_number": "40817810099910004312",
     "bank_account_name": "Основная карта",

@@ -1,13 +1,14 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+import uuid
+from datetime import datetime
 from typing import Optional
+from uuid import uuid4
+
+from app.models import EntityType, Image
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
-from datetime import datetime
-from uuid import uuid4
-import uuid
-
-from app.models import Image, EntityType
 
 
 class ImageRepository:

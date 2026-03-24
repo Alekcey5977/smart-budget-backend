@@ -1,12 +1,17 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.models import Bank, Bank_Account, Category, MCC_Category, Merchant, Transaction
+from app.schemas import (
+    BankAccountCreate,
+    BankCreate,
+    CategoryCreate,
+    MCCCategoryCreate,
+    MerchantCreate,
+    TransactionCreate,
+)
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from app.models import Bank_Account, Bank, Transaction, Merchant, Category, MCC_Category
-from app.schemas import (
-    CategoryCreate, MCCCategoryCreate, MerchantCreate,
-    BankCreate, BankAccountCreate, TransactionCreate
-)
+
 
 class TransactionRepository:
     def __init__(self, db: AsyncSession):

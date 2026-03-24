@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import Optional
 from uuid import uuid4
 
+from app.models import User
+from app.schemas import UserCreate, UserUpdate
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
-from app.models import User
-from app.schemas import UserCreate, UserUpdate
 
 
 class UserRepository:

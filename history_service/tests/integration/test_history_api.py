@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,6 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from app.repository.history_repository import HistoryRepository  # noqa: E402
 from app.schemas import HistoryEntryCreate  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Хелперы

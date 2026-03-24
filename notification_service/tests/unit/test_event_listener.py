@@ -1,16 +1,16 @@
 import sys
-from pathlib import Path
 from datetime import datetime
-from uuid import uuid4
+from pathlib import Path
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import pytest  # noqa: E402
-
 from app.event_listener import EventListener  # noqa: E402
+
 from shared.event_schema import DomainEvent  # noqa: E402
 
 

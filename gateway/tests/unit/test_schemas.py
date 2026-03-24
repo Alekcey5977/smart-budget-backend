@@ -3,9 +3,8 @@
 Нет HTTP и БД — только логика валидации.
 """
 import pytest
-from pydantic import ValidationError
-
 from app.schemas.authorization_schemas import RegisterRequest, UserLogin, UserUpdateRequest
+from pydantic import ValidationError
 
 VALID_PASSWORD = "StrongPass1!"
 VALID_EMAIL = "user@example.com"

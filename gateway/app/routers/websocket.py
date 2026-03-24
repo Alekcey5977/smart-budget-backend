@@ -1,12 +1,11 @@
-import os
 import asyncio
 import logging
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from websockets import connect as ws_connect
-from websockets.exceptions import ConnectionClosed
+import os
 
 from app.dependencies import verify_websocket_token
-
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from websockets import connect as ws_connect
+from websockets.exceptions import ConnectionClosed
 
 logger = logging.getLogger(__name__)
 

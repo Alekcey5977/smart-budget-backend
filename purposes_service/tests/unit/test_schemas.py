@@ -16,10 +16,8 @@ from decimal import Decimal  # noqa: E402
 from uuid import uuid4  # noqa: E402
 
 import pytest  # noqa: E402
-from pydantic import ValidationError  # noqa: E402
-
 from app.schemas import PurposeCreate, PurposeResponse, PurposeUpdate  # noqa: E402
-
+from pydantic import ValidationError  # noqa: E402
 
 # ==================== PurposeCreate ====================
 

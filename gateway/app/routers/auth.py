@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-import httpx
 import os
-from typing import Dict, Any
-from app.schemas.authorization_schemas import RegisterRequest, UserUpdateRequest, UserLogin
+from typing import Any, Dict
+
+import httpx
 from app.dependencies import get_current_user
+from app.schemas.authorization_schemas import RegisterRequest, UserLogin, UserUpdateRequest
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 router = APIRouter(
     prefix="/auth",

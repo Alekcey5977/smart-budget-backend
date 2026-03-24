@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,6 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from app.models import EntityType, Image  # noqa: E402
 from app.repository.image_repository import ImageRepository  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Хелперы

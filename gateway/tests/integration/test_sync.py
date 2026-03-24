@@ -13,7 +13,6 @@ import httpx
 
 from tests.conftest import make_mock_http_response
 
-
 ACCOUNTS_LIST = [
     {"bank_account_id": 1, "bank_account_name": "Основная карта"},
     {"bank_account_id": 2, "bank_account_name": "Накопительная"},

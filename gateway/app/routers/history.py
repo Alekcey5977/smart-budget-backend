@@ -1,12 +1,11 @@
 import os
 from typing import Any, Dict, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query
+
 import httpx
-
 from app.dependencies import get_current_user
-from app.schemas.history_schema import HistoryEntryResponse, DeleteResponse
-
+from app.schemas.history_schema import DeleteResponse, HistoryEntryResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 router = APIRouter(
     prefix="/history",

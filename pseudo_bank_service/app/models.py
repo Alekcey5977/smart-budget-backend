@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import Column, Integer, DECIMAL, String, DateTime, ForeignKey, UUID, func
+
+from sqlalchemy import DECIMAL, UUID, Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 

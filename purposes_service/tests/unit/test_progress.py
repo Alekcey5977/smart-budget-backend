@@ -5,8 +5,8 @@ Unit-тесты для логики прогресса целей (get_crossed_t
 Паттерн: тестируем каждый граничный случай отдельным тестом.
 """
 import sys
-from pathlib import Path
 from decimal import Decimal
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:

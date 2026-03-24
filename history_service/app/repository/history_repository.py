@@ -1,8 +1,9 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import delete, select
+from uuid import UUID
+
 from app.models import HistoryEntry
 from app.schemas import HistoryEntryCreate
-from uuid import UUID
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class HistoryRepository:
