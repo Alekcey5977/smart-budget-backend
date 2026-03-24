@@ -1,0 +1,894 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Продукты"
+    },
+    {
+      "id": 2,
+      "name": "Транспорт"
+    },
+    {
+      "id": 3,
+      "name": "Развлечения"
+    },
+    {
+      "id": 4,
+      "name": "Здоровье"
+    },
+    {
+      "id": 5,
+      "name": "Образование"
+    },
+    {
+      "id": 6,
+      "name": "Рестораны"
+    },
+    {
+      "id": 7,
+      "name": "Одежда"
+    },
+    {
+      "id": 8,
+      "name": "Коммунальные услуги"
+    },
+    {
+      "id": 9,
+      "name": "Связь"
+    },
+    {
+      "id": 10,
+      "name": "Путешествия"
+    },
+    {
+      "id": 11,
+      "name": "Зарплата"
+    },
+    {
+      "id": 12,
+      "name": "Подработка"
+    },
+    {
+      "id": 13,
+      "name": "Инвестиции"
+    },
+    {
+      "id": 14,
+      "name": "Подарки"
+    },
+    {
+      "id": 15,
+      "name": "Спорт"
+    }
+  ],
+  "mcc_categories": [
+    {
+      "mcc": 5411,
+      "name": "Супермаркеты",
+      "category_id": 1
+    },
+    {
+      "mcc": 5812,
+      "name": "Рестораны",
+      "category_id": 6
+    },
+    {
+      "mcc": 4121,
+      "name": "Такси",
+      "category_id": 2
+    },
+    {
+      "mcc": 5541,
+      "name": "Заправки",
+      "category_id": 2
+    },
+    {
+      "mcc": 7832,
+      "name": "Кинотеатры",
+      "category_id": 3
+    },
+    {
+      "mcc": 8011,
+      "name": "Медицина",
+      "category_id": 4
+    },
+    {
+      "mcc": 8220,
+      "name": "Университеты",
+      "category_id": 5
+    },
+    {
+      "mcc": 5651,
+      "name": "Одежда",
+      "category_id": 7
+    },
+    {
+      "mcc": 4900,
+      "name": "Коммунальные",
+      "category_id": 8
+    },
+    {
+      "mcc": 4814,
+      "name": "Мобильная связь",
+      "category_id": 9
+    },
+    {
+      "mcc": 4511,
+      "name": "Авиабилеты",
+      "category_id": 10
+    },
+    {
+      "mcc": 5941,
+      "name": "Спорттовары",
+      "category_id": 15
+    }
+  ],
+  "merchants": [
+    {
+      "id": 1,
+      "name": "Пятёрочка",
+      "inn": "5024045632",
+      "category_id": 1
+    },
+    {
+      "id": 2,
+      "name": "Магнит",
+      "inn": "2310031475",
+      "category_id": 1
+    },
+    {
+      "id": 3,
+      "name": "Перекрёсток",
+      "inn": "7703270067",
+      "category_id": 1
+    },
+    {
+      "id": 4,
+      "name": "Лента",
+      "inn": "7814148471",
+      "category_id": 1
+    },
+    {
+      "id": 5,
+      "name": "Яндекс.Такси",
+      "inn": "7704340327",
+      "category_id": 2
+    },
+    {
+      "id": 6,
+      "name": "Лукойл",
+      "inn": "7708004767",
+      "category_id": 2
+    },
+    {
+      "id": 7,
+      "name": "Газпром",
+      "inn": "7736050003",
+      "category_id": 2
+    },
+    {
+      "id": 8,
+      "name": "Макдоналдс",
+      "inn": "7704217160",
+      "category_id": 6
+    },
+    {
+      "id": 9,
+      "name": "KFC",
+      "inn": "7703270067",
+      "category_id": 6
+    },
+    {
+      "id": 10,
+      "name": "Бургер Кинг",
+      "inn": "7714617793",
+      "category_id": 6
+    },
+    {
+      "id": 11,
+      "name": "Додо Пицца",
+      "inn": "5260250585",
+      "category_id": 6
+    },
+    {
+      "id": 12,
+      "name": "Кинотеатр Синема Парк",
+      "inn": "7702045093",
+      "category_id": 3
+    },
+    {
+      "id": 13,
+      "name": "Спортмастер",
+      "inn": "7707619048",
+      "category_id": 15
+    },
+    {
+      "id": 14,
+      "name": "Decathlon",
+      "inn": "7705485928",
+      "category_id": 15
+    },
+    {
+      "id": 15,
+      "name": "H&M",
+      "inn": "7706697844",
+      "category_id": 7
+    },
+    {
+      "id": 16,
+      "name": "Zara",
+      "inn": "7704821201",
+      "category_id": 7
+    },
+    {
+      "id": 17,
+      "name": "Wildberries",
+      "inn": "7721546864",
+      "category_id": 7
+    },
+    {
+      "id": 18,
+      "name": "Ozon",
+      "inn": "7704217370",
+      "category_id": 7
+    },
+    {
+      "id": 19,
+      "name": "МТС",
+      "inn": "7740000076",
+      "category_id": 9
+    },
+    {
+      "id": 20,
+      "name": "Билайн",
+      "inn": "7713076301",
+      "category_id": 9
+    },
+    {
+      "id": 21,
+      "name": "Мегафон",
+      "inn": "7812014560",
+      "category_id": 9
+    },
+    {
+      "id": 22,
+      "name": "Аэрофлот",
+      "inn": "7712040126",
+      "category_id": 10
+    },
+    {
+      "id": 23,
+      "name": "S7 Airlines",
+      "inn": "7312012111",
+      "category_id": 10
+    },
+    {
+      "id": 24,
+      "name": "Booking.com",
+      "inn": "NL000000001",
+      "category_id": 10
+    },
+    {
+      "id": 25,
+      "name": "ООО РомашкаСофт",
+      "inn": "7701234567",
+      "category_id": 11
+    }
+  ],
+  "banks": [
+    {
+      "id": 1,
+      "name": "Сбербанк"
+    },
+    {
+      "id": 2,
+      "name": "ВТБ"
+    },
+    {
+      "id": 3,
+      "name": "Альфа-Банк"
+    },
+    {
+      "id": 4,
+      "name": "Тинькофф"
+    },
+    {
+      "id": 5,
+      "name": "Райффайзен"
+    }
+  ],
+  "bank_accounts": [
+    {
+      "id": 1,
+      "user_id": 999,
+      "bank_account_hash": "0eb1e101dd9a63977ba423f0b31ae575373940dc86e51f4719e06203e96445b0",
+      "bank_account_name": "Основная карта",
+      "bank_id": 1,
+      "currency": "RUB",
+      "balance": "125450.75"
+    },
+    {
+      "id": 2,
+      "user_id": 999,
+      "bank_account_hash": "1bc84f0f532c963ca202d0fb9a9e91a790c375dc394dd3bc90a5810f27c8e21d",
+      "bank_account_name": "Накопительная",
+      "bank_id": 4,
+      "currency": "RUB",
+      "balance": "50000.00"
+    },
+    {
+      "id": 3,
+      "user_id": 998,
+      "bank_account_hash": "ac8e103a0e8e790e2fa1841f5d2e43cb753e4882cbce4347fd87f4fcbff6c56a",
+      "bank_account_name": "Зарплатная",
+      "bank_id": 2,
+      "currency": "RUB",
+      "balance": "78230.50"
+    },
+    {
+      "id": 4,
+      "user_id": 997,
+      "bank_account_hash": "3fb96127df8c5849b51570c7c608e744e4eaa9af137c698d6b19f05500526f61",
+      "bank_account_name": "Повседневная",
+      "bank_id": 3,
+      "currency": "RUB",
+      "balance": "23100.00"
+    },
+    {
+      "id": 5,
+      "user_id": 996,
+      "bank_account_hash": "4917e2ba6bc128150b77f6f0be0e9392da492a75fd8bc4dce412592bbba0dc26",
+      "bank_account_name": "Кредитная карта",
+      "bank_id": 1,
+      "currency": "RUB",
+      "balance": "45000.00"
+    },
+    {
+      "id": 6,
+      "user_id": 996,
+      "bank_account_hash": "231eefa5d9d0bae161911b6689acefb443cf2bffe5a9ad275b9e0bc6c98a0116",
+      "bank_account_name": "Валютный счет",
+      "bank_id": 5,
+      "currency": "RUB",
+      "balance": "1500.00"
+    },
+    {
+      "id": 7,
+      "user_id": 995,
+      "bank_account_hash": "7801c7ceecf4f2d35d196d24228f5a6ab47586ce184acbeaf675ba18a6aa8bbd",
+      "bank_account_name": "Семейная карта",
+      "bank_id": 4,
+      "currency": "RUB",
+      "balance": "87500.25"
+    },
+    {
+      "id": 8,
+      "user_id": 995,
+      "bank_account_hash": "964f0c9173badd35d9f849e6058c50e827513d274823c67671d72552f060a54f",
+      "bank_account_name": "Бизнес счет",
+      "bank_id": 3,
+      "currency": "RUB",
+      "balance": "250000.00"
+    },
+    {
+      "id": 9,
+      "user_id": 994,
+      "bank_account_hash": "0f388269eccbd96b70f6a65b55807a9d7d627f19290a775af7855fb435c3b208",
+      "bank_account_name": "Детская карта",
+      "bank_id": 1,
+      "currency": "RUB",
+      "balance": "5000.00"
+    },
+    {
+      "id": 10,
+      "user_id": 994,
+      "bank_account_hash": "d08a42fa958030fc5d8e41cb6bf7f84537e9741318a3a0b8bd9cfb6f0a68cc52",
+      "bank_account_name": "Премиум карта",
+      "bank_id": 2,
+      "currency": "RUB",
+      "balance": "500000.00"
+    }
+  ],
+  "transactions": [
+    {
+      "user_id": 999,
+      "category_id": 11,
+      "bank_account_id": 1,
+      "amount": "85000.00",
+      "type": "income",
+      "description": "Зарплата за январь 2026",
+      "merchant_id": 25,
+      "created_at": "2026-01-05T10:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 1,
+      "bank_account_id": 1,
+      "amount": "2450.50",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 1,
+      "created_at": "2026-01-06T18:30:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 1,
+      "bank_account_id": 1,
+      "amount": "1850.00",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 2,
+      "created_at": "2026-01-07T12:15:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 2,
+      "bank_account_id": 1,
+      "amount": "350.00",
+      "type": "expense",
+      "description": "Поездка на такси",
+      "merchant_id": 5,
+      "created_at": "2026-01-07T20:45:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 6,
+      "bank_account_id": 1,
+      "amount": "1250.00",
+      "type": "expense",
+      "description": "Обед в ресторане",
+      "merchant_id": 8,
+      "created_at": "2026-01-08T14:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 2,
+      "bank_account_id": 1,
+      "amount": "2100.00",
+      "type": "expense",
+      "description": "Заправка автомобиля",
+      "merchant_id": 6,
+      "created_at": "2026-01-08T19:30:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 1,
+      "bank_account_id": 1,
+      "amount": "3200.75",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 3,
+      "created_at": "2026-01-09T11:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 3,
+      "bank_account_id": 1,
+      "amount": "800.00",
+      "type": "expense",
+      "description": "Билеты в кино",
+      "merchant_id": 12,
+      "created_at": "2026-01-09T19:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 6,
+      "bank_account_id": 1,
+      "amount": "2500.00",
+      "type": "expense",
+      "description": "Ужин в ресторане",
+      "merchant_id": 11,
+      "created_at": "2026-01-09T21:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 9,
+      "bank_account_id": 1,
+      "amount": "650.00",
+      "type": "expense",
+      "description": "Оплата мобильной связи",
+      "merchant_id": 19,
+      "created_at": "2026-01-10T10:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 1,
+      "bank_account_id": 1,
+      "amount": "1950.00",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 4,
+      "created_at": "2026-01-10T17:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 7,
+      "bank_account_id": 1,
+      "amount": "4500.00",
+      "type": "expense",
+      "description": "Покупка одежды",
+      "merchant_id": 15,
+      "created_at": "2026-01-11T15:30:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 2,
+      "bank_account_id": 1,
+      "amount": "450.00",
+      "type": "expense",
+      "description": "Поездка на такси",
+      "merchant_id": 5,
+      "created_at": "2026-01-11T22:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 12,
+      "bank_account_id": 1,
+      "amount": "15000.00",
+      "type": "income",
+      "description": "Фриланс проект",
+      "merchant_id": null,
+      "created_at": "2026-01-12T11:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 15,
+      "bank_account_id": 1,
+      "amount": "3500.00",
+      "type": "expense",
+      "description": "Спортивная экипировка",
+      "merchant_id": 13,
+      "created_at": "2026-01-12T13:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 11,
+      "bank_account_id": 3,
+      "amount": "95000.00",
+      "type": "income",
+      "description": "Зарплата за январь 2026",
+      "merchant_id": 25,
+      "created_at": "2026-01-05T10:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 8,
+      "bank_account_id": 3,
+      "amount": "4500.00",
+      "type": "expense",
+      "description": "Коммунальные платежи",
+      "merchant_id": null,
+      "created_at": "2026-01-06T10:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 1,
+      "bank_account_id": 3,
+      "amount": "3200.00",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 1,
+      "created_at": "2026-01-06T18:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 2,
+      "bank_account_id": 3,
+      "amount": "2500.00",
+      "type": "expense",
+      "description": "Заправка",
+      "merchant_id": 7,
+      "created_at": "2026-01-07T10:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 6,
+      "bank_account_id": 3,
+      "amount": "1800.00",
+      "type": "expense",
+      "description": "Обед",
+      "merchant_id": 9,
+      "created_at": "2026-01-07T13:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 7,
+      "bank_account_id": 3,
+      "amount": "8500.00",
+      "type": "expense",
+      "description": "Онлайн покупка одежды",
+      "merchant_id": 17,
+      "created_at": "2026-01-08T16:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 1,
+      "bank_account_id": 3,
+      "amount": "2700.00",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 2,
+      "created_at": "2026-01-09T19:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 4,
+      "bank_account_id": 3,
+      "amount": "3500.00",
+      "type": "expense",
+      "description": "Визит к врачу",
+      "merchant_id": null,
+      "created_at": "2026-01-10T11:00:00Z"
+    },
+    {
+      "user_id": 998,
+      "category_id": 9,
+      "bank_account_id": 3,
+      "amount": "800.00",
+      "type": "expense",
+      "description": "Оплата интернета",
+      "merchant_id": 20,
+      "created_at": "2026-01-10T14:00:00Z"
+    },
+    {
+      "user_id": 997,
+      "category_id": 11,
+      "bank_account_id": 4,
+      "amount": "65000.00",
+      "type": "income",
+      "description": "Зарплата за январь 2026",
+      "merchant_id": 25,
+      "created_at": "2026-01-05T10:00:00Z"
+    },
+    {
+      "user_id": 997,
+      "category_id": 1,
+      "bank_account_id": 4,
+      "amount": "1500.00",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 1,
+      "created_at": "2026-01-06T17:00:00Z"
+    },
+    {
+      "user_id": 997,
+      "category_id": 6,
+      "bank_account_id": 4,
+      "amount": "950.00",
+      "type": "expense",
+      "description": "Кофе и снеки",
+      "merchant_id": 8,
+      "created_at": "2026-01-07T12:00:00Z"
+    },
+    {
+      "user_id": 997,
+      "category_id": 2,
+      "bank_account_id": 4,
+      "amount": "300.00",
+      "type": "expense",
+      "description": "Такси",
+      "merchant_id": 5,
+      "created_at": "2026-01-07T20:00:00Z"
+    },
+    {
+      "user_id": 997,
+      "category_id": 1,
+      "bank_account_id": 4,
+      "amount": "2100.00",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 3,
+      "created_at": "2026-01-08T18:30:00Z"
+    },
+    {
+      "user_id": 997,
+      "category_id": 7,
+      "bank_account_id": 4,
+      "amount": "5500.00",
+      "type": "expense",
+      "description": "Покупка обуви и одежды",
+      "merchant_id": 16,
+      "created_at": "2026-01-09T14:00:00Z"
+    },
+    {
+      "user_id": 997,
+      "category_id": 3,
+      "bank_account_id": 4,
+      "amount": "1200.00",
+      "type": "expense",
+      "description": "Развлечения",
+      "merchant_id": 12,
+      "created_at": "2026-01-10T19:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 1,
+      "bank_account_id": 2,
+      "amount": "1200.00",
+      "type": "expense",
+      "description": "Покупка продуктов",
+      "merchant_id": 1,
+      "created_at": "2026-01-06T16:00:00Z"
+    },
+    {
+      "user_id": 999,
+      "category_id": 13,
+      "bank_account_id": 2,
+      "amount": "10000.00",
+      "type": "income",
+      "description": "Дивиденды",
+      "merchant_id": null,
+      "created_at": "2026-01-10T12:00:00Z"
+    },
+    {
+      "user_id": 996,
+      "category_id": 11,
+      "bank_account_id": 5,
+      "amount": "75000.00",
+      "type": "income",
+      "description": "Зарплата за январь 2026",
+      "merchant_id": 25,
+      "created_at": "2026-01-05T10:00:00Z"
+    },
+    {
+      "user_id": 996,
+      "category_id": 7,
+      "bank_account_id": 5,
+      "amount": "12500.00",
+      "type": "expense",
+      "description": "Покупка одежды онлайн",
+      "merchant_id": 17,
+      "created_at": "2026-01-08T00:00:00Z"
+    },
+    {
+      "user_id": 996,
+      "category_id": 10,
+      "bank_account_id": 5,
+      "amount": "35000.00",
+      "type": "expense",
+      "description": "Авиабилеты в Сочи",
+      "merchant_id": 22,
+      "created_at": "2026-01-08T20:00:00Z"
+    },
+    {
+      "user_id": 996,
+      "category_id": 13,
+      "bank_account_id": 6,
+      "amount": "500.00",
+      "type": "income",
+      "description": "Пополнение валютного счета",
+      "merchant_id": null,
+      "created_at": "2026-01-06T10:00:00Z"
+    },
+    {
+      "user_id": 995,
+      "category_id": 11,
+      "bank_account_id": 7,
+      "amount": "120000.00",
+      "type": "income",
+      "description": "Зарплата за январь 2026",
+      "merchant_id": 25,
+      "created_at": "2026-01-05T10:00:00Z"
+    },
+    {
+      "user_id": 995,
+      "category_id": 1,
+      "bank_account_id": 7,
+      "amount": "8500.00",
+      "type": "expense",
+      "description": "Большая закупка продуктов",
+      "merchant_id": 4,
+      "created_at": "2026-01-06T21:00:00Z"
+    },
+    {
+      "user_id": 995,
+      "category_id": 5,
+      "bank_account_id": 7,
+      "amount": "15000.00",
+      "type": "expense",
+      "description": "Оплата курсов",
+      "merchant_id": null,
+      "created_at": "2026-01-07T10:00:00Z"
+    },
+    {
+      "user_id": 995,
+      "category_id": 4,
+      "bank_account_id": 7,
+      "amount": "4500.00",
+      "type": "expense",
+      "description": "Аптека",
+      "merchant_id": null,
+      "created_at": "2026-01-09T02:00:00Z"
+    },
+    {
+      "user_id": 995,
+      "category_id": 12,
+      "bank_account_id": 8,
+      "amount": "180000.00",
+      "type": "income",
+      "description": "Оплата от клиента за проект",
+      "merchant_id": null,
+      "created_at": "2026-01-07T10:00:00Z"
+    },
+    {
+      "user_id": 995,
+      "category_id": 9,
+      "bank_account_id": 8,
+      "amount": "2500.00",
+      "type": "expense",
+      "description": "Корпоративная связь",
+      "merchant_id": 19,
+      "created_at": "2026-01-08T10:00:00Z"
+    },
+    {
+      "user_id": 994,
+      "category_id": 14,
+      "bank_account_id": 9,
+      "amount": "5000.00",
+      "type": "income",
+      "description": "Карманные деньги",
+      "merchant_id": null,
+      "created_at": "2026-01-05T10:00:00Z"
+    },
+    {
+      "user_id": 994,
+      "category_id": 1,
+      "bank_account_id": 9,
+      "amount": "350.00",
+      "type": "expense",
+      "description": "Снеки",
+      "merchant_id": 1,
+      "created_at": "2026-01-07T01:00:00Z"
+    },
+    {
+      "user_id": 994,
+      "category_id": 3,
+      "bank_account_id": 9,
+      "amount": "800.00",
+      "type": "expense",
+      "description": "Кино с друзьями",
+      "merchant_id": 12,
+      "created_at": "2026-01-09T04:00:00Z"
+    },
+    {
+      "user_id": 994,
+      "category_id": 11,
+      "bank_account_id": 10,
+      "amount": "350000.00",
+      "type": "income",
+      "description": "Зарплата за январь 2026",
+      "merchant_id": 25,
+      "created_at": "2026-01-05T10:00:00Z"
+    },
+    {
+      "user_id": 994,
+      "category_id": 10,
+      "bank_account_id": 10,
+      "amount": "85000.00",
+      "type": "expense",
+      "description": "Бронирование отеля",
+      "merchant_id": 24,
+      "created_at": "2026-01-08T06:00:00Z"
+    },
+    {
+      "user_id": 994,
+      "category_id": 7,
+      "bank_account_id": 10,
+      "amount": "45000.00",
+      "type": "expense",
+      "description": "Премиум одежда",
+      "merchant_id": 16,
+      "created_at": "2026-01-09T22:00:00Z"
+    },
+    {
+      "user_id": 994,
+      "category_id": 6,
+      "bank_account_id": 10,
+      "amount": "12000.00",
+      "type": "expense",
+      "description": "Ресторан",
+      "merchant_id": 11,
+      "created_at": "2026-01-11T06:00:00Z"
+    }
+  ]
+}
