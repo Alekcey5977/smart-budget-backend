@@ -1,7 +1,7 @@
 .PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop
 
 TEST_PROJECT = smartbudget-test
-TEST_COMPOSE = docker-compose -p $(TEST_PROJECT) --env-file .env.test
+TEST_COMPOSE = docker compose -p $(TEST_PROJECT) --env-file .env.test
 
 help:
 	@echo "Smart Budget Backend - Make Commands"
@@ -35,7 +35,7 @@ help:
 
 start:
 	@echo "Starting all services..."
-	docker-compose up -d
+	docker compose up -d
 	@echo ""
 	@echo "Waiting for services to be ready..."
 	@sleep 5
@@ -56,31 +56,31 @@ start:
 
 stop:
 	@echo "Stopping all services..."
-	docker-compose stop
+	docker compose stop
 	@echo "Services stopped!"
 
 restart:
 	@echo "Restarting all services..."
-	docker-compose restart
+	docker compose restart
 	@echo "Services restarted!"
 
 down:
 	@echo "Stopping and removing containers..."
-	docker-compose down
+	docker compose down
 	@echo "Containers removed!"
 
 build:
 	@echo "Rebuilding all services..."
-	docker-compose build
+	docker compose build
 	@echo "Services rebuilt!"
 
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 status:
 	@echo "Service Status:"
 	@echo "==============="
-	docker-compose ps
+	docker compose ps
 
 generate-test-data:
 	@echo "Generating test data files..."
@@ -117,7 +117,7 @@ load-test-images:
 	@echo "Loading test images..."
 	@echo "Make sure services are running (make start)"
 	@echo ""
-	docker-compose exec -w /app images-service python /testData/load_test_images.py
+	docker compose exec -w /app images-service python /testData/load_test_images.py
 	@echo ""
 
 clean:
@@ -126,7 +126,7 @@ clean:
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker-compose down -v; \
+		docker compose down -v; \
 		echo "Cleanup completed!"; \
 	else \
 		echo "Cleanup cancelled"; \
@@ -222,9 +222,9 @@ reset-db:
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		echo "Stopping services..."; \
-		docker-compose down -v; \
+		docker compose down -v; \
 		echo "Volumes removed, starting services..."; \
-		docker-compose up -d; \
+		docker compose up -d; \
 		echo "Waiting for DB initialization..."; \
 		sleep 15; \
 		echo ""; \
