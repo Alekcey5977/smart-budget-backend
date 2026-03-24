@@ -1,0 +1,31 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Create env files from secrets
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "${{ secrets.ENV_TEST_FILE }}" > .env.test
+      - name: Install E2E test dependencies
+        run: |
+          pip install -r e2e_tests/requirements.txt
+          pip install requests
+      - name: Start test stack
+        run: make test-e2e-start
+      - name: Run E2E tests
+        run: make test-e2e
+      - name: Stop test stack
+        if: always()
+        run: make test-e2e-stop

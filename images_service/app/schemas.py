@@ -1,9 +1,9 @@
-from pydantic import BaseModel, Field, ConfigDict
+import uuid
 from datetime import datetime
 from typing import Optional
-import uuid
-from app.models import EntityType
 
+from app.models import EntityType
+from pydantic import BaseModel, ConfigDict, Field
 
 # ===========================
 # Response Schemas

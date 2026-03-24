@@ -1,9 +1,9 @@
-import httpx
-from fastapi import HTTPException, Header, Request
 import os
-from typing import Dict, Any, Optional
-from jose import JWTError, jwt
+from typing import Any, Dict, Optional
 
+import httpx
+from fastapi import Header, HTTPException, Request
+from jose import JWTError, jwt
 
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY")

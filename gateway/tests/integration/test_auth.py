@@ -8,8 +8,8 @@ httpx.AsyncClient мокается на уровне роутера для regis
 from unittest.mock import AsyncMock, patch
 
 from tests.conftest import (
-    make_mock_http_response,
     make_access_token,
+    make_mock_http_response,
 )
 
 VALID_REGISTER_BODY = {

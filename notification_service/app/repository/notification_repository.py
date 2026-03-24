@@ -1,8 +1,9 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import delete, select, update, func
+from uuid import UUID
+
 from app.models import Notification
 from app.schemas import NotificationCreate
-from uuid import UUID
+from sqlalchemy import delete, func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class NotificationRepository:

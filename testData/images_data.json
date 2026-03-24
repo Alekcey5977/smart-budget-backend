@@ -1,0 +1,402 @@
+[
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#3B82F6\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">A</text>\n</svg>",
+    "description": "Предустановленная аватарка blue"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#10B981\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">B</text>\n</svg>",
+    "description": "Предустановленная аватарка green"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#EF4444\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">C</text>\n</svg>",
+    "description": "Предустановленная аватарка red"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#8B5CF6\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">D</text>\n</svg>",
+    "description": "Предустановленная аватарка purple"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#F59E0B\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">E</text>\n</svg>",
+    "description": "Предустановленная аватарка orange"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#EC4899\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">F</text>\n</svg>",
+    "description": "Предустановленная аватарка pink"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#06B6D4\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">G</text>\n</svg>",
+    "description": "Предустановленная аватарка cyan"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#6366F1\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">H</text>\n</svg>",
+    "description": "Предустановленная аватарка indigo"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#84CC16\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">I</text>\n</svg>",
+    "description": "Предустановленная аватарка lime"
+  },
+  {
+    "entity_type": "user_avatar",
+    "entity_id": null,
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#14B8A6\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\">J</text>\n</svg>",
+    "description": "Предустановленная аватарка teal"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "1",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#10B981\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">🛒</text>\n</svg>",
+    "description": "Иконка категории: Продукты"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "2",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#3B82F6\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">🚗</text>\n</svg>",
+    "description": "Иконка категории: Транспорт"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "3",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#EC4899\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">🎬</text>\n</svg>",
+    "description": "Иконка категории: Развлечения"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "4",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#EF4444\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">💊</text>\n</svg>",
+    "description": "Иконка категории: Здоровье"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "5",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#8B5CF6\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">📚</text>\n</svg>",
+    "description": "Иконка категории: Образование"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "6",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#F59E0B\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">👕</text>\n</svg>",
+    "description": "Иконка категории: Одежда"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "7",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#F97316\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">🍽️</text>\n</svg>",
+    "description": "Иконка категории: Рестораны"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "8",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#06B6D4\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">⚽</text>\n</svg>",
+    "description": "Иконка категории: Спорт"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "9",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#6366F1\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">💻</text>\n</svg>",
+    "description": "Иконка категории: Электроника"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "10",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#84CC16\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">🏠</text>\n</svg>",
+    "description": "Иконка категории: Дом"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "11",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#0EA5E9\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">✈️</text>\n</svg>",
+    "description": "Иконка категории: Путешествия"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "12",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#DB2777\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">💄</text>\n</svg>",
+    "description": "Иконка категории: Красота"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "13",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#DC2626\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">🎁</text>\n</svg>",
+    "description": "Иконка категории: Подарки"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "14",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#D97706\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">🐾</text>\n</svg>",
+    "description": "Иконка категории: Питомцы"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "15",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#7C3AED\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">📱</text>\n</svg>",
+    "description": "Иконка категории: Связь"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "16",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#059669\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">💰</text>\n</svg>",
+    "description": "Иконка категории: Финансы"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "17",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#FBBF24\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">💡</text>\n</svg>",
+    "description": "Иконка категории: Коммунальные услуги"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "18",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#2563EB\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">☂️</text>\n</svg>",
+    "description": "Иконка категории: Страхование"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "19",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#9333EA\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">🎨</text>\n</svg>",
+    "description": "Иконка категории: Хобби"
+  },
+  {
+    "entity_type": "category",
+    "entity_id": "20",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <circle cx=\"100\" cy=\"100\" r=\"100\" fill=\"#BE123C\"/>\n  <text x=\"100\" y=\"130\" font-size=\"80\" fill=\"white\" text-anchor=\"middle\">❤️</text>\n</svg>",
+    "description": "Иконка категории: Благотворительность"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "1",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#DC2626\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Пятёрочка</text>\n</svg>",
+    "description": "Логотип мерчанта: Пятёрочка"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "2",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#DC2626\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Магнит</text>\n</svg>",
+    "description": "Логотип мерчанта: Магнит"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "3",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#10B981\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Перекрёсток</text>\n</svg>",
+    "description": "Логотип мерчанта: Перекрёсток"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "4",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#F59E0B\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Лента</text>\n</svg>",
+    "description": "Логотип мерчанта: Лента"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "5",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#EF4444\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Ашан</text>\n</svg>",
+    "description": "Логотип мерчанта: Ашан"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "6",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#FBBF24\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"#DC2626\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">McDonald's</text>\n</svg>",
+    "description": "Логотип мерчанта: McDonald's"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "7",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#DC2626\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">KFC</text>\n</svg>",
+    "description": "Логотип мерчанта: KFC"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "8",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#F97316\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Burger King</text>\n</svg>",
+    "description": "Логотип мерчанта: Burger King"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "9",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#FBBF24\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"black\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Яндекс Такси</text>\n</svg>",
+    "description": "Логотип мерчанта: Яндекс Такси"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "10",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"black\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Uber</text>\n</svg>",
+    "description": "Логотип мерчанта: Uber"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "11",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#3B82F6\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Ozon</text>\n</svg>",
+    "description": "Логотип мерчанта: Ozon"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "12",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#A855F7\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Wildberries</text>\n</svg>",
+    "description": "Логотип мерчанта: Wildberries"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "13",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#EF4444\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">AliExpress</text>\n</svg>",
+    "description": "Логотип мерчанта: AliExpress"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "14",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#10B981\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Сбербанк</text>\n</svg>",
+    "description": "Логотип мерчанта: Сбербанк"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "15",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#FBBF24\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"black\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Тинькофф</text>\n</svg>",
+    "description": "Логотип мерчанта: Тинькофф"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "16",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#3B82F6\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Спортмастер</text>\n</svg>",
+    "description": "Логотип мерчанта: Спортмастер"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "17",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#2563EB\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Decathlon</text>\n</svg>",
+    "description": "Логотип мерчанта: Decathlon"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "18",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#F97316\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Читай-город</text>\n</svg>",
+    "description": "Логотип мерчанта: Читай-город"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "19",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#DC2626\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"white\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">М.Видео</text>\n</svg>",
+    "description": "Логотип мерчанта: М.Видео"
+  },
+  {
+    "entity_type": "merchant",
+    "entity_id": "20",
+    "mime_type": "image/svg+xml",
+    "is_default": true,
+    "file_data_svg": "<svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"200\" height=\"200\" fill=\"#FBBF24\"/>\n  <text x=\"100\" y=\"110\" font-size=\"24\" fill=\"#DC2626\" text-anchor=\"middle\" font-family=\"Arial\" font-weight=\"bold\">Эльдорадо</text>\n</svg>",
+    "description": "Логотип мерчанта: Эльдорадо"
+  }
+]

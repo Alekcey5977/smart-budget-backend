@@ -2,7 +2,6 @@
 __pycache__/
 *.py[codz]
 *$py.class
-testData/
 # C extensions
 *.so
 
@@ -209,5 +208,3 @@ __marimo__/
 
 # macOS
 .DS_Store
-
-testData/

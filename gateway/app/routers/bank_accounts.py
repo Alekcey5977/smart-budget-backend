@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-import httpx
 import os
+
+import httpx
 from app.dependencies import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 router = APIRouter(
     prefix="/users/me",

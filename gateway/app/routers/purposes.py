@@ -1,12 +1,11 @@
 import os
 from typing import Any, Dict, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
-import httpx
 
+import httpx
 from app.dependencies import get_current_user
 from app.schemas.purpose_schema import PurposeCreate, PurposeResponse, PurposeUpdate
-
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(
     prefix="/purposes",

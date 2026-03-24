@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
-from typing import Dict, Any
 import os
+from typing import Any, Dict
+
 import httpx
 from app.dependencies import get_current_user
-
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 router = APIRouter(
     prefix="/images",

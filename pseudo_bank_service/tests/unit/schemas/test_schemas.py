@@ -1,16 +1,16 @@
-import pytest
 from decimal import Decimal
-from pydantic import ValidationError
 
+import pytest
 from app.schemas import (
+    BankAccountCreate,
+    BankCreate,
     CategoryCreate,
     MCCCategoryCreate,
     MerchantCreate,
-    BankCreate,
-    BankAccountCreate,
     TransactionCreate,
-    Validate_Bank_Account
+    Validate_Bank_Account,
 )
+from pydantic import ValidationError
 
 
 class TestValidateBankAccount:

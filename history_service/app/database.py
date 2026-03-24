@@ -1,9 +1,9 @@
 import os
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.exc import SQLAlchemyError
-from dotenv import load_dotenv
-from app.models import History_Base
 
+from app.models import History_Base
+from dotenv import load_dotenv
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 load_dotenv()
 

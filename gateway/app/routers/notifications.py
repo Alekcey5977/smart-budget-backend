@@ -1,12 +1,11 @@
 import os
 from typing import Any, Dict, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query
+
 import httpx
-
 from app.dependencies import get_current_user
-from app.schemas.notification_schema import NotificationResponse, UnreadCountResponse, MarkAsReadResponse
-
+from app.schemas.notification_schema import MarkAsReadResponse, NotificationResponse, UnreadCountResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 router = APIRouter(
     prefix="/notifications",

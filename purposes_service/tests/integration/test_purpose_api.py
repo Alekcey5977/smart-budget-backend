@@ -10,9 +10,10 @@
 4. Проверяем вызовы EventPublisher через mock
 """
 import sys
-from pathlib import Path
 from datetime import datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
+
 from httpx import AsyncClient
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent

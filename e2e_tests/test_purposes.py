@@ -3,7 +3,6 @@ E2E tests for /purposes/* — полный CRUD жизненный цикл.
 """
 import uuid
 
-
 PURPOSE = {
     "title": "E2E Test Purpose",
     "deadline": "2027-12-31T00:00:00",

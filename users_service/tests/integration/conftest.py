@@ -23,7 +23,6 @@ from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-
 TEST_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY")
 
 # ============================================================================

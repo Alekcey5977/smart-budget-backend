@@ -1,12 +1,13 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.database import create_tables, shutdown
-from contextlib import asynccontextmanager
-from app.routers import notification, websocket
-import uvicorn
-from app.event_listener import EventListener
 import asyncio
 import logging
+from contextlib import asynccontextmanager
+
+import uvicorn
+from app.database import create_tables, shutdown
+from app.event_listener import EventListener
+from app.routers import notification, websocket
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 # Настройка логирования
 logging.basicConfig(

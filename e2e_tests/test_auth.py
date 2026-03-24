@@ -1,6 +1,5 @@
 import uuid
 
-
 PASSWORD = "StrongPass1!"
 
 

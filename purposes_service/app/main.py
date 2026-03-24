@@ -1,9 +1,10 @@
+from contextlib import asynccontextmanager
+
+import uvicorn
+from app.database import create_tables, shutdown
+from app.routers import purpose
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import create_tables, shutdown
-from contextlib import asynccontextmanager
-from app.routers import purpose
-import uvicorn
 
 
 @asynccontextmanager

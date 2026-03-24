@@ -13,11 +13,10 @@ os.environ.setdefault("TRANSACTIONS_SERVICE_URL", "http://transactions-service-t
 os.environ.setdefault("PSEUDO_BANK_SERVICE_URL", "http://pseudo-bank-service-test")
 
 import pytest
+from app.dependencies import get_current_user
+from app.main import app
 from httpx import ASGITransport, AsyncClient
 from jose import jwt
-
-from app.main import app
-from app.dependencies import get_current_user
 
 TEST_SECRET = "test-secret-key-for-gateway"
 USER_ID = "1"

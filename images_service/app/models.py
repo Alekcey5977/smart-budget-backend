@@ -1,9 +1,11 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, LargeBinary, Index, Enum as SQLEnum
+import enum
+import uuid
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, LargeBinary, String
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
-from datetime import datetime
-import uuid
-import enum
 
 Base = declarative_base()
 

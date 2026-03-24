@@ -1,19 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 import uuid
+from typing import List
 
 from app.database import get_db
 from app.dependencies import get_user_id_from_header
-from app.repository.image_repository import ImageRepository
-from app.schemas import (
-    ImageMetadata,
-    ImageMappingResponse,
-    ImageMappingItem,
-    UpdateUserAvatarRequest,
-    ErrorResponse
-)
 from app.models import EntityType
+from app.repository.image_repository import ImageRepository
+from app.schemas import ErrorResponse, ImageMappingItem, ImageMappingResponse, ImageMetadata, UpdateUserAvatarRequest
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/images", tags=["images"])
 

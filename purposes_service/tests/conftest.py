@@ -21,9 +21,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.database import get_db  # noqa: E402
-from app.models import Purpose_Base  # noqa: E402
 from app.main import app  # noqa: E402
-
+from app.models import Purpose_Base  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # 1) Тестовый движок — SQLite in-memory

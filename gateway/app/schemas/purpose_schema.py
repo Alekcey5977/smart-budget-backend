@@ -1,8 +1,9 @@
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from datetime import datetime
 from decimal import Decimal
-from uuid import UUID
 from typing import Self
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class PurposeCreate(BaseModel):

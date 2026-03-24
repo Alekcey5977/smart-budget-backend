@@ -6,7 +6,7 @@ Downstream history-service мокается через patch("app.routers.histor
 """
 from unittest.mock import AsyncMock, patch
 
-from tests.conftest import make_mock_http_response, USER_ID
+from tests.conftest import USER_ID, make_mock_http_response
 
 ENTRY_ID = "550e8400-e29b-41d4-a716-446655440000"
 

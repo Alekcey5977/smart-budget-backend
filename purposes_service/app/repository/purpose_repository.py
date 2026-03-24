@@ -1,12 +1,15 @@
+from datetime import datetime
 from uuid import UUID, uuid4
+
+from app.models import Purpose
+from app.schemas import PurposeCreate
+from app.utils import get_crossed_thresholds
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas import PurposeCreate
-from app.models import Purpose
-from app.utils import get_crossed_thresholds
+
 from shared.event_publisher import EventPublisher
 from shared.event_schema import DomainEvent
-from datetime import datetime
+
 
 class PurposeRepository:
     def __init__(self, db: AsyncSession):
