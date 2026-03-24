@@ -3,6 +3,7 @@ E2E tests for /transactions/* endpoints.
 Транзакции появляются после синхронизации с pseudo-bank.
 """
 import asyncio
+import uuid
 
 import pytest
 
@@ -99,3 +100,74 @@ class TestGetTransactions:
     def test_transactions_without_token_returns_401(self, http_client):
         resp = http_client.post("/transactions/", json={"limit": 10})
         assert resp.status_code == 401
+
+
+class TestUpdateTransactionCategory:
+    async def _get_transaction_id(self, http_client, headers):
+        """Синхронизируем и возвращаем первую транзакцию (с polling)."""
+        http_client.post("/sync/", headers=headers)
+        for _ in range(15):
+            resp = http_client.post("/transactions/", json={"limit": 1}, headers=headers)
+            data = resp.json()
+            if data:
+                return data[0]["id"]
+            await asyncio.sleep(1.0)
+        return None
+
+    async def test_update_category_success(self, http_client, auth_headers, bank_account):
+        _, headers = auth_headers
+
+        tx_id = await self._get_transaction_id(http_client, headers)
+        if tx_id is None:
+            pytest.skip("No transactions available — run: make reset-db")
+
+        categories = http_client.get("/transactions/categories", headers=headers).json()
+        assert categories, "No categories in DB"
+        target_category = categories[0]
+
+        resp = http_client.patch(
+            f"/transactions/{tx_id}/category",
+            json={"category_id": target_category["id"]},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] == tx_id
+        assert data["category_id"] == target_category["id"]
+        assert data["category_name"] == target_category["name"]
+
+    def test_update_category_nonexistent_transaction(self, http_client, auth_headers):
+        _, headers = auth_headers
+        fake_id = "00000000-0000-0000-0000-000000000000"
+        resp = http_client.patch(
+            f"/transactions/{fake_id}/category",
+            json={"category_id": 1},
+            headers=headers,
+        )
+        assert resp.status_code == 404
+
+    def test_update_category_nonexistent_category(self, http_client, auth_headers, bank_account):
+        _, headers = auth_headers
+        resp = http_client.patch(
+            f"/transactions/{uuid.uuid4()}/category",
+            json={"category_id": 999999},
+            headers=headers,
+        )
+        # 404 (category not found) или 404 (transaction not found) — оба корректны
+        assert resp.status_code == 404
+
+    def test_update_category_without_token(self, http_client):
+        resp = http_client.patch(
+            f"/transactions/{uuid.uuid4()}/category",
+            json={"category_id": 1},
+        )
+        assert resp.status_code == 401
+
+    def test_update_category_invalid_body(self, http_client, auth_headers):
+        _, headers = auth_headers
+        resp = http_client.patch(
+            f"/transactions/{uuid.uuid4()}/category",
+            json={"category_id": 0},
+            headers=headers,
+        )
+        assert resp.status_code == 422

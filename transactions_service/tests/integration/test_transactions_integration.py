@@ -104,6 +104,132 @@ async def test_get_transactions_with_filters(client: AsyncClient, db_session: As
 
 
 @pytest.mark.asyncio
+async def test_update_category_success(client: AsyncClient, db_session: AsyncSession):
+    """Тест: успешное изменение категории транзакции"""
+    user_id = 123
+
+    bank = Bank(id=1, name="Test Bank")
+    cat_old = Category(id=1, name="Food")
+    cat_new = Category(id=2, name="Transport")
+    account = Bank_Account(
+        id=1, user_id=user_id, bank_account_hash="hash_1",
+        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+    )
+    tx_id = uuid.uuid4()
+    tx = Transaction(
+        id=tx_id, user_id=user_id, category_id=1,
+        bank_account_id=1, amount=100.00, type="expense",
+        created_at=datetime(2024, 1, 1)
+    )
+
+    db_session.add_all([bank, cat_old, cat_new, account, tx])
+    await db_session.flush()
+
+    response = await client.patch(
+        f"/transactions/{tx_id}/category",
+        json={"category_id": 2}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["category_id"] == 2
+    assert data["category_name"] == "Transport"
+    assert str(data["id"]) == str(tx_id)
+
+
+@pytest.mark.asyncio
+async def test_update_category_transaction_not_found(client: AsyncClient, db_session: AsyncSession):
+    """Тест: транзакция не найдена → 404"""
+    cat = Category(id=1, name="Food")
+    db_session.add(cat)
+    await db_session.flush()
+
+    response = await client.patch(
+        f"/transactions/{uuid.uuid4()}/category",
+        json={"category_id": 1}
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_category_wrong_user(client: AsyncClient, db_session: AsyncSession):
+    """Тест: транзакция другого пользователя → 404"""
+    bank = Bank(id=1, name="Test Bank")
+    cat = Category(id=1, name="Food")
+    account = Bank_Account(
+        id=1, user_id=999, bank_account_hash="hash_1",
+        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+    )
+    tx_id = uuid.uuid4()
+    tx = Transaction(
+        id=tx_id, user_id=999, category_id=1,
+        bank_account_id=1, amount=100.00, type="expense",
+        created_at=datetime(2024, 1, 1)
+    )
+
+    db_session.add_all([bank, cat, account, tx])
+    await db_session.flush()
+
+    # client использует user_id=123, транзакция принадлежит 999
+    response = await client.patch(
+        f"/transactions/{tx_id}/category",
+        json={"category_id": 1}
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_category_category_not_found(client: AsyncClient, db_session: AsyncSession):
+    """Тест: несуществующая категория → 404"""
+    bank = Bank(id=1, name="Test Bank")
+    cat = Category(id=1, name="Food")
+    account = Bank_Account(
+        id=1, user_id=123, bank_account_hash="hash_1",
+        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+    )
+    tx_id = uuid.uuid4()
+    tx = Transaction(
+        id=tx_id, user_id=123, category_id=1,
+        bank_account_id=1, amount=100.00, type="expense",
+        created_at=datetime(2024, 1, 1)
+    )
+
+    db_session.add_all([bank, cat, account, tx])
+    await db_session.flush()
+
+    response = await client.patch(
+        f"/transactions/{tx_id}/category",
+        json={"category_id": 9999}
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_category_invalid_body(client: AsyncClient, db_session: AsyncSession):
+    """Тест: невалидное тело запроса → 422"""
+    response = await client.patch(
+        f"/transactions/{uuid.uuid4()}/category",
+        json={"category_id": 0}  # gt=0 — не пройдёт валидацию
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_update_category_missing_body(client: AsyncClient, db_session: AsyncSession):
+    """Тест: отсутствует тело запроса → 422"""
+    response = await client.patch(
+        f"/transactions/{uuid.uuid4()}/category",
+        json={}
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_sync_repository_integration(client: AsyncClient, db_session: AsyncSession):
     """Тест репозитория синхронизации (запись в БД)"""
     from unittest.mock import AsyncMock, MagicMock, patch

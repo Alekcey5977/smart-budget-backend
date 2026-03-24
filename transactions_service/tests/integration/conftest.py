@@ -2,7 +2,9 @@ import os
 import pathlib
 import sys
 import uuid
+from unittest.mock import AsyncMock, patch
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import String, TypeDecorator
@@ -11,8 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 SERVICE_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = SERVICE_ROOT.parent
 if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # Создаем универсальный тип, который умеет работать и со строками, и с объектами uuid.UUID.
 class UniversalUUID(TypeDecorator):
@@ -53,6 +58,13 @@ TestingSessionLocal = sessionmaker(
 )
 
 # --- ФИКСТУРЫ ---
+
+@pytest.fixture(autouse=True)
+def mock_event_publisher():
+    with patch("app.routers.transactions.EventPublisher") as mock:
+        mock.return_value.publish = AsyncMock()
+        yield mock
+
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session():
