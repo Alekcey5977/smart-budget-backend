@@ -1,9 +1,11 @@
 name: E2E Tests
 
 on:
+  push:
   pull_request:
-    branches:
-      - main
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   e2e:
