@@ -101,6 +101,7 @@ async def test_get_transactions_with_filters(client: AsyncClient, db_session: As
     assert tx_data["category_name"] == "Groceries"
     assert tx_data["merchant_name"] == "Supermarket"
     assert tx_data["user_id"] == user_id
+    assert tx_data["bank_account_id"] == 1
 
 
 @pytest.mark.asyncio
@@ -135,6 +136,7 @@ async def test_update_category_success(client: AsyncClient, db_session: AsyncSes
     assert data["category_id"] == 2
     assert data["category_name"] == "Transport"
     assert str(data["id"]) == str(tx_id)
+    assert data["bank_account_id"] == 1
 
 
 @pytest.mark.asyncio
@@ -276,3 +278,85 @@ async def test_sync_repository_integration(client: AsyncClient, db_session: Asyn
 
     assert cat is not None
     assert cat.name == "Synced Cat"
+
+
+@pytest.mark.asyncio
+async def test_get_transaction_by_id_success(client: AsyncClient, db_session: AsyncSession):
+    """Тест: успешное получение транзакции по ID"""
+    user_id = 123
+    bank = Bank(id=1, name="Test Bank")
+    cat = Category(id=1, name="Food")
+    account = Bank_Account(
+        id=1, user_id=user_id, bank_account_hash="hash_1",
+        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+    )
+    tx_id = uuid.uuid4()
+    tx = Transaction(
+        id=tx_id, user_id=user_id, category_id=1,
+        bank_account_id=1, amount=250.00, type="expense",
+        created_at=datetime(2024, 3, 1)
+    )
+    db_session.add_all([bank, cat, account, tx])
+    await db_session.flush()
+
+    response = await client.get(f"/transactions/{tx_id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert str(data["id"]) == str(tx_id)
+    assert data["user_id"] == user_id
+    assert data["bank_account_id"] == 1
+    assert data["amount"] == 250.00
+    assert data["category_name"] == "Food"
+
+
+@pytest.mark.asyncio
+async def test_get_transaction_by_id_not_found(client: AsyncClient, db_session: AsyncSession):
+    """Тест: транзакция не найдена → 404"""
+    response = await client.get(f"/transactions/{uuid.uuid4()}")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_transaction_by_id_wrong_user(client: AsyncClient, db_session: AsyncSession):
+    """Тест: транзакция другого пользователя → 404"""
+    bank = Bank(id=1, name="Test Bank")
+    cat = Category(id=1, name="Food")
+    account = Bank_Account(
+        id=1, user_id=999, bank_account_hash="hash_1",
+        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+    )
+    tx_id = uuid.uuid4()
+    tx = Transaction(
+        id=tx_id, user_id=999, category_id=1,
+        bank_account_id=1, amount=100.00, type="expense",
+        created_at=datetime(2024, 1, 1)
+    )
+    db_session.add_all([bank, cat, account, tx])
+    await db_session.flush()
+
+    # client использует user_id=123, транзакция принадлежит 999
+    response = await client.get(f"/transactions/{tx_id}")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_category_by_id_success(client: AsyncClient, db_session: AsyncSession):
+    """Тест: успешное получение категории по ID"""
+    cat = Category(id=42, name="Entertainment")
+    db_session.add(cat)
+    await db_session.flush()
+
+    response = await client.get("/transactions/categories/42")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == 42
+    assert data["name"] == "Entertainment"
+
+
+@pytest.mark.asyncio
+async def test_get_category_by_id_not_found(client: AsyncClient, db_session: AsyncSession):
+    """Тест: категория не найдена → 404"""
+    response = await client.get("/transactions/categories/9999")
+    assert response.status_code == 404

@@ -80,6 +80,7 @@ class TestTransactionResponse:
         response_data = {
             "id": tx_id,
             "user_id": 1,
+            "bank_account_id": 1,
             "category_id": 1,
             "amount": 100.0,
             "created_at": now,
@@ -104,6 +105,7 @@ class TestTransactionResponse:
         data = {
             "id": tx_id,
             "user_id": 1,
+            "bank_account_id": 1,
             "category_id": 1,
             "amount": 500.0,
             "created_at": now,

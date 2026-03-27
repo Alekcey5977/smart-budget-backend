@@ -37,6 +37,27 @@ class TestGetCategories:
         resp = http_client.get("/transactions/categories")
         assert resp.status_code == 401
 
+    def test_get_category_by_id(self, http_client, auth_headers):
+        _, headers = auth_headers
+        categories = http_client.get("/transactions/categories", headers=headers).json()
+        assert categories, "No categories in DB — run: make load-test-data"
+        category_id = categories[0]["id"]
+
+        resp = http_client.get(f"/transactions/categories/{category_id}", headers=headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] == category_id
+        assert "name" in data
+
+    def test_get_category_by_id_not_found(self, http_client, auth_headers):
+        _, headers = auth_headers
+        resp = http_client.get("/transactions/categories/999999", headers=headers)
+        assert resp.status_code == 404
+
+    def test_get_category_by_id_without_token(self, http_client):
+        resp = http_client.get("/transactions/categories/1")
+        assert resp.status_code == 401
+
 
 class TestGetTransactions:
     def test_empty_for_new_user_without_accounts(self, http_client, auth_headers):
@@ -67,6 +88,7 @@ class TestGetTransactions:
         tx = transactions[0]
         assert "id" in tx
         assert "amount" in tx
+        assert "bank_account_id" in tx
         assert tx["type"] in ("income", "expense")
 
     async def test_filter_by_type_expense(self, http_client, auth_headers, bank_account):
@@ -99,6 +121,32 @@ class TestGetTransactions:
 
     def test_transactions_without_token_returns_401(self, http_client):
         resp = http_client.post("/transactions/", json={"limit": 10})
+        assert resp.status_code == 401
+
+    async def test_get_transaction_by_id(self, http_client, auth_headers, bank_account):
+        _, headers = auth_headers
+        http_client.post("/sync/", headers=headers)
+        transactions = await _poll_transactions(http_client, headers)
+        if not transactions:
+            pytest.skip("No transactions available — run: make reset-db")
+
+        tx_id = transactions[0]["id"]
+        resp = http_client.get(f"/transactions/{tx_id}", headers=headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] == tx_id
+        assert "bank_account_id" in data
+        assert "category_id" in data
+
+    def test_get_transaction_by_id_not_found(self, http_client, auth_headers):
+        _, headers = auth_headers
+        fake_id = "00000000-0000-0000-0000-000000000000"
+        resp = http_client.get(f"/transactions/{fake_id}", headers=headers)
+        assert resp.status_code == 404
+
+    def test_get_transaction_by_id_without_token(self, http_client):
+        fake_id = "00000000-0000-0000-0000-000000000000"
+        resp = http_client.get(f"/transactions/{fake_id}")
         assert resp.status_code == 401
 
 

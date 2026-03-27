@@ -54,6 +54,7 @@ class TransactionResponse(BaseModel):
     """Схема ответа транзакции"""
     id: str
     user_id: int
+    bank_account_id: int
     category_id: int
     category_name: Optional[str] = None
     amount: float

@@ -12,6 +12,7 @@ TRANSACTION_LIST = [
     {
         "id": "550e8400-e29b-41d4-a716-446655440000",
         "user_id": 1,
+        "bank_account_id": 1,
         "category_id": 5,
         "category_name": "Продукты",
         "amount": 1500.50,
