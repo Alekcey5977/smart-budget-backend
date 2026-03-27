@@ -271,3 +271,114 @@ async def get_categories(
             raise HTTPException(503, "Transaction service is unavailable")
         except httpx.TimeoutException:
             raise HTTPException(504, "Transactions service timeout")
+
+
+@router.get(
+    "/categories/{category_id}",
+    response_model=CategoryResponse,
+    summary="Получить категорию по ID",
+    description="""
+Получить категорию транзакций по её ID.
+
+**Требует авторизации:** JWT токен в заголовке Authorization.
+""",
+    responses={
+        200: {
+            "description": "Категория",
+            "content": {
+                "application/json": {
+                    "example": {"id": 1, "name": "Продукты"}
+                }
+            }
+        },
+        401: {"description": "Не авторизован"},
+        404: {"description": "Категория не найдена"},
+        503: {"description": "Сервис транзакций недоступен"},
+        504: {"description": "Таймаут сервиса транзакций"}
+    }
+)
+async def get_category_by_id(
+    category_id: int,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories/{category_id}",
+                timeout=10.0
+            )
+
+            if response.status_code == 200:
+                return response.json()
+
+            error_detail = response.json().get("detail", "Failed to get category")
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
+
+        except httpx.ConnectError:
+            raise HTTPException(503, "Transaction service is unavailable")
+        except httpx.TimeoutException:
+            raise HTTPException(504, "Transactions service timeout")
+
+
+@router.get(
+    "/{transaction_id}",
+    response_model=TransactionResponse,
+    summary="Получить транзакцию по ID",
+    description="""
+Получить конкретную транзакцию пользователя по её UUID.
+
+**Требует авторизации:** JWT токен в заголовке Authorization.
+
+Возвращает только транзакции текущего пользователя.
+""",
+    responses={
+        200: {
+            "description": "Транзакция",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "user_id": 1,
+                        "bank_account_id": 1,
+                        "category_id": 5,
+                        "category_name": "Продукты",
+                        "amount": 1500.50,
+                        "created_at": "2024-01-15T14:30:00",
+                        "type": "expense",
+                        "description": "Покупка в супермаркете",
+                        "merchant_id": 10,
+                        "merchant_name": "Пятёрочка"
+                    }
+                }
+            }
+        },
+        401: {"description": "Не авторизован"},
+        404: {"description": "Транзакция не найдена"},
+        503: {"description": "Сервис транзакций недоступен"},
+        504: {"description": "Таймаут сервиса транзакций"}
+    }
+)
+async def get_transaction_by_id(
+    transaction_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/{transaction_id}",
+                headers={"X-User-ID": str(user_id)},
+                timeout=10.0
+            )
+
+            if response.status_code == 200:
+                return response.json()
+
+            error_detail = response.json().get("detail", "Failed to get transaction")
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
+
+        except httpx.ConnectError:
+            raise HTTPException(503, "Transaction service is unavailable")
+        except httpx.TimeoutException:
+            raise HTTPException(504, "Transactions service timeout")

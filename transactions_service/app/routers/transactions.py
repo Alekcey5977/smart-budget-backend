@@ -161,3 +161,63 @@ async def get_categories(
 
     except Exception as e:
         raise HTTPException(500, f"Internal server error: {str(e)}")
+
+
+@router.get(
+    "/categories/{category_id}",
+    response_model=CategoryResponse,
+    summary="Получить категорию по ID",
+    description="Получить категорию транзакций по её ID."
+)
+async def get_category_by_id(
+    category_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        repo = TransactionRepository(db)
+        category = await repo.get_category_by_id(category_id)
+        if not category:
+            raise HTTPException(404, f"Category {category_id} not found")
+        return category
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Internal server error: {str(e)}")
+
+
+@router.get(
+    "/{transaction_id}",
+    response_model=TransactionResponse,
+    summary="Получить транзакцию по ID",
+    description="Получить конкретную транзакцию пользователя по её UUID."
+)
+async def get_transaction_by_id(
+    transaction_id: str,
+    user_id: int = Depends(get_user_id_from_header),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        repo = TransactionRepository(db)
+        transaction = await repo.get_transaction_by_id(transaction_id, user_id)
+        if not transaction:
+            raise HTTPException(404, f"Transaction {transaction_id} not found")
+
+        return {
+            "id": transaction.id,
+            "user_id": transaction.user_id,
+            "bank_account_id": transaction.bank_account_id,
+            "category_id": transaction.category_id,
+            "category_name": transaction.category.name if transaction.category else None,
+            "amount": float(transaction.amount),
+            "created_at": transaction.created_at,
+            "type": transaction.type,
+            "description": transaction.description,
+            "merchant_id": transaction.merchant_id,
+            "merchant_name": transaction.merchant.name if transaction.merchant else None,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Internal server error: {str(e)}")

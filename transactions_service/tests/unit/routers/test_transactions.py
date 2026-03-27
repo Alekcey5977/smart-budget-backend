@@ -323,3 +323,117 @@ class TestValidation:
             json={"limit": 10, "transaction_type": "invalid_type"}
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+class TestGetTransactionById:
+    """Тесты для получения транзакции по ID"""
+
+    @pytest.fixture
+    def mock_db_session(self):
+        return AsyncMock()
+
+    @pytest.fixture
+    def client(self, mock_db_session):
+        test_app = FastAPI()
+        test_app.include_router(transactions.router)
+        test_app.dependency_overrides[get_db] = lambda: mock_db_session
+        test_app.dependency_overrides[get_user_id_from_header] = lambda: 123
+        return TestClient(test_app)
+
+    @pytest.fixture
+    def sample_transaction(self):
+        tx_id = uuid.uuid4()
+        tx = Transaction(
+            id=tx_id,
+            user_id=123,
+            category_id=1,
+            bank_account_id=1,
+            amount=300.00,
+            created_at=datetime.now(),
+            type="expense",
+            description="Test",
+            merchant_id=None
+        )
+        tx.category = Category(id=1, name="Food")
+        tx.merchant = None
+        return tx
+
+    @pytest.mark.asyncio
+    async def test_get_transaction_by_id_success(self, client, mock_db_session, sample_transaction):
+        """Тест: успешное получение транзакции"""
+        mock_repo_instance = MagicMock()
+        mock_repo_instance.get_transaction_by_id = AsyncMock(return_value=sample_transaction)
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+            response = client.get(f"/transactions/{sample_transaction.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert str(data["id"]) == str(sample_transaction.id)
+        assert data["user_id"] == 123
+        assert data["bank_account_id"] == 1
+        assert data["category_name"] == "Food"
+
+    @pytest.mark.asyncio
+    async def test_get_transaction_by_id_not_found(self, client, mock_db_session):
+        """Тест: транзакция не найдена → 404"""
+        mock_repo_instance = MagicMock()
+        mock_repo_instance.get_transaction_by_id = AsyncMock(return_value=None)
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+            response = client.get(f"/transactions/{uuid.uuid4()}")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.asyncio
+    async def test_get_transaction_missing_user_id_header(self, mock_db_session):
+        """Тест: отсутствует X-User-ID → 422"""
+        test_app = FastAPI()
+        test_app.include_router(transactions.router)
+        test_app.dependency_overrides[get_db] = lambda: mock_db_session
+        # Не переопределяем get_user_id_from_header — должна вернуть 422
+        client_no_header = TestClient(test_app, raise_server_exceptions=False)
+
+        response = client_no_header.get(f"/transactions/{uuid.uuid4()}")
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+class TestGetCategoryById:
+    """Тесты для получения категории по ID"""
+
+    @pytest.fixture
+    def mock_db_session(self):
+        return AsyncMock()
+
+    @pytest.fixture
+    def client(self, mock_db_session):
+        test_app = FastAPI()
+        test_app.include_router(transactions.router)
+        test_app.dependency_overrides[get_db] = lambda: mock_db_session
+        return TestClient(test_app)
+
+    @pytest.mark.asyncio
+    async def test_get_category_by_id_success(self, client, mock_db_session):
+        """Тест: успешное получение категории"""
+        mock_category = Category(id=5, name="Transport")
+        mock_repo_instance = MagicMock()
+        mock_repo_instance.get_category_by_id = AsyncMock(return_value=mock_category)
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+            response = client.get("/transactions/categories/5")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["id"] == 5
+        assert data["name"] == "Transport"
+
+    @pytest.mark.asyncio
+    async def test_get_category_by_id_not_found(self, client, mock_db_session):
+        """Тест: категория не найдена → 404"""
+        mock_repo_instance = MagicMock()
+        mock_repo_instance.get_category_by_id = AsyncMock(return_value=None)
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+            response = client.get("/transactions/categories/9999")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
