@@ -62,6 +62,7 @@ async def get_transactions(
             result.append({
                 "id": t.id,
                 "user_id": t.user_id,
+                "bank_account_id": t.bank_account_id,
                 "category_id": t.category_id,
                 "category_name": t.category.name if t.category else None,
                 "amount": t.amount,
@@ -122,6 +123,7 @@ async def update_transaction_category(
         return {
             "id": transaction.id,
             "user_id": transaction.user_id,
+            "bank_account_id": transaction.bank_account_id,
             "category_id": transaction.category_id,
             "category_name": transaction.category.name if transaction.category else None,
             "amount": float(transaction.amount),

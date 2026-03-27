@@ -73,6 +73,7 @@ class TestGetTransactions:
         data = response.json()
         assert len(data) == 1
         assert data[0]["user_id"] == 123
+        assert data[0]["bank_account_id"] == 1
         assert data[0]["category_name"] == "Products"
         assert data[0]["merchant_name"] == "Supermarket"
         assert float(data[0]["amount"]) == 100.50

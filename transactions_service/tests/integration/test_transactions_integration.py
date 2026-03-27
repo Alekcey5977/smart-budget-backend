@@ -101,6 +101,7 @@ async def test_get_transactions_with_filters(client: AsyncClient, db_session: As
     assert tx_data["category_name"] == "Groceries"
     assert tx_data["merchant_name"] == "Supermarket"
     assert tx_data["user_id"] == user_id
+    assert tx_data["bank_account_id"] == 1
 
 
 @pytest.mark.asyncio
@@ -135,6 +136,7 @@ async def test_update_category_success(client: AsyncClient, db_session: AsyncSes
     assert data["category_id"] == 2
     assert data["category_name"] == "Transport"
     assert str(data["id"]) == str(tx_id)
+    assert data["bank_account_id"] == 1
 
 
 @pytest.mark.asyncio

@@ -67,6 +67,7 @@ class TestGetTransactions:
         tx = transactions[0]
         assert "id" in tx
         assert "amount" in tx
+        assert "bank_account_id" in tx
         assert tx["type"] in ("income", "expense")
 
     async def test_filter_by_type_expense(self, http_client, auth_headers, bank_account):
