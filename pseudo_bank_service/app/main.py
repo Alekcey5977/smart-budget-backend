@@ -6,6 +6,7 @@ from app.models import *  # noqa: F403
 from app.routers import pseudo_bank
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 
 @asynccontextmanager
@@ -27,6 +28,7 @@ app.add_middleware(
 
 app.include_router(pseudo_bank.router)
 
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 @app.get("/health")
 async def health():

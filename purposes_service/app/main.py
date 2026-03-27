@@ -5,6 +5,7 @@ from app.database import create_tables, shutdown
 from app.routers import purpose
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 
 @asynccontextmanager
@@ -25,6 +26,8 @@ app.add_middleware(
 )
 
 app.include_router(purpose.router)
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 @app.get("/health")

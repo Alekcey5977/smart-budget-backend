@@ -8,6 +8,7 @@ from app.event_listener import EventListener
 from app.routers import notification, websocket
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Настройка логирования
 logging.basicConfig(
@@ -52,6 +53,9 @@ app.add_middleware(
 
 app.include_router(notification.router)
 app.include_router(websocket.router)
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
 
 @app.get("/health")
 async def health():

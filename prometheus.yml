@@ -1,0 +1,48 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Шлюз
+  - job_name: 'gateway'
+    static_configs:
+      - targets: ['gateway:8000']
+
+  # Пользовательский сервис
+  - job_name: 'users-service'
+    static_configs:
+      - targets: ['users-service:8001'] 
+
+  # Транзакции
+  - job_name: 'transactions-service'
+    static_configs:
+      - targets: ['transactions-service:8002']
+
+  # Изображения
+  - job_name: 'images-service'
+    static_configs:
+      - targets: ['images-service:8003']
+
+  # Псевдо-банк
+  - job_name: 'pseudo-bank-service'
+    static_configs:
+      - targets: ['pseudo-bank-service:8004']
+
+  # Цели
+  - job_name: 'purposes-service'
+    static_configs:
+      - targets: ['purposes-service:8005']
+
+  # Уведомления
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service:8006']
+
+  # История
+  - job_name: 'history-service'
+    static_configs:
+      - targets: ['history-service:8007']
+
+  # Сам Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

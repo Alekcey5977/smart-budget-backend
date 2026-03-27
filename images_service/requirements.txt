@@ -6,3 +6,4 @@ python-dotenv==1.0.1
 pydantic==2.8.2
 psycopg2-binary==2.9.9
 redis==7.1.0
+prometheus-fastapi-instrumentator==7.1.0

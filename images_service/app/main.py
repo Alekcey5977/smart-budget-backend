@@ -5,6 +5,7 @@ from app.models import Base
 from app.routers import images
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 
 @asynccontextmanager
@@ -73,6 +74,8 @@ app.add_middleware(
 
 # Подключение роутеров
 app.include_router(images.router)
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 @app.get("/", tags=["health"])
