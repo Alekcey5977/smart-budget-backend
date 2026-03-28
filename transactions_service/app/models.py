@@ -24,6 +24,7 @@ class Category(Transaction_Base):
     
     id = Column(Integer, nullable=False, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
+    type = Column(String(10), nullable=True)
 
     mcc = relationship("MCC_Category", back_populates="category")
     merchants = relationship("Merchant", back_populates="category")

@@ -37,6 +37,30 @@ class TestGetCategories:
         resp = http_client.get("/transactions/categories")
         assert resp.status_code == 401
 
+    def test_categories_include_type_field(self, http_client, auth_headers):
+        _, headers = auth_headers
+        categories = http_client.get("/transactions/categories", headers=headers).json()
+        assert categories, "No categories in DB — run: make load-test-data"
+        assert "type" in categories[0]
+
+    def test_categories_filter_expense(self, http_client, auth_headers):
+        _, headers = auth_headers
+        resp = http_client.get("/transactions/categories?type=expense", headers=headers)
+        assert resp.status_code == 200
+        categories = resp.json()
+        assert categories, "No categories — run: make load-test-data"
+        for cat in categories:
+            assert cat["type"] in ("expense", None), f"Unexpected type: {cat['type']}"
+
+    def test_categories_filter_income(self, http_client, auth_headers):
+        _, headers = auth_headers
+        resp = http_client.get("/transactions/categories?type=income", headers=headers)
+        assert resp.status_code == 200
+        categories = resp.json()
+        assert categories, "No income categories — run: make load-test-data"
+        for cat in categories:
+            assert cat["type"] in ("income", None), f"Unexpected type: {cat['type']}"
+
     def test_get_category_by_id(self, http_client, auth_headers):
         _, headers = auth_headers
         categories = http_client.get("/transactions/categories", headers=headers).json()
@@ -48,6 +72,7 @@ class TestGetCategories:
         data = resp.json()
         assert data["id"] == category_id
         assert "name" in data
+        assert "type" in data
 
     def test_get_category_by_id_not_found(self, http_client, auth_headers):
         _, headers = auth_headers

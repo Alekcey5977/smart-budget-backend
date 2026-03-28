@@ -82,14 +82,22 @@ class TransactionRepository:
         result = await self.db.execute(query)
         return result.scalars().unique().all()
 
-    async def get_all_categories(self) -> List[Category]:
+    async def get_all_categories(self, type: Optional[str] = None) -> List[Category]:
         """
         Получение всех категорий.
 
+        Args:
+            type: Фильтр по типу ("income" / "expense"). Если указан,
+                  возвращаются категории с данным типом И универсальные (type=NULL).
+
         Returns:
-            Список всех категорий
+            Список категорий
         """
         query = select(Category).order_by(Category.id)
+        if type is not None:
+            query = query.where(
+                (Category.type == type) | (Category.type.is_(None))
+            )
         result = await self.db.execute(query)
         return result.scalars().all()
 

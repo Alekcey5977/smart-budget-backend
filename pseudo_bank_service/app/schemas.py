@@ -14,6 +14,7 @@ class CategoryCreate(BaseModel):
     """Схема для создания категории"""
     id: int
     name: str = Field(..., max_length=100)
+    type: Optional[str] = Field(None, max_length=10)
 
 
 class MCCCategoryCreate(BaseModel):

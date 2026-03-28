@@ -69,6 +69,7 @@ class CategoryResponse(BaseModel):
     """Схема ответа категории"""
     id: int
     name: str
+    type: Optional[str] = None
 
 
 class UpdateTransactionCategoryRequest(BaseModel):

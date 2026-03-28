@@ -342,8 +342,8 @@ async def test_get_transaction_by_id_wrong_user(client: AsyncClient, db_session:
 
 @pytest.mark.asyncio
 async def test_get_category_by_id_success(client: AsyncClient, db_session: AsyncSession):
-    """Тест: успешное получение категории по ID"""
-    cat = Category(id=42, name="Entertainment")
+    """Тест: успешное получение категории по ID, поле type присутствует"""
+    cat = Category(id=42, name="Entertainment", type="expense")
     db_session.add(cat)
     await db_session.flush()
 
@@ -353,6 +353,7 @@ async def test_get_category_by_id_success(client: AsyncClient, db_session: Async
     data = response.json()
     assert data["id"] == 42
     assert data["name"] == "Entertainment"
+    assert data["type"] == "expense"
 
 
 @pytest.mark.asyncio
@@ -360,3 +361,66 @@ async def test_get_category_by_id_not_found(client: AsyncClient, db_session: Asy
     """Тест: категория не найдена → 404"""
     response = await client.get("/transactions/categories/9999")
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_categories_includes_type(client: AsyncClient, db_session: AsyncSession):
+    """Тест: поле type присутствует в ответе категорий"""
+    db_session.add_all([
+        Category(id=1, name="Food", type="expense"),
+        Category(id=2, name="Salary", type="income"),
+        Category(id=3, name="Investments", type=None),
+    ])
+    await db_session.flush()
+
+    response = await client.get("/transactions/categories")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+    types = {item["name"]: item["type"] for item in data}
+    assert types["Food"] == "expense"
+    assert types["Salary"] == "income"
+    assert types["Investments"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_categories_filter_expense(client: AsyncClient, db_session: AsyncSession):
+    """Тест: ?type=expense — возвращает expense и null-категории"""
+    db_session.add_all([
+        Category(id=1, name="Food", type="expense"),
+        Category(id=2, name="Salary", type="income"),
+        Category(id=3, name="Investments", type=None),
+    ])
+    await db_session.flush()
+
+    response = await client.get("/transactions/categories?type=expense")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2  # Food (expense) + Investments (null)
+    names = {item["name"] for item in data}
+    assert "Food" in names
+    assert "Investments" in names
+    assert "Salary" not in names
+
+
+@pytest.mark.asyncio
+async def test_get_categories_filter_income(client: AsyncClient, db_session: AsyncSession):
+    """Тест: ?type=income — возвращает income и null-категории"""
+    db_session.add_all([
+        Category(id=1, name="Food", type="expense"),
+        Category(id=2, name="Salary", type="income"),
+        Category(id=3, name="Investments", type=None),
+    ])
+    await db_session.flush()
+
+    response = await client.get("/transactions/categories?type=income")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2  # Salary (income) + Investments (null)
+    names = {item["name"] for item in data}
+    assert "Salary" in names
+    assert "Investments" in names
+    assert "Food" not in names

@@ -155,8 +155,8 @@ class TestGetCategories:
 
     @pytest.mark.asyncio
     async def test_get_categories_success(self, client, mock_db_session):
-        """Тест: успешное получение категорий"""
-        mock_category = Category(id=1, name="Food")
+        """Тест: успешное получение категорий, поле type присутствует"""
+        mock_category = Category(id=1, name="Food", type="expense")
 
         mock_repo_instance = MagicMock()
         mock_repo_instance.get_all_categories = AsyncMock(
@@ -169,6 +169,7 @@ class TestGetCategories:
         data = response.json()
         assert len(data) == 1
         assert data[0]["name"] == "Food"
+        assert data[0]["type"] == "expense"
 
     @pytest.mark.asyncio
     async def test_get_categories_empty(self, client, mock_db_session):
@@ -181,6 +182,18 @@ class TestGetCategories:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == []
+
+    @pytest.mark.asyncio
+    async def test_get_categories_with_type_filter(self, client, mock_db_session):
+        """Тест: параметр type передаётся в репозиторий"""
+        mock_repo_instance = MagicMock()
+        mock_repo_instance.get_all_categories = AsyncMock(return_value=[])
+
+        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+            response = client.get("/transactions/categories?type=expense")
+
+        assert response.status_code == status.HTTP_200_OK
+        mock_repo_instance.get_all_categories.assert_called_once_with(type="expense")
 
 
 class TestUpdateTransactionCategory:
