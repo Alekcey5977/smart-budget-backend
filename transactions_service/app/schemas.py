@@ -76,6 +76,7 @@ class CategoryResponse(BaseModel):
     """Схема ответа категории"""
     id: int
     name: str
+    type: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

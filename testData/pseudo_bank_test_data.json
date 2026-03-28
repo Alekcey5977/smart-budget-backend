@@ -2,63 +2,78 @@
   "categories": [
     {
       "id": 1,
-      "name": "Продукты"
+      "name": "Продукты",
+      "type": "expense"
     },
     {
       "id": 2,
-      "name": "Транспорт"
+      "name": "Транспорт",
+      "type": "expense"
     },
     {
       "id": 3,
-      "name": "Развлечения"
+      "name": "Развлечения",
+      "type": "expense"
     },
     {
       "id": 4,
-      "name": "Здоровье"
+      "name": "Здоровье",
+      "type": "expense"
     },
     {
       "id": 5,
-      "name": "Образование"
+      "name": "Образование",
+      "type": "expense"
     },
     {
       "id": 6,
-      "name": "Рестораны"
+      "name": "Рестораны",
+      "type": "expense"
     },
     {
       "id": 7,
-      "name": "Одежда"
+      "name": "Одежда",
+      "type": "expense"
     },
     {
       "id": 8,
-      "name": "Коммунальные услуги"
+      "name": "Коммунальные услуги",
+      "type": "expense"
     },
     {
       "id": 9,
-      "name": "Связь"
+      "name": "Связь",
+      "type": "expense"
     },
     {
       "id": 10,
-      "name": "Путешествия"
+      "name": "Путешествия",
+      "type": "expense"
     },
     {
       "id": 11,
-      "name": "Зарплата"
+      "name": "Зарплата",
+      "type": "income"
     },
     {
       "id": 12,
-      "name": "Подработка"
+      "name": "Подработка",
+      "type": "income"
     },
     {
       "id": 13,
-      "name": "Инвестиции"
+      "name": "Инвестиции",
+      "type": null
     },
     {
       "id": 14,
-      "name": "Подарки"
+      "name": "Подарки",
+      "type": null
     },
     {
       "id": 15,
-      "name": "Спорт"
+      "name": "Спорт",
+      "type": "expense"
     }
   ],
   "mcc_categories": [

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from app.database import get_db
 from app.dependencies import get_user_id_from_header
@@ -11,7 +11,7 @@ from app.schemas import (
     TransactionResponse,
     UpdateTransactionCategoryRequest,
 )
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.event_publisher import EventPublisher
@@ -143,20 +143,27 @@ async def update_transaction_category(
 @router.get(
     "/categories",
     response_model=List[CategoryResponse],
-    summary="Получить все категории",
-    description="Получить список всех доступных категорий транзакций."
+    summary="Получить категории",
+    description="""Получить список категорий транзакций.
+
+Опциональный параметр **type** фильтрует выдачу:
+- `expense` — категории расходов + универсальные (type=null)
+- `income` — категории доходов + универсальные (type=null)
+- без параметра — все категории
+
+Используйте фильтр при смене категории транзакции, чтобы показывать только подходящие варианты.
+"""
 )
 async def get_categories(
+    type: Optional[str] = Query(
+        None,
+        description="Фильтр по типу: 'income' или 'expense'. Универсальные категории (null) включаются всегда."
+    ),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Получить все категории транзакций.
-
-    Возвращает список всех категорий с их ID и названиями.
-    """
     try:
         repo = TransactionRepository(db)
-        categories = await repo.get_all_categories()
+        categories = await repo.get_all_categories(type=type)
         return categories
 
     except Exception as e:

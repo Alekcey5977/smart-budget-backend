@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import httpx
 from app.dependencies import get_current_user
@@ -9,7 +9,7 @@ from app.schemas.transaction_schema import (
     TransactionResponse,
     UpdateTransactionCategoryRequest,
 )
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 router = APIRouter(
     prefix="/transactions",
@@ -218,13 +218,18 @@ async def update_transaction_category(
 @router.get(
     "/categories",
     response_model=List[CategoryResponse],
-    summary="Получить все категории",
+    summary="Получить категории",
     description="""
-Получить список всех доступных категорий транзакций.
+Получить список категорий транзакций.
 
 **Требует авторизации:** JWT токен в заголовке Authorization.
 
-Возвращает список категорий с их ID и названиями.
+Опциональный параметр **type** фильтрует выдачу:
+- `expense` — категории расходов + универсальные
+- `income` — категории доходов + универсальные
+- без параметра — все категории
+
+**Используйте при смене категории транзакции**, чтобы показывать фронту только подходящие варианты.
 """,
     responses={
         200: {
@@ -232,9 +237,10 @@ async def update_transaction_category(
             "content": {
                 "application/json": {
                     "example": [
-                        {"id": 1, "name": "Продукты"},
-                        {"id": 2, "name": "Транспорт"},
-                        {"id": 3, "name": "Развлечения"}
+                        {"id": 1, "name": "Продукты", "type": "expense"},
+                        {"id": 2, "name": "Транспорт", "type": "expense"},
+                        {"id": 11, "name": "Зарплата", "type": "income"},
+                        {"id": 13, "name": "Инвестиции", "type": None}
                     ]
                 }
             }
@@ -244,17 +250,26 @@ async def update_transaction_category(
     }
 )
 async def get_categories(
+    type: Optional[str] = Query(
+        None,
+        description="Фильтр по типу: 'income' или 'expense'. Универсальные категории (null) включаются всегда."
+    ),
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """
-    Получить все категории транзакций.
+    Получить категории транзакций с опциональной фильтрацией по типу.
 
     Защищенный эндпоинт, требует JWT токен.
     """
     async with httpx.AsyncClient() as client:
         try:
+            params = {}
+            if type is not None:
+                params["type"] = type
+
             response = await client.get(
                 f"{TRANSACTIONS_SERVICE_URL}/transactions/categories",
+                params=params,
                 timeout=10.0
             )
 
@@ -287,7 +302,7 @@ async def get_categories(
             "description": "Категория",
             "content": {
                 "application/json": {
-                    "example": {"id": 1, "name": "Продукты"}
+                    "example": {"id": 1, "name": "Продукты", "type": "expense"}
                 }
             }
         },
