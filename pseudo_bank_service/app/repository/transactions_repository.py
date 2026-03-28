@@ -61,13 +61,9 @@ class TransactionRepository:
             category_ids.update(
                 m_id for m_id, in merchant_categories.fetchall() if m_id)
 
-        # Получаем все категории
-        categories = []
-        if category_ids:
-            categories_result = await self.db.execute(
-                select(Category).where(Category.id.in_(category_ids))
-            )
-            categories = categories_result.scalars().all()
+        # Получаем все категории (не только те что встречаются в транзакциях счёта)
+        categories_result = await self.db.execute(select(Category).order_by(Category.id))
+        categories = categories_result.scalars().all()
 
         # Получаем MCC
         mccs = []

@@ -114,21 +114,21 @@ def generate_test_data():
 
     # Категории
     categories = [
-        {"id": 1, "name": "Продукты"},
-        {"id": 2, "name": "Транспорт"},
-        {"id": 3, "name": "Развлечения"},
-        {"id": 4, "name": "Здоровье"},
-        {"id": 5, "name": "Образование"},
-        {"id": 6, "name": "Рестораны"},
-        {"id": 7, "name": "Одежда"},
-        {"id": 8, "name": "Коммунальные услуги"},
-        {"id": 9, "name": "Связь"},
-        {"id": 10, "name": "Путешествия"},
-        {"id": 11, "name": "Зарплата"},
-        {"id": 12, "name": "Подработка"},
-        {"id": 13, "name": "Инвестиции"},
-        {"id": 14, "name": "Подарки"},
-        {"id": 15, "name": "Спорт"}
+        {"id": 1,  "name": "Продукты",           "type": "expense"},
+        {"id": 2,  "name": "Транспорт",           "type": "expense"},
+        {"id": 3,  "name": "Развлечения",         "type": "expense"},
+        {"id": 4,  "name": "Здоровье",            "type": "expense"},
+        {"id": 5,  "name": "Образование",         "type": "expense"},
+        {"id": 6,  "name": "Рестораны",           "type": "expense"},
+        {"id": 7,  "name": "Одежда",              "type": "expense"},
+        {"id": 8,  "name": "Коммунальные услуги", "type": "expense"},
+        {"id": 9,  "name": "Связь",               "type": "expense"},
+        {"id": 10, "name": "Путешествия",         "type": "expense"},
+        {"id": 11, "name": "Зарплата",            "type": "income"},
+        {"id": 12, "name": "Подработка",          "type": "income"},
+        {"id": 13, "name": "Инвестиции",          "type": None},
+        {"id": 14, "name": "Подарки",             "type": None},
+        {"id": 15, "name": "Спорт",               "type": "expense"}
     ]
 
     # MCC категории

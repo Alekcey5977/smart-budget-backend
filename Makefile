@@ -84,8 +84,8 @@ status:
 
 generate-test-data:
 	@echo "Generating test data files..."
-	cd testData && python generate_pseudo_bank_data.py
-	cd testData && python generate_images_data.py
+	cd testData && python3 generate_pseudo_bank_data.py
+	cd testData && python3 generate_images_data.py
 	@echo ""
 	@echo "Test data files generated!"
 	@echo "  - testData/pseudo_bank_test_data.json"
@@ -98,7 +98,7 @@ load-test-data:
 	@echo "Make sure services are running (make start)"
 	@echo ""
 	@sleep 2
-	cd testData && python load_pseudo_bank_data.py http://localhost:8004
+	cd testData && python3 load_pseudo_bank_data.py http://localhost:8004
 	@echo ""
 	@echo "Data loaded! Available account numbers:"
 	@echo "  - 40817810099910004312 (Main card)"
@@ -191,7 +191,7 @@ test-e2e-start:
 	done
 	@echo ""
 	@echo "Loading test data into pseudo bank..."
-	cd testData && python load_pseudo_bank_data.py http://localhost:18004
+	cd testData && python3 load_pseudo_bank_data.py http://localhost:18004
 	@echo ""
 	@echo "Loading test images..."
 	$(TEST_COMPOSE) exec -w /app images-service python /testData/load_test_images.py
