@@ -1,5 +1,5 @@
+# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -10,10 +10,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+from shared.logging import LoggingMiddleware, setup_logging
+
+setup_logging(service_name="history-service")
 
 
 @asynccontextmanager
@@ -43,6 +42,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=life_span
 )
+
+app.add_middleware(LoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
