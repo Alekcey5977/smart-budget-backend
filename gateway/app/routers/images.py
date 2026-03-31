@@ -168,7 +168,7 @@ async def update_my_avatar(
 
 
 @router.get(
-    "/images/{image_id}",
+    "/{image_id}",
     summary="Получить изображение по ID",
     description="""
 Получить бинарные данные изображения по его ID.
