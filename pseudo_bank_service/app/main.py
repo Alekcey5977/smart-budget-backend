@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from app.database import create_tables, shutdown
+from app.models import *  # noqa: F403
 from app.routers import pseudo_bank
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,9 +12,6 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from shared.logging import LoggingMiddleware, setup_logging
 
 setup_logging(service_name="pseudo-bank-service")
-
-
-from app.models import *  # noqa: F403
 
 
 @asynccontextmanager

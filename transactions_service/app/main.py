@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from app.database import AsyncSessionLocal, create_tables
+from app.models import *  # noqa: F403
 from app.repository.sync_repository import SyncRepository
 from app.routers import sync, transactions
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -14,9 +15,6 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from shared.logging import LoggingMiddleware, setup_logging
 
 setup_logging(service_name="transactions-service")
-
-
-from app.models import *  # noqa: F403
 
 scheduler = AsyncIOScheduler()
 
