@@ -12,6 +12,8 @@ services:
       - "${USERS_DB_HOST_PORT:-5433}:5432"
     volumes:
       - users-db-data:/var/lib/postgresql/data
+    networks:
+      - monitoring-net
 
   users-service:
     build:
@@ -31,6 +33,11 @@ services:
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
     restart: on-failure
+    labels:
+      - "logging=promtail"
+      - "compose_service=users-service"
+    networks:
+      - monitoring-net
 
   # --- Transactions Microservice ---
   transactions-db:
@@ -45,6 +52,8 @@ services:
       - "${TRANSACTIONS_DB_HOST_PORT:-5434}:5432"
     volumes:
       - transactions-db-data:/var/lib/postgresql/data
+    networks:
+      - monitoring-net
 
   transactions-service:
     build:
@@ -60,6 +69,11 @@ services:
       DATABASE_URL: ${TRANSACTIONS_DATABASE_URL}
       SERVICE_PORT: ${TRANSACTIONS_SERVICE_PORT}
     restart: on-failure
+    labels:
+      - "logging=promtail"
+      - "compose_service=transactions-service"
+    networks:
+      - monitoring-net
 
   # --- Images Microservice ---
   images-db:
@@ -74,6 +88,8 @@ services:
       - "${IMAGES_DB_HOST_PORT:-5435}:5432"
     volumes:
       - images-db-data:/var/lib/postgresql/data
+    networks:
+      - monitoring-net
 
   images-service:
     build:
@@ -92,6 +108,11 @@ services:
     volumes:
       - ./testData:/testData
     restart: on-failure
+    labels:
+      - "logging=promtail"
+      - "compose_service=images-service"
+    networks:
+      - monitoring-net
 
   # --- Pseudo Bank Microservice ---
   pseudo-bank-db:
@@ -106,9 +127,13 @@ services:
       - "${PSEUDO_BANK_DB_HOST_PORT:-5436}:5432"
     volumes:
       - pseudo-bank-db-data:/var/lib/postgresql/data
+    networks:
+      - monitoring-net
 
   pseudo-bank-service:
-    build: ./pseudo_bank_service
+    build:
+      context: .
+      dockerfile: pseudo_bank_service/Dockerfile
     env_file:
       - .env
     ports:
@@ -119,6 +144,11 @@ services:
       DATABASE_URL: ${PSEUDO_BANK_DATABASE_URL}
       SERVICE_PORT: ${PSEUDO_BANK_SERVICE_PORT}
     restart: on-failure
+    labels:
+      - "logging=promtail"
+      - "compose_service=pseudo-bank-service"
+    networks:
+      - monitoring-net
 
   # --- Purposes Microservice ---
   purposes-db:
@@ -133,6 +163,8 @@ services:
       - "${PURPOSES_DB_HOST_PORT:-5437}:5432"
     volumes:
       - purposes-db-data:/var/lib/postgresql/data
+    networks:
+      - monitoring-net
 
   purposes-service:
     build:
@@ -150,6 +182,11 @@ services:
       SERVICE_PORT: ${PURPOSES_SERVICE_PORT}
       REDIS_URL: ${REDIS_URL}
     restart: on-failure
+    labels:
+      - "logging=promtail"
+      - "compose_service=purposes-service"
+    networks:
+      - monitoring-net
 
   # --- Notification Microservice ---
   notification-db:
@@ -164,6 +201,8 @@ services:
       - "${NOTIFICATION_DB_HOST_PORT:-5438}:5432"
     volumes:
       - notification-db-data:/var/lib/postgresql/data
+    networks:
+      - monitoring-net
 
   notification-service:
     build:
@@ -182,6 +221,11 @@ services:
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
     restart: on-failure
+    labels:
+      - "logging=promtail"
+      - "compose_service=notification-service"
+    networks:
+      - monitoring-net
 
   # --- History Microservice ---
   history-db:
@@ -196,6 +240,8 @@ services:
       - "${HISTORY_DB_HOST_PORT:-5439}:5432"
     volumes:
       - history-db-data:/var/lib/postgresql/data
+    networks:
+      - monitoring-net
 
   history-service:
     build:
@@ -214,10 +260,17 @@ services:
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
     restart: on-failure
+    labels:
+      - "logging=promtail"
+      - "compose_service=history-service"
+    networks:
+      - monitoring-net
 
   # --- API Gateway ---
   gateway:
-    build: ./gateway
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
     env_file:
       - .env
     ports:
@@ -241,9 +294,13 @@ services:
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
     restart: on-failure
+    labels:
+      - "logging=promtail"
+      - "compose_service=gateway"
+    networks:
+      - monitoring-net
 
-
-# --- Redis ---
+  # --- Redis ---
   redis:
     image: redis:7-alpine
     ports:
@@ -251,6 +308,71 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    networks:
+      - monitoring-net
+
+  # --- Prometheus ---
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - users-service
+      - transactions-service
+      - images-service
+      - pseudo-bank-service
+      - purposes-service
+      - notification-service
+      - history-service
+    networks:
+      - monitoring-net
+
+  # --- Loki (для сбора и хранения логов) ---
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring-net
+
+  # --- Promtail (для сбора логов с контейнеров и отправки в Loki) ---
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - monitoring-net
+
+  # --- Grafana ---
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./monitoring/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./monitoring/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./monitoring:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - monitoring-net
 
 volumes:
   users-db-data:
@@ -261,3 +383,7 @@ volumes:
   notification-db-data:
   history-db-data:
   redis_data:
+
+networks:
+  monitoring-net:
+    driver: bridge

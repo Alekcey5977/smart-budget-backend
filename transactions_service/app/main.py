@@ -1,3 +1,4 @@
+# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -9,6 +10,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+
+from shared.logging import LoggingMiddleware, setup_logging
+
+setup_logging(service_name="transactions-service")
 
 scheduler = AsyncIOScheduler()
 
@@ -49,8 +55,9 @@ async def life_span(app: FastAPI):
     print("[LIFESPAN] Scheduler stopped")
 
 
-
 app = FastAPI(title="Transactions", lifespan=life_span)
+
+app.add_middleware(LoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,6 +69,9 @@ app.add_middleware(
 
 app.include_router(transactions.router)
 app.include_router(sync.router)
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
 
 @app.get("/health")
 async def health():

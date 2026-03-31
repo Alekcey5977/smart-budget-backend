@@ -1,3 +1,4 @@
+# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 from contextlib import asynccontextmanager
 
 from app.database import engine
@@ -5,6 +6,11 @@ from app.models import Base
 from app.routers import images
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+
+from shared.logging import LoggingMiddleware, setup_logging
+
+setup_logging(service_name="images-service")
 
 
 @asynccontextmanager
@@ -62,6 +68,8 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+app.add_middleware(LoggingMiddleware)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -73,6 +81,8 @@ app.add_middleware(
 
 # Подключение роутеров
 app.include_router(images.router)
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 @app.get("/", tags=["health"])

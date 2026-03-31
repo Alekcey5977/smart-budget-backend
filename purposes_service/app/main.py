@@ -1,3 +1,4 @@
+# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -5,6 +6,11 @@ from app.database import create_tables, shutdown
 from app.routers import purpose
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+
+from shared.logging import LoggingMiddleware, setup_logging
+
+setup_logging(service_name="purposes-service")
 
 
 @asynccontextmanager
@@ -16,6 +22,8 @@ async def life_span(app: FastAPI):
 
 app = FastAPI(title="Purposes-service", lifespan=life_span)
 
+app.add_middleware(LoggingMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,6 +33,8 @@ app.add_middleware(
 )
 
 app.include_router(purpose.router)
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 @app.get("/health")

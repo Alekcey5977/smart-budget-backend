@@ -1,12 +1,8 @@
+# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 import os
 import sys
 
 import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from app.routers import (
     auth,
     bank_accounts,
@@ -18,8 +14,22 @@ from app.routers import (
     transactions,
     websocket,
 )
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
-app = FastAPI(title="Gateway Service", description="Точка входа", version="1.0.0")
+from shared.logging import LoggingMiddleware, setup_logging
+
+setup_logging(service_name="gateway")
+
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+app = FastAPI(title="Gateway Service",
+              description="Точка входа", version="1.0.0")
+
+app.add_middleware(LoggingMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,6 +48,9 @@ app.include_router(purposes.router)
 app.include_router(notifications.router)
 app.include_router(history.router)
 app.include_router(websocket.router)
+
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 @app.get("/health")

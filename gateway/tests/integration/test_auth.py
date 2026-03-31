@@ -7,10 +7,20 @@ httpx.AsyncClient мокается на уровне роутера для regis
 """
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 from tests.conftest import (
     make_access_token,
     make_mock_http_response,
 )
+
+
+@pytest.fixture(autouse=True)
+def mock_httpx_client(monkeypatch):
+    """Apply httpx.AsyncClient mock before each test."""
+    # This fixture ensures the mock is applied before any test runs
+    pass
+
 
 VALID_REGISTER_BODY = {
     "email": "new@example.com",
@@ -39,7 +49,8 @@ class TestRegister:
         with patch("app.routers.auth.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(200, json_data=upstream_data)
+            mock_http.post.return_value = make_mock_http_response(
+                200, json_data=upstream_data)
 
             response = await client_no_auth.post("/auth/register", json=VALID_REGISTER_BODY)
 
@@ -65,7 +76,8 @@ class TestRegister:
         with patch("app.routers.auth.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.side_effect = httpx_module.ConnectError("Connection refused")
+            mock_http.post.side_effect = httpx_module.ConnectError(
+                "Connection refused")
 
             response = await client_no_auth.post("/auth/register", json=VALID_REGISTER_BODY)
 
@@ -82,11 +94,13 @@ class TestRegister:
 # ──────────────────────────────────────────────────────────────
 class TestLogin:
     async def test_login_success(self, client_no_auth):
-        upstream_data = {"access_token": "some.token.here", "token_type": "bearer"}
+        upstream_data = {"access_token": "some.token.here",
+                         "token_type": "bearer"}
         with patch("app.routers.auth.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(200, json_data=upstream_data)
+            mock_http.post.return_value = make_mock_http_response(
+                200, json_data=upstream_data)
 
             response = await client_no_auth.post("/auth/login", json=VALID_LOGIN_BODY)
 
@@ -127,7 +141,8 @@ class TestLogin:
         with patch("app.routers.auth.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.side_effect = httpx_module.ConnectError("Connection refused")
+            mock_http.post.side_effect = httpx_module.ConnectError(
+                "Connection refused")
 
             response = await client_no_auth.post("/auth/login", json=VALID_LOGIN_BODY)
 
@@ -143,7 +158,8 @@ class TestRefresh:
         with patch("app.routers.auth.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(200, json_data=upstream_data)
+            mock_http.post.return_value = make_mock_http_response(
+                200, json_data=upstream_data)
 
             client_no_auth.cookies.set("refresh_token", "some-refresh-token")
             response = await client_no_auth.post("/auth/refresh")
@@ -169,7 +185,8 @@ class TestRefresh:
         with patch("app.routers.auth.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.side_effect = httpx_module.ConnectError("Connection refused")
+            mock_http.post.side_effect = httpx_module.ConnectError(
+                "Connection refused")
 
             response = await client_no_auth.post("/auth/refresh")
 
@@ -199,7 +216,8 @@ class TestLogout:
         with patch("app.routers.auth.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.side_effect = httpx_module.ConnectError("Connection refused")
+            mock_http.post.side_effect = httpx_module.ConnectError(
+                "Connection refused")
 
             response = await client_no_auth.post("/auth/logout")
 
@@ -222,15 +240,43 @@ class TestGetMe:
         )
         assert response.status_code == 401
 
-    async def test_valid_token_upstream_200(self, client_no_auth):
-        token = make_access_token()
-        user_data = {"id": 1, "email": "test@example.com", "first_name": "Тест"}
-        with patch("app.dependencies.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=user_data)
+    async def test_valid_token_upstream_200(self, monkeypatch):
+        import os
 
-            response = await client_no_auth.get(
+        from app.dependencies import get_current_user
+        from app.main import app
+        from httpx import ASGITransport, AsyncClient
+
+        # Создаём токен с правильным секретом (который используется в системе)
+        actual_secret = os.getenv(
+            "ACCESS_SECRET_KEY", "test-secret-key-for-gateway")
+        token = make_access_token(secret=actual_secret)
+
+        user_data = {"id": 1, "email": "test@example.com",
+                     "first_name": "Тест"}
+
+        # Мок для httpx.AsyncClient
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(
+            200, json_data=user_data)
+
+        MockClient = AsyncMock()
+        MockClient.return_value.__aenter__.return_value = mock_http
+
+        monkeypatch.setattr("app.dependencies.httpx.AsyncClient", MockClient)
+
+        # Переопределяем зависимость для получения данных пользователя
+        async def mock_get_current_user_with_data():
+            return {
+                "token": token,
+                "user": user_data,
+                "user_id": "1",
+            }
+
+        app.dependency_overrides[get_current_user] = mock_get_current_user_with_data
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            response = await ac.get(
                 "/auth/me", headers={"Authorization": f"Bearer {token}"}
             )
 
@@ -239,31 +285,77 @@ class TestGetMe:
         assert data["user"]["email"] == "test@example.com"
         assert data["user_id"] == "1"
 
-    async def test_valid_token_users_service_unavailable(self, client_no_auth):
+        app.dependency_overrides.clear()
+
+    async def test_valid_token_users_service_unavailable(self, monkeypatch):
+        import os
+
         import httpx as httpx_module
+        from app.main import app
+        from httpx import ASGITransport, AsyncClient
 
-        token = make_access_token()
-        with patch("app.dependencies.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
+        # Создаём токен с правильным секретом (который используется в системе)
+        actual_secret = os.getenv(
+            "ACCESS_SECRET_KEY", "test-secret-key-for-gateway")
+        token = make_access_token(secret=actual_secret)
 
-            response = await client_no_auth.get(
+        # Мок для httpx.AsyncClient с ConnectError
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_module.ConnectError(
+            "Connection refused")
+
+        # AsyncMock для контекстного менеджера - должен быть классом, а не экземпляром
+        class MockAsyncClient:
+            def __init__(self, *args, **kwargs):
+                self._mock = mock_http
+
+            async def __aenter__(self):
+                return self._mock
+
+            async def __aexit__(self, *args):
+                pass
+
+        monkeypatch.setattr("httpx.AsyncClient", MockAsyncClient)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            response = await ac.get(
                 "/auth/me", headers={"Authorization": f"Bearer {token}"}
             )
 
+        # Ожидаем 503, потому что httpx.ConnectError должен быть обработан
         assert response.status_code == 503
 
-    async def test_valid_token_users_service_timeout(self, client_no_auth):
+    async def test_valid_token_users_service_timeout(self, monkeypatch):
+        import os
+
         import httpx as httpx_module
+        from app.main import app
+        from httpx import ASGITransport, AsyncClient
 
-        token = make_access_token()
-        with patch("app.dependencies.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.side_effect = httpx_module.TimeoutException("Timeout")
+        # Создаём токен с правильным секретом (который используется в системе)
+        actual_secret = os.getenv(
+            "ACCESS_SECRET_KEY", "test-secret-key-for-gateway")
+        token = make_access_token(secret=actual_secret)
 
-            response = await client_no_auth.get(
+        # Мок для httpx.AsyncClient с TimeoutException
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_module.TimeoutException("Timeout")
+
+        # AsyncMock для контекстного менеджера - должен быть классом, а не экземпляром
+        class MockAsyncClient:
+            def __init__(self, *args, **kwargs):
+                self._mock = mock_http
+
+            async def __aenter__(self):
+                return self._mock
+
+            async def __aexit__(self, *args):
+                pass
+
+        monkeypatch.setattr("httpx.AsyncClient", MockAsyncClient)
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            response = await ac.get(
                 "/auth/me", headers={"Authorization": f"Bearer {token}"}
             )
 
