@@ -36,14 +36,14 @@ class TestPublicEndpoints:
         avatar = avatars[0]
         image_id = avatar.get("image_id") or avatar.get("id")
 
-        resp = http_client.get(f"/images/images/{image_id}")
+        resp = http_client.get(f"/images/{image_id}")
         assert resp.status_code == 200
         assert len(resp.content) > 0
         assert resp.headers.get("content-type", "").startswith("image/")
 
     def test_get_image_by_invalid_id_returns_404(self, http_client):
         # Endpoint expects a UUID — use a valid UUID format that doesn't exist
-        resp = http_client.get("/images/images/00000000-0000-0000-0000-000000000000")
+        resp = http_client.get("/images/00000000-0000-0000-0000-000000000000")
         assert resp.status_code == 404
 
 

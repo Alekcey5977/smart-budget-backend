@@ -150,7 +150,7 @@ class TestUpdateMyAvatar:
 
 
 # ──────────────────────────────────────────────────────────────
-# GET /images/images/{id}  (public, binary)
+# GET /images/{id}  (public, binary)
 # ──────────────────────────────────────────────────────────────
 class TestGetImageBinary:
     async def test_get_image_success(self, client_no_auth):
@@ -168,7 +168,7 @@ class TestGetImageBinary:
                 },
             )
 
-            response = await client_no_auth.get(f"/images/images/{IMAGE_ID}")
+            response = await client_no_auth.get(f"/images/{IMAGE_ID}")
 
         assert response.status_code == 200
         assert response.content == image_bytes
@@ -182,7 +182,7 @@ class TestGetImageBinary:
                 404, json_data={"detail": "Image not found"}
             )
 
-            response = await client_no_auth.get(f"/images/images/{IMAGE_ID}")
+            response = await client_no_auth.get(f"/images/{IMAGE_ID}")
 
         assert response.status_code == 404
 
@@ -197,7 +197,7 @@ class TestGetImageBinary:
                 headers={"content-type": "image/png", "content-length": str(len(image_bytes))},
             )
 
-            response = await client_no_auth.get(f"/images/images/{IMAGE_ID}")
+            response = await client_no_auth.get(f"/images/{IMAGE_ID}")
 
         assert response.status_code == 200
 
