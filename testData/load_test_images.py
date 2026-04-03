@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, '/app')
 
 from app.models import Base, EntityType, Image
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
@@ -50,6 +51,11 @@ async def load_test_data(database_url: str, json_path: str):
     # Вставка данных
     async with async_session_maker() as session:
         try:
+            # Очистка существующих данных перед загрузкой
+            deleted = await session.execute(delete(Image))
+            await session.commit()
+            print(f"Cleared {deleted.rowcount} existing records")
+
             inserted_count = 0
 
             for item in test_data:
