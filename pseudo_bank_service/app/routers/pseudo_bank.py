@@ -1,6 +1,15 @@
 from datetime import datetime
 from typing import List, Optional
 
+from app.cache import (
+    BANK_ACCOUNT_TTL,
+    BANKS_KEY,
+    CATEGORIES_KEY,
+    DICTIONARIES_TTL,
+    MCC_CATEGORIES_KEY,
+    MERCHANTS_KEY,
+    cache_client,
+)
 from app.database import get_db
 from app.repository.transactions_repository import TransactionRepository
 from app.schemas import (
@@ -18,6 +27,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter(prefix="/pseudo_bank", tags=["pseudo_bank"])
 
 # Получение репозитория транзакций
+
+
 async def get_transactions_repository(db: AsyncSession = Depends(get_db)):
     """Dependency для получения репозитория"""
     return TransactionRepository(db)
@@ -50,9 +61,9 @@ async def get_transactions_repository(db: AsyncSession = Depends(get_db)):
     }
 )
 async def validate_account(
-    request: Validate_Bank_Account,
-    db: AsyncSession = Depends(get_db),
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)):
+        request: Validate_Bank_Account,
+        db: AsyncSession = Depends(get_db),
+        transaction_repo: TransactionRepository = Depends(get_transactions_repository)):
     """
     Проверка существования банковского счета в псевдо банке.
 
@@ -111,16 +122,26 @@ async def validate_account(
     | 40817810099910004314 | a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2 |
     | 40817810099910004315 | 5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6 |
     """
+    # Cache-Aside: пробуем получить из кэша
+    cache_key = f"bank:account:{request.bank_account_hash}"
+    cached = await cache_client.get(cache_key)
+    if cached is not None:
+        return cached
 
     result = await transaction_repo.get_account_bank(request.bank_account_hash)
 
     if not result:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    return {
+    response_data = {
         "balance": str(result.balance),
         "currency": result.currency,
     }
+
+    # Сохраняем в кэш
+    await cache_client.set(cache_key, response_data, ttl=BANK_ACCOUNT_TTL)
+
+    return response_data
 
 
 @router.get(
@@ -263,9 +284,6 @@ async def export_account_data(
     ## Использование параметра since
 
     Для инкрементальной синхронизации (получение только новых транзакций):
-    ```
-    ?since=2024-01-15T12:30:00
-    ```
     Вернет только транзакции, созданные после указанной даты.
     """
     data = await transaction_repo.export_account_data(account_hash)
@@ -274,13 +292,38 @@ async def export_account_data(
 
     to_dict = transaction_repo.to_dict
 
+    # Кэшируем справочники (меняются крайне редко)
+    # Категории
+    cached_categories = await cache_client.get(CATEGORIES_KEY)
+    if cached_categories is None:
+        cached_categories = [to_dict(c) for c in data["categories"]]
+        await cache_client.set(CATEGORIES_KEY, cached_categories, ttl=DICTIONARIES_TTL)
+
+    # Мерчанты
+    cached_merchants = await cache_client.get(MERCHANTS_KEY)
+    if cached_merchants is None:
+        cached_merchants = [to_dict(m) for m in data["merchants"]]
+        await cache_client.set(MERCHANTS_KEY, cached_merchants, ttl=DICTIONARIES_TTL)
+
+    # MCC категории
+    cached_mcc = await cache_client.get(MCC_CATEGORIES_KEY)
+    if cached_mcc is None:
+        cached_mcc = [to_dict(m) for m in data["mccs"]]
+        await cache_client.set(MCC_CATEGORIES_KEY, cached_mcc, ttl=DICTIONARIES_TTL)
+
+    # Банки
+    cached_banks = await cache_client.get(BANKS_KEY)
+    if cached_banks is None:
+        cached_banks = [to_dict(data["bank"])]
+        await cache_client.set(BANKS_KEY, cached_banks, ttl=DICTIONARIES_TTL)
+
     return {
         "bank_account": to_dict(data["account"]),
         "bank": to_dict(data["bank"]),
         "transactions": [to_dict(t) for t in data["transactions"]],
-        "merchants": [to_dict(m) for m in data["merchants"]],
-        "categories": [to_dict(c) for c in data["categories"]],
-        "mcc_categories": [to_dict(m) for m in data["mccs"]],
+        "merchants": cached_merchants,
+        "categories": cached_categories,
+        "mcc_categories": cached_mcc,
     }
 
 
@@ -306,7 +349,8 @@ async def export_account_data(
 )
 async def create_category(
     category: CategoryCreate,
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Создание категории транзакций.
@@ -341,6 +385,10 @@ async def create_category(
     - Коммунальные услуги
     """
     result = await transaction_repo.create_category(category)
+
+    # Инвалидация кэша категорий
+    await cache_client.delete(CATEGORIES_KEY)
+
     return transaction_repo.to_dict(result)
 
 
@@ -363,7 +411,8 @@ async def create_category(
 )
 async def create_categories_bulk(
     categories: List[CategoryCreate],
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Массовое создание категорий транзакций.
@@ -395,7 +444,12 @@ async def create_categories_bulk(
     }
     ```
     """
-    return await transaction_repo.bulk_create_categories(categories)
+    result = await transaction_repo.bulk_create_categories(categories)
+
+    # Инвалидация кэша категорий
+    await cache_client.delete(CATEGORIES_KEY)
+
+    return result
 
 
 @router.post(
@@ -420,7 +474,8 @@ async def create_categories_bulk(
 )
 async def create_mcc_category(
     mcc: MCCCategoryCreate,
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Создание связи между MCC кодом и категорией.
@@ -477,7 +532,8 @@ async def create_mcc_category(
 )
 async def create_mcc_categories_bulk(
     mcc_list: List[MCCCategoryCreate],
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Массовое создание связей между MCC кодами и категориями.
@@ -503,7 +559,12 @@ async def create_mcc_categories_bulk(
     }
     ```
     """
-    return await transaction_repo.bulk_create_mcc_categories(mcc_list)
+    result = await transaction_repo.bulk_create_mcc_categories(mcc_list)
+
+    # Инвалидация кэша MCC категорий
+    await cache_client.delete(MCC_CATEGORIES_KEY)
+
+    return result
 
 
 @router.post(
@@ -529,7 +590,8 @@ async def create_mcc_categories_bulk(
 )
 async def create_merchant(
     merchant: MerchantCreate,
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Создание мерчанта (магазин, организация, получатель платежа).
@@ -584,7 +646,8 @@ async def create_merchant(
 )
 async def create_merchants_bulk(
     merchants: List[MerchantCreate],
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Массовое создание мерчантов.
@@ -609,7 +672,12 @@ async def create_merchants_bulk(
     }
     ```
     """
-    return await transaction_repo.bulk_create_merchants(merchants)
+    result = await transaction_repo.bulk_create_merchants(merchants)
+
+    # Инвалидация кэша мерчантов
+    await cache_client.delete(MERCHANTS_KEY)
+
+    return result
 
 
 @router.post(
@@ -635,7 +703,8 @@ async def create_merchants_bulk(
 )
 async def create_bank(
     bank: BankCreate,
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Создание банка-эмитента.
@@ -695,7 +764,8 @@ async def create_bank(
 )
 async def create_banks_bulk(
     banks: List[BankCreate],
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Массовое создание банков.
@@ -720,7 +790,12 @@ async def create_banks_bulk(
     }
     ```
     """
-    return await transaction_repo.bulk_create_banks(banks)
+    result = await transaction_repo.bulk_create_banks(banks)
+
+    # Инвалидация кэша банков
+    await cache_client.delete(BANKS_KEY)
+
+    return result
 
 
 @router.post(
@@ -750,7 +825,8 @@ async def create_banks_bulk(
 )
 async def create_bank_account(
     account: BankAccountCreate,
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Создание банковского счета в псевдо банке.
@@ -821,7 +897,8 @@ async def create_bank_account(
 )
 async def create_bank_accounts_bulk(
     accounts: List[BankAccountCreate],
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Массовое создание банковских счетов.
@@ -891,7 +968,8 @@ async def create_bank_accounts_bulk(
 )
 async def create_transaction(
     transaction: TransactionCreate,
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Создание транзакции (банковской операции).
@@ -973,7 +1051,8 @@ async def create_transaction(
 )
 async def create_transactions_bulk(
     transactions: List[TransactionCreate],
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository)
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository)
 ):
     """
     Массовое создание транзакций.
