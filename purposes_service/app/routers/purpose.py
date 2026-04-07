@@ -1,6 +1,11 @@
 from typing import List
 from uuid import UUID
 
+from app.cache import (
+    PURPOSES_LIST_TTL,
+    cache_client,
+    purposes_by_user_key,
+)
 from app.database import get_db
 from app.dependencies import get_user_id_from_header
 from app.repository.purpose_repository import PurposeRepository
@@ -24,7 +29,10 @@ async def create_purpose(
 ):
     """Создание цели"""
     purpose = await repo.create_purpose(user_id, purpose)
-    
+
+    # Инвалидация кэша целей пользователя
+    await cache_client.delete(purposes_by_user_key(user_id))
+
     return purpose
 
 
@@ -33,9 +41,18 @@ async def get_purposes_by_user(
     user_id: int = Depends(get_user_id_from_header),
     repo: PurposeRepository = Depends(get_purpose_repository),
 ):
-    """Получение целей пользователя"""
+    """Получение целей пользователя с кэшем в Redis"""
+    # Cache-Aside: пробуем получить из кэша
+    cache_key = purposes_by_user_key(user_id)
+    cached = await cache_client.get(cache_key)
+    if cached is not None:
+        return cached
+
     purposes = await repo.get_purposes_by_user(user_id)
-    
+
+    # Сохраняем в кэш
+    await cache_client.set(cache_key, purposes, ttl=PURPOSES_LIST_TTL)
+
     return purposes
 
 
@@ -56,6 +73,9 @@ async def update_purpose(
     if not purpose:
         raise HTTPException(status_code=404, detail="Purpose not found")
 
+    # Инвалидация кэша целей пользователя
+    await cache_client.delete(purposes_by_user_key(user_id))
+
     return purpose
 
 
@@ -70,4 +90,8 @@ async def delete_purpose(
     if deleted_purpose is None:
         raise HTTPException(
             status_code=404, detail="Purpose not found or access denied")
+
+    # Инвалидация кэша целей пользователя
+    await cache_client.delete(purposes_by_user_key(user_id))
+
     return deleted_purpose
