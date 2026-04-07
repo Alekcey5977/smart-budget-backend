@@ -1,7 +1,7 @@
-# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 from contextlib import asynccontextmanager
 
 import uvicorn
+from app.cache import cache_client
 from app.database import AsyncSessionLocal, create_tables
 from app.models import *  # noqa: F403
 from app.repository.sync_repository import SyncRepository
@@ -35,6 +35,7 @@ async def life_span(app: FastAPI):
     print("[LIFESPAN] Starting up...")
 
     await create_tables()
+    await cache_client.connect()
 
     try:
         async with AsyncSessionLocal() as db:
@@ -51,6 +52,7 @@ async def life_span(app: FastAPI):
     yield
 
     print("[LIFESPAN] Shutting down...")
+    await cache_client.close()
     scheduler.shutdown(wait=False)
     print("[LIFESPAN] Scheduler stopped")
 

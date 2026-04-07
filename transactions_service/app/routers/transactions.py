@@ -2,6 +2,18 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
+from app.cache import (
+    CATEGORIES_ALL_KEY,
+    CATEGORIES_EXPENSE_KEY,
+    CATEGORIES_INCOME_KEY,
+    CATEGORIES_TTL,
+    TRANSACTION_TTL,
+    TRANSACTIONS_LIST_TTL,
+    cache_client,
+    category_by_id_key,
+    transaction_by_id_key,
+    transactions_list_key,
+)
 from app.database import get_db
 from app.dependencies import get_user_id_from_header
 from app.repository.transactions_repository import TransactionRepository
@@ -42,6 +54,25 @@ async def get_transactions(
     - merchant_ids: список ID мерчантов
     - limit, offset: пагинация
     """
+    # Формируем ключ кэша из всех фильтров
+    filter_dict = {
+        "type": filters.transaction_type,
+        "categories": filters.category_ids,
+        "start": filters.start_date,
+        "end": filters.end_date,
+        "min": filters.min_amount,
+        "max": filters.max_amount,
+        "merchants": filters.merchant_ids,
+        "limit": filters.limit,
+        "offset": filters.offset,
+    }
+    cache_key = transactions_list_key(user_id, filter_dict)
+
+    # Cache-Aside: пробуем получить из кэша
+    cached = await cache_client.get(cache_key)
+    if cached is not None:
+        return cached
+
     try:
         repo = TransactionRepository(db)
         transactions = await repo.get_transactions_with_filters(
@@ -72,6 +103,10 @@ async def get_transactions(
                 "merchant_id": t.merchant_id,
                 "merchant_name": t.merchant.name if t.merchant else None
             })
+
+        # Сохраняем в кэш
+        await cache_client.set(cache_key, result, ttl=TRANSACTIONS_LIST_TTL)
+
         return result
 
     except Exception as e:
@@ -120,6 +155,11 @@ async def update_transaction_category(
             }
         ))
 
+        # Инвалидация кэша изменённой транзакции
+        await cache_client.delete(transaction_by_id_key(str(transaction_id)))
+        # Инвалидация кэшей списков транзакций пользователя (все варианты фильтров)
+        await cache_client.delete_pattern(f"transactions:list:user{user_id}:*")
+
         return {
             "id": transaction.id,
             "user_id": transaction.user_id,
@@ -159,12 +199,42 @@ async def get_categories(
         None,
         description="Фильтр по типу: 'income' или 'expense'. Универсальные категории (null) включаются всегда."
     ),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
+    """Получить категории с кэша в Redis"""
+    # Определяем ключ кэша
+    if type == "income":
+        cache_key = CATEGORIES_INCOME_KEY
+    elif type == "expense":
+        cache_key = CATEGORIES_EXPENSE_KEY
+    else:
+        cache_key = CATEGORIES_ALL_KEY
+
+    # Cache-Aside: пробуем получить из кэша
+    cached = await cache_client.get(cache_key)
+    if cached is not None:
+        return cached
+
+    # Промах кэша -> запрос в БД
     try:
         repo = TransactionRepository(db)
         categories = await repo.get_all_categories(type=type)
-        return categories
+
+        # Сериализуем в dict для кэширования
+        result = [
+            {
+                "id": cat.id,
+                "name": cat.name,
+                "type": cat.type,
+                "icon": cat.icon,
+            }
+            for cat in categories
+        ]
+
+        # Сохраняем в кэш
+        await cache_client.set(cache_key, result, ttl=CATEGORIES_TTL)
+
+        return result
 
     except Exception as e:
         raise HTTPException(500, f"Internal server error: {str(e)}")
@@ -178,14 +248,31 @@ async def get_categories(
 )
 async def get_category_by_id(
     category_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
+    """Получить категорию по ID с кэша в Redis"""
+    cache_key = category_by_id_key(category_id)
+
+    # Cache-Aside
+    cached = await cache_client.get(cache_key)
+    if cached is not None:
+        return cached
+
     try:
         repo = TransactionRepository(db)
         category = await repo.get_category_by_id(category_id)
         if not category:
             raise HTTPException(404, f"Category {category_id} not found")
-        return category
+
+        result = {
+            "id": category.id,
+            "name": category.name,
+            "type": category.type,
+            "icon": category.icon,
+        }
+
+        await cache_client.set(cache_key, result, ttl=CATEGORIES_TTL)
+        return result
 
     except HTTPException:
         raise
@@ -204,13 +291,23 @@ async def get_transaction_by_id(
     user_id: int = Depends(get_user_id_from_header),
     db: AsyncSession = Depends(get_db)
 ):
+    """Получить транзакцию по ID с кэшем в Redis"""
+    cache_key = transaction_by_id_key(transaction_id)
+
+    # Cache-Aside: пробуем получить из кэша
+    cached = await cache_client.get(cache_key)
+    if cached is not None:
+        # Проверяем, что транзакция принадлежит пользователю
+        if cached.get("user_id") == user_id:
+            return cached
+
     try:
         repo = TransactionRepository(db)
         transaction = await repo.get_transaction_by_id(transaction_id, user_id)
         if not transaction:
             raise HTTPException(404, f"Transaction {transaction_id} not found")
 
-        return {
+        result = {
             "id": transaction.id,
             "user_id": transaction.user_id,
             "bank_account_id": transaction.bank_account_id,
@@ -223,6 +320,11 @@ async def get_transaction_by_id(
             "merchant_id": transaction.merchant_id,
             "merchant_name": transaction.merchant.name if transaction.merchant else None,
         }
+
+        # Сохраняем в кэш
+        await cache_client.set(cache_key, result, ttl=TRANSACTION_TTL)
+
+        return result
 
     except HTTPException:
         raise

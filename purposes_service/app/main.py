@@ -1,4 +1,3 @@
-# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 from contextlib import asynccontextmanager
 
 import uvicorn
