@@ -1,6 +1,11 @@
 from typing import List
 
 from app.auth import verify_token
+from app.cache import (
+    BANK_ACCOUNTS_TTL,
+    bank_accounts_key,
+    cache_client,
+)
 from app.repository.bank_account_repository import Bank_AccountRepository
 from app.repository.user_repository import UserRepository
 from app.routers.users import get_bank_account_repository, get_user_repository
@@ -64,6 +69,9 @@ async def add_bank_account(
     background_tasks.add_task(
         bank_account_repo.trigger_transaction_sync, account_hash, user_id)
 
+    # Инвалидация кэша банковских счетов
+    await cache_client.delete(bank_accounts_key(user_id))
+
     return {
         "bank_account_id": new_account.bank_account_id,
         "bank_account_name": new_account.bank_account_name,
@@ -81,9 +89,16 @@ async def get_user_bank_accounts(
 ):
     """Получить все банковские счета текущего пользователя"""
     user_id = user.id
+
+    # Cache-Aside: пробуем получить из кэша
+    cache_key = bank_accounts_key(user_id)
+    cached = await cache_client.get(cache_key)
+    if cached is not None:
+        return cached
+
     accounts = await bank_account_repo.get_all_by_user_id(user_id)
 
-    return [
+    result = [
         {
             "bank_account_id": acc.bank_account_id,
             "bank_account_name": acc.bank_account_name,
@@ -93,6 +108,11 @@ async def get_user_bank_accounts(
         }
         for acc in accounts
     ]
+
+    # Сохраняем в кэш
+    await cache_client.set(cache_key, result, ttl=BANK_ACCOUNTS_TTL)
+
+    return result
 
 
 @router.delete("/bank_account/{bank_account_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -111,5 +131,8 @@ async def delete_bank_account(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bank account not found"
         )
+
+    # Инвалидация кэша банковских счетов
+    await cache_client.delete(bank_accounts_key(user_id))
 
     return None

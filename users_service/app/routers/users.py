@@ -9,6 +9,11 @@ from app.auth import (
     verify_password,
     verify_token,
 )
+from app.cache import (
+    USER_PROFILE_TTL,
+    cache_client,
+    user_profile_key,
+)
 from app.database import get_db
 from app.repository.bank_account_repository import Bank_AccountRepository
 from app.repository.user_repository import UserRepository
@@ -51,7 +56,7 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    
+
     hashed_password = get_password_hash(user_data.password)
     db_user = await user_repo.create(user_data, hashed_password)
 
@@ -65,9 +70,9 @@ async def login(
     user_data: UserLogin,
     user_repo: UserRepository = Depends(get_user_repository)
 ):
-    
+
     user = await user_repo.get_by_email(user_data.email)
-    
+
     if not user or not verify_password(user_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -86,7 +91,8 @@ async def login(
         expires_delta=refresh_token_expires
     )
 
-    refresh_payload = jwt.decode(refresh_token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+    refresh_payload = jwt.decode(
+        refresh_token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
     refresh_jti = refresh_payload.get("jti")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -104,7 +110,6 @@ async def login(
         samesite="strict",
         max_age=7 * 24 * 3600
     )
-
 
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -210,10 +215,10 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     user_repo: UserRepository = Depends(get_user_repository),
 ):
-    
+
     refresh_token = request.cookies.get("refresh_token")
     payload = verify_token(token, refresh_token_from_cookie=refresh_token)
-    
+
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -221,12 +226,42 @@ async def get_current_user(
         )
 
     user_id = int(payload.get("sub"))
+
+    # Cache-Aside: пробуем получить из кэша
+    cache_key = user_profile_key(user_id)
+    cached = await cache_client.get(cache_key)
+    if cached is not None:
+        return {
+            "id": cached["id"],
+            "email": cached["email"],
+            "first_name": cached["first_name"],
+            "last_name": cached["last_name"],
+            "middle_name": cached.get("middle_name"),
+            "is_active": cached["is_active"],
+            "created_at": cached["created_at"],
+            "updated_at": cached.get("updated_at"),
+        }
+
     user = await user_repo.get_by_id(user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+
+    result = {
+        "id": user.id,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "middle_name": user.middle_name,
+        "is_active": user.is_active,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+    }
+
+    # Сохраняем в кэш
+    await cache_client.set(cache_key, result, ttl=USER_PROFILE_TTL)
 
     return user
 
@@ -255,5 +290,7 @@ async def update_current_user(
             detail="User not found"
         )
 
-    return user
+    # Инвалидация кэша профиля
+    await cache_client.delete(user_profile_key(user_id))
 
+    return user
