@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert
 logger = logging.getLogger(__name__)
 PSEUDO_BANK_SERVICE_URL = os.getenv("PSEUDO_BANK_SERVICE_URL")
 
+
 class SyncRepository:
     def __init__(self, db):
         self.db = db
@@ -25,13 +26,12 @@ class SyncRepository:
             .where(Bank_Account.is_deleted.is_(False))
         )
         return [row[0] for row in result.fetchall()]
-    
+
     async def upsert_categories(self, categories: list) -> int:
         """Добавление категорий"""
         if not categories:
             return 0
-        stmt = insert(Category).values(
-            categories).on_conflict_do_nothing(index_elements=["id"])
+        stmt = insert(Category).values(categories).on_conflict_do_nothing(index_elements=["id"])
         res = await self.db.execute(stmt)
         return res.rowcount
 
@@ -39,8 +39,7 @@ class SyncRepository:
         """Добавление MCC"""
         if not mcc_list:
             return 0
-        stmt = insert(MCC_Category).values(
-            mcc_list).on_conflict_do_nothing(index_elements=["mcc"])
+        stmt = insert(MCC_Category).values(mcc_list).on_conflict_do_nothing(index_elements=["mcc"])
         res = await self.db.execute(stmt)
         return res.rowcount
 
@@ -48,8 +47,7 @@ class SyncRepository:
         """Добавление мерчантов"""
         if not merchants:
             return 0
-        stmt = insert(Merchant).values(
-            merchants).on_conflict_do_nothing(index_elements=["id"])
+        stmt = insert(Merchant).values(merchants).on_conflict_do_nothing(index_elements=["id"])
         res = await self.db.execute(stmt)
         return res.rowcount
 
@@ -57,11 +55,10 @@ class SyncRepository:
         """Добавление банков"""
         if not banks:
             return 0
-        stmt = insert(Bank).values(
-            banks).on_conflict_do_nothing(index_elements=["id"])
+        stmt = insert(Bank).values(banks).on_conflict_do_nothing(index_elements=["id"])
         res = await self.db.execute(stmt)
         return res.rowcount
-    
+
     async def upsert_bank_accounts(self, accounts: list) -> int:
         """Добавление банковских счетов"""
         if not accounts:
@@ -83,7 +80,7 @@ class SyncRepository:
                     # Сбрасываем last_synced_at при смене владельца,
                     # чтобы следующий sync забрал всю историю заново
                     last_synced_at=None,
-                )
+                ),
             )
         )
         result = await self.db.execute(stmt)
@@ -100,12 +97,12 @@ class SyncRepository:
             .on_conflict_do_update(
                 index_elements=["id"],
                 # При смене владельца счёта транзакции переходят новому пользователю
-                set_=dict(user_id=excluded.user_id)
+                set_=dict(user_id=excluded.user_id),
             )
         )
         res = await self.db.execute(stmt)
         return res.rowcount
-    
+
     async def sync_by_account(self, bank_account_hash: str, user_id: int) -> Dict[str, int]:
         """
         Синхронизация данных банковского счёта с заменой user_id.
@@ -116,8 +113,7 @@ class SyncRepository:
         logger.info(f"[SYNC] Starting sync for account {bank_account_hash}, user_id={user_id}")
 
         result = await self.db.execute(
-            select(Bank_Account.last_synced_at)
-            .where(Bank_Account.bank_account_hash == bank_account_hash)
+            select(Bank_Account.last_synced_at).where(Bank_Account.bank_account_hash == bank_account_hash)
         )
         last_synced = result.scalar()
         logger.info(f"[SYNC] Last synced: {last_synced}")
@@ -131,12 +127,13 @@ class SyncRepository:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(url)
             if resp.status_code == 404:
-                raise ValueError(
-                    f"Account {bank_account_hash} not found in pseudo_bank")
+                raise ValueError(f"Account {bank_account_hash} not found in pseudo_bank")
             resp.raise_for_status()
             data = resp.json()
 
-        logger.info(f"[SYNC] Received data: categories={len(data.get('categories', []))}, mcc={len(data.get('mcc_categories', []))}, merchants={len(data.get('merchants', []))}, transactions={len(data.get('transactions', []))}")
+        logger.info(
+            f"[SYNC] Received data: categories={len(data.get('categories', []))}, mcc={len(data.get('mcc_categories', []))}, merchants={len(data.get('merchants', []))}, transactions={len(data.get('transactions', []))}"
+        )
         logger.info(f"[SYNC] Bank data: {data.get('bank')}")
         logger.info(f"[SYNC] Bank account data: {data.get('bank_account')}")
 
@@ -146,11 +143,9 @@ class SyncRepository:
             bank_account["user_id"] = user_id
             # Конвертируем строковые даты в datetime объекты
             if "created_at" in bank_account and isinstance(bank_account["created_at"], str):
-                bank_account["created_at"] = datetime.fromisoformat(
-                    bank_account["created_at"].replace("Z", "+00:00"))
+                bank_account["created_at"] = datetime.fromisoformat(bank_account["created_at"].replace("Z", "+00:00"))
             if "updated_at" in bank_account and isinstance(bank_account["updated_at"], str):
-                bank_account["updated_at"] = datetime.fromisoformat(
-                    bank_account["updated_at"].replace("Z", "+00:00"))
+                bank_account["updated_at"] = datetime.fromisoformat(bank_account["updated_at"].replace("Z", "+00:00"))
 
         # Заменяем user_id во всех транзакциях (999 → реальный user_id)
         transactions = data.get("transactions", [])
@@ -158,8 +153,7 @@ class SyncRepository:
             tx["user_id"] = user_id
             # Конвертируем строковые даты в datetime объекты
             if "created_at" in tx and isinstance(tx["created_at"], str):
-                tx["created_at"] = datetime.fromisoformat(
-                    tx["created_at"].replace("Z", "+00:00"))
+                tx["created_at"] = datetime.fromisoformat(tx["created_at"].replace("Z", "+00:00"))
 
         logger.info("[SYNC] Upserting data...")
         stats = {
@@ -168,7 +162,7 @@ class SyncRepository:
             "merchants": await self.upsert_merchants(data.get("merchants", [])),
             "banks": await self.upsert_banks([data["bank"]] if data.get("bank") else []),
             "bank_accounts": await self.upsert_bank_accounts([bank_account] if bank_account else []),
-            "transactions": await self.upsert_transactions(transactions)
+            "transactions": await self.upsert_transactions(transactions),
         }
         logger.info(f"[SYNC] Upsert stats: {stats}")
 
@@ -189,15 +183,13 @@ class SyncRepository:
 
         await self.db.commit()
         return stats
-    
+
     async def get_all_active_account_hashes(self) -> list[tuple[str, int]]:
         """Возвращает [(bank_account_hash, user_id)]"""
         result = await self.db.execute(
-            select(Bank_Account.bank_account_hash, Bank_Account.user_id)
-            .where(Bank_Account.is_deleted.is_(False))
+            select(Bank_Account.bank_account_hash, Bank_Account.user_id).where(Bank_Account.is_deleted.is_(False))
         )
         return result.fetchall()
-
 
     async def sync_user_accounts(self, user_id: int) -> dict:
         """

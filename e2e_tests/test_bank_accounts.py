@@ -1,4 +1,3 @@
-
 from conftest import BANK_ACCOUNT_NUMBERS
 
 NONEXISTENT_ACCOUNT = {
@@ -32,9 +31,7 @@ class TestAddBankAccount:
 
     def test_add_nonexistent_account_returns_400(self, http_client, auth_headers):
         _, headers = auth_headers
-        resp = http_client.post(
-            "/users/me/bank_account", json=NONEXISTENT_ACCOUNT, headers=headers
-        )
+        resp = http_client.post("/users/me/bank_account", json=NONEXISTENT_ACCOUNT, headers=headers)
         assert resp.status_code == 400
 
     def test_add_without_token_returns_401(self, http_client):
@@ -75,9 +72,7 @@ class TestDeleteBankAccount:
         _, headers = auth_headers
         account_id = bank_account["bank_account_id"]
 
-        resp = http_client.delete(
-            f"/users/me/bank_account/{account_id}", headers=headers
-        )
+        resp = http_client.delete(f"/users/me/bank_account/{account_id}", headers=headers)
         assert resp.status_code == 204
 
         # Проверяем что счёт исчез

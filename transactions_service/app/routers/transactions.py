@@ -32,12 +32,12 @@ router = APIRouter(prefix="/transactions", tags=["transactions"])
     "/",
     response_model=List[TransactionResponse],
     summary="Получить транзакции с фильтрацией",
-    description="Получить список транзакций пользователя с возможностью фильтрации по различным параметрам."
+    description="Получить список транзакций пользователя с возможностью фильтрации по различным параметрам.",
 )
 async def get_transactions(
     filters: TransactionFilterRequest,
     user_id: int = Depends(get_user_id_from_header),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Получить транзакции пользователя с фильтрацией.
@@ -62,24 +62,26 @@ async def get_transactions(
             max_amount=filters.max_amount,
             merchant_ids=filters.merchant_ids,
             limit=filters.limit,
-            offset=filters.offset
+            offset=filters.offset,
         )
 
         result = []
         for t in transactions:
-            result.append({
-                "id": t.id,
-                "user_id": t.user_id,
-                "bank_account_id": t.bank_account_id,
-                "category_id": t.category_id,
-                "category_name": t.category.name if t.category else None,
-                "amount": t.amount,
-                "created_at": t.created_at,
-                "type": t.type,
-                "description": t.description,
-                "merchant_id": t.merchant_id,
-                "merchant_name": t.merchant.name if t.merchant else None
-            })
+            result.append(
+                {
+                    "id": t.id,
+                    "user_id": t.user_id,
+                    "bank_account_id": t.bank_account_id,
+                    "category_id": t.category_id,
+                    "category_name": t.category.name if t.category else None,
+                    "amount": t.amount,
+                    "created_at": t.created_at,
+                    "type": t.type,
+                    "description": t.description,
+                    "merchant_id": t.merchant_id,
+                    "merchant_name": t.merchant.name if t.merchant else None,
+                }
+            )
 
         return result
 
@@ -91,13 +93,13 @@ async def get_transactions(
     "/{transaction_id}/category",
     response_model=TransactionResponse,
     summary="Изменить категорию транзакции",
-    description="Изменить категорию для конкретной транзакции пользователя."
+    description="Изменить категорию для конкретной транзакции пользователя.",
 )
 async def update_transaction_category(
     transaction_id: str,
     body: UpdateTransactionCategoryRequest,
     user_id: int = Depends(get_user_id_from_header),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Изменить категорию транзакции.
@@ -116,18 +118,20 @@ async def update_transaction_category(
         if not transaction:
             raise HTTPException(404, f"Transaction {transaction_id} not found")
 
-        await EventPublisher().publish(DomainEvent(
-            event_id=uuid.uuid4(),
-            event_type="transaction.category.updated",
-            source="transactions-service",
-            timestamp=datetime.now(),
-            payload={
-                "user_id": user_id,
-                "transaction_id": str(transaction_id),
-                "old_category_name": category.name,
-                "new_category_name": transaction.category.name if transaction.category else str(body.category_id),
-            }
-        ))
+        await EventPublisher().publish(
+            DomainEvent(
+                event_id=uuid.uuid4(),
+                event_type="transaction.category.updated",
+                source="transactions-service",
+                timestamp=datetime.now(),
+                payload={
+                    "user_id": user_id,
+                    "transaction_id": str(transaction_id),
+                    "old_category_name": category.name,
+                    "new_category_name": transaction.category.name if transaction.category else str(body.category_id),
+                },
+            )
+        )
 
         return {
             "id": transaction.id,
@@ -161,12 +165,11 @@ async def update_transaction_category(
 - без параметра — все категории
 
 Используйте фильтр при смене категории транзакции, чтобы показывать только подходящие варианты.
-"""
+""",
 )
 async def get_categories(
     type: Optional[str] = Query(
-        None,
-        description="Фильтр по типу: 'income' или 'expense'. Универсальные категории (null) включаются всегда."
+        None, description="Фильтр по типу: 'income' или 'expense'. Универсальные категории (null) включаются всегда."
     ),
     db: AsyncSession = Depends(get_db),
 ):
@@ -212,7 +215,7 @@ async def get_categories(
     "/categories/{category_id}",
     response_model=CategoryResponse,
     summary="Получить категорию по ID",
-    description="Получить категорию транзакций по её ID."
+    description="Получить категорию транзакций по её ID.",
 )
 async def get_category_by_id(
     category_id: int,
@@ -251,12 +254,10 @@ async def get_category_by_id(
     "/{transaction_id}",
     response_model=TransactionResponse,
     summary="Получить транзакцию по ID",
-    description="Получить конкретную транзакцию пользователя по её UUID."
+    description="Получить конкретную транзакцию пользователя по её UUID.",
 )
 async def get_transaction_by_id(
-    transaction_id: str,
-    user_id: int = Depends(get_user_id_from_header),
-    db: AsyncSession = Depends(get_db)
+    transaction_id: str, user_id: int = Depends(get_user_id_from_header), db: AsyncSession = Depends(get_db)
 ):
     """Получить транзакцию по ID без кэширования"""
     try:

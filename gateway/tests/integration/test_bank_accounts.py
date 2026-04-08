@@ -7,6 +7,7 @@ Downstream (users-service) мокается через httpx.AsyncClient.
 Особенность роутера: использует response.raise_for_status() + HTTPStatusError
 вместо ConnectError — этот роутер не обрабатывает ConnectError отдельно.
 """
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -83,9 +84,7 @@ class TestAddBankAccount:
         with patch("app.routers.bank_accounts.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(
-                404, json_data={"detail": "Not found"}
-            )
+            mock_http.post.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
 
             response = await client.post("/users/me/bank_account", json=BANK_ACCOUNT_REQUEST)
 
@@ -193,9 +192,7 @@ class TestDeleteBankAccount:
         with patch("app.routers.bank_accounts.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.delete.return_value = make_mock_http_response(
-                404, json_data={"detail": "Not found"}
-            )
+            mock_http.delete.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
 
             response = await client.delete("/users/me/bank_account/999")
 

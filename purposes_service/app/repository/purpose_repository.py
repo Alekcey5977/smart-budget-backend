@@ -14,8 +14,12 @@ from shared.event_schema import DomainEvent
 class PurposeRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
-    
-    async def create_purpose(self, user_id: int, purpose_data: PurposeCreate,):
+
+    async def create_purpose(
+        self,
+        user_id: int,
+        purpose_data: PurposeCreate,
+    ):
         """Создание целей"""
         purpose = Purpose(
             id=uuid4(),
@@ -37,7 +41,7 @@ class PurposeRepository:
             "name": purpose.title,
             "target_amount": str(purpose.total_amount),
             "current_amount": str(purpose.amount),
-            "deadline": purpose.deadline.isoformat()
+            "deadline": purpose.deadline.isoformat(),
         }
 
         publisher = EventPublisher()
@@ -46,7 +50,7 @@ class PurposeRepository:
             event_type="purpose.created",
             source="purposes-service",
             timestamp=datetime.now(),
-            payload=event_data_created
+            payload=event_data_created,
         )
         await publisher.publish(event_created)
 
@@ -60,7 +64,7 @@ class PurposeRepository:
                 "purpose_id": str(purpose.id),
                 "purpose_name": purpose.title,
                 "progress_percent": round(progress_percent, 2),
-                "threshold": threshold
+                "threshold": threshold,
             }
             publisher = EventPublisher()
             event_progress = DomainEvent(
@@ -68,28 +72,26 @@ class PurposeRepository:
                 event_type="purpose.progress",
                 source="purposes-service",
                 timestamp=datetime.now(),
-                payload=event_data_progress
+                payload=event_data_progress,
             )
             await publisher.publish(event_progress)
 
         return purpose
-    
+
     async def get_purposes_by_user(self, user_id: int):
         """Получение целей пользователя"""
         result = await self.db.execute(select(Purpose).where(Purpose.user_id == user_id))
 
         return list(result.scalars().all())
-    
+
     async def update_purpose(self, user_id: int, purpose_id: UUID, update_data: dict):
         """Обновление цели и проверка прогресса"""
         # Получаем текущую цель из БД
         purpose = await self.db.execute(
-            select(Purpose).where(
-                (Purpose.id == purpose_id) & (Purpose.user_id == user_id)
-            )
+            select(Purpose).where((Purpose.id == purpose_id) & (Purpose.user_id == user_id))
         )
         purpose = purpose.scalar_one_or_none()
-        
+
         if not purpose:
             return None
 
@@ -130,7 +132,7 @@ class PurposeRepository:
             event_type="purpose.updated",
             source="purposes-service",
             timestamp=datetime.now(),
-            payload=event_data_updated
+            payload=event_data_updated,
         )
         await publisher.publish(event_updated)
 
@@ -145,7 +147,7 @@ class PurposeRepository:
                     "purpose_id": str(purpose.id),
                     "purpose_name": purpose.title,
                     "progress_percent": round(progress_percent, 2),
-                    "threshold": threshold
+                    "threshold": threshold,
                 }
                 publisher = EventPublisher()
                 event = DomainEvent(
@@ -153,30 +155,25 @@ class PurposeRepository:
                     event_type="purpose.progress",
                     source="purposes-service",
                     timestamp=datetime.now(),
-                    payload=event_data
+                    payload=event_data,
                 )
                 await publisher.publish(event)
 
         return updated_purpose
-    
+
     async def delete_purpose(self, user_id: int, purpose_id: UUID):
         """Удаление цели"""
         # Получаем цель перед удалением для события
         purpose = await self.db.execute(
-            select(Purpose).where(
-                (Purpose.id == purpose_id) & (Purpose.user_id == user_id)
-            )
+            select(Purpose).where((Purpose.id == purpose_id) & (Purpose.user_id == user_id))
         )
         purpose = purpose.scalar_one_or_none()
-        
+
         if not purpose:
             return None
-            
+
         # Удаляем цель
-        stmt = (
-            delete(Purpose)
-            .where((Purpose.id == purpose_id) & (Purpose.user_id == user_id))
-        )
+        stmt = delete(Purpose).where((Purpose.id == purpose_id) & (Purpose.user_id == user_id))
         await self.db.execute(stmt)
         await self.db.commit()
 
@@ -186,7 +183,7 @@ class PurposeRepository:
             "purpose_id": str(purpose.id),
             "name": purpose.title,
             "target_amount": purpose.total_amount,
-            "current_amount": purpose.amount
+            "current_amount": purpose.amount,
         }
 
         # Публикуем событие в Redis Streams
@@ -196,7 +193,7 @@ class PurposeRepository:
             event_type="purpose.deleted",
             source="purposes-service",
             timestamp=datetime.now(),
-            payload=event_data
+            payload=event_data,
         )
         await publisher.publish(event)
 

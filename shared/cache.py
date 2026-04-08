@@ -37,8 +37,7 @@ class CacheClient:
     def redis(self) -> aioredis.Redis:
         """Получить экземпляр Redis-клиента."""
         if self._redis is None:
-            raise RuntimeError(
-                "CacheClient не подключён. Сначала вызовите connect().")
+            raise RuntimeError("CacheClient не подключён. Сначала вызовите connect().")
         return self._redis
 
     async def get(self, key: str) -> Any | None:

@@ -63,8 +63,7 @@ def mock_user_repo():
     repo = MagicMock(spec=UserRepository)
     repo.get_by_id = AsyncMock(return_value=None)
     repo.get_by_email = AsyncMock(return_value=None)
-    repo.create = AsyncMock(return_value=MagicMock(
-        id=1, email="test@example.com"))
+    repo.create = AsyncMock(return_value=MagicMock(id=1, email="test@example.com"))
     repo.update = AsyncMock(return_value=None)
     repo.exists_with_email = AsyncMock(return_value=False)
     repo.deactivate_refresh_token = AsyncMock(return_value=None)
@@ -123,10 +122,9 @@ def mock_hash_function():
 def bank_account_create_schema():
     """Схема создания счёта для тестов"""
     from app.schemas import Bank_AccountCreate
+
     return Bank_AccountCreate(
-        bank_account_number="40817810099910004312",
-        bank_account_name="Test Account",
-        bank="Сбербанк"
+        bank_account_number="40817810099910004312", bank_account_name="Test Account", bank="Сбербанк"
     )
 
 
@@ -152,6 +150,7 @@ def mock_httpx_async_client():
 def user_repo(mock_db_session, mock_event_publisher):
     """Реальный экземпляр репозитория с мокнутой сессией БД"""
     from app.repository.user_repository import UserRepository
+
     return UserRepository(db=mock_db_session, event_publisher=mock_event_publisher)
 
 
@@ -159,6 +158,7 @@ def user_repo(mock_db_session, mock_event_publisher):
 def app():
     """Фикстура, возвращающая экземпляр приложения"""
     from app.main import app as fastapi_app
+
     return fastapi_app
 
 
@@ -192,10 +192,7 @@ def mock_get_current_user(app):
     from app.dependencies import get_current_user
 
     async def _mock_get_current_user():
-        return MagicMock(
-            id=1, email="test@example.com", first_name="Ivan",
-            last_name="Ivanov", is_active=True
-        )
+        return MagicMock(id=1, email="test@example.com", first_name="Ivan", last_name="Ivanov", is_active=True)
 
     app.dependency_overrides[get_current_user] = _mock_get_current_user
     yield
@@ -206,4 +203,5 @@ def mock_get_current_user(app):
 def bank_account_repo(mock_db_session, mock_event_publisher):
     """Экземпляр Bank_AccountRepository с мокнутыми зависимостями"""
     from app.repository.bank_account_repository import Bank_AccountRepository
+
     return Bank_AccountRepository(db=mock_db_session)

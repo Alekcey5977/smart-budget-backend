@@ -20,6 +20,7 @@ from pydantic import ValidationError  # noqa: E402
 
 # ==================== ImageMetadata ====================
 
+
 class TestImageMetadata:
     """Тесты схемы метаданных изображения."""
 
@@ -86,6 +87,7 @@ class TestImageMetadata:
 
 # ==================== ImageMappingItem ====================
 
+
 class TestImageMappingItem:
     """Тесты схемы маппинга сущности к изображению."""
 
@@ -111,6 +113,7 @@ class TestImageMappingItem:
 
 
 # ==================== ImageMappingResponse ====================
+
 
 class TestImageMappingResponse:
     """Тесты схемы ответа маппингов."""
@@ -141,6 +144,7 @@ class TestImageMappingResponse:
 
 # ==================== UpdateUserAvatarRequest ====================
 
+
 class TestUpdateUserAvatarRequest:
     """Тесты схемы обновления аватарки пользователя."""
 
@@ -157,6 +161,7 @@ class TestUpdateUserAvatarRequest:
 
 
 # ==================== UploadImageRequest ====================
+
 
 class TestUploadImageRequest:
     """Тесты схемы загрузки изображения (admin endpoint)."""

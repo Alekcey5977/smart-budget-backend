@@ -8,45 +8,24 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # Request Schemas
 # ===========================
 
+
 class TransactionFilterRequest(BaseModel):
     """Схема запроса фильтрации транзакций"""
-    transaction_type: Optional[str] = Field(
-        None,
-        description="Тип транзакции: 'income' или 'expense'"
-    )
-    category_ids: Optional[List[int]] = Field(
-        None,
-        description="Список ID категорий для фильтрации"
-    )
-    start_date: Optional[datetime] = Field(
-        None,
-        description="Начальная дата периода"
-    )
-    end_date: Optional[datetime] = Field(
-        None,
-        description="Конечная дата периода"
-    )
-    min_amount: Optional[float] = Field(
-        None,
-        ge=0,
-        description="Минимальная сумма"
-    )
-    max_amount: Optional[float] = Field(
-        None,
-        ge=0,
-        description="Максимальная сумма"
-    )
-    merchant_ids: Optional[List[int]] = Field(
-        None,
-        description="Список ID мерчантов"
-    )
+
+    transaction_type: Optional[str] = Field(None, description="Тип транзакции: 'income' или 'expense'")
+    category_ids: Optional[List[int]] = Field(None, description="Список ID категорий для фильтрации")
+    start_date: Optional[datetime] = Field(None, description="Начальная дата периода")
+    end_date: Optional[datetime] = Field(None, description="Конечная дата периода")
+    min_amount: Optional[float] = Field(None, ge=0, description="Минимальная сумма")
+    max_amount: Optional[float] = Field(None, ge=0, description="Максимальная сумма")
+    merchant_ids: Optional[List[int]] = Field(None, description="Список ID мерчантов")
     limit: int = Field(..., ge=1, le=1000)
     offset: int = Field(0, ge=0)
 
-    @field_validator('transaction_type')
+    @field_validator("transaction_type")
     @classmethod
     def validate_type(cls, v):
-        if v is not None and v not in ['income', 'expense']:
+        if v is not None and v not in ["income", "expense"]:
             raise ValueError('Type must be "income" or "expense"')
         return v
 
@@ -55,8 +34,10 @@ class TransactionFilterRequest(BaseModel):
 # Response Schemas
 # ===========================
 
+
 class TransactionResponse(BaseModel):
     """Схема ответа транзакции"""
+
     id: uuid.UUID
     user_id: int
     bank_account_id: int
@@ -74,6 +55,7 @@ class TransactionResponse(BaseModel):
 
 class CategoryResponse(BaseModel):
     """Схема ответа категории"""
+
     id: int
     name: str
     type: Optional[str] = None
@@ -83,6 +65,7 @@ class CategoryResponse(BaseModel):
 
 class MccCategoryResponse(BaseModel):
     """Схема ответа MCC категории"""
+
     mcc: int
     name: str
     category_id: int
@@ -92,6 +75,7 @@ class MccCategoryResponse(BaseModel):
 
 class MerchantResponse(BaseModel):
     """Схема ответа мерчанта"""
+
     id: int
     name: str
     inn: str
@@ -100,9 +84,9 @@ class MerchantResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-
 class UpdateTransactionCategoryRequest(BaseModel):
     """Схема запроса изменения категории транзакции"""
+
     category_id: int = Field(..., gt=0, description="ID новой категории")
 
 

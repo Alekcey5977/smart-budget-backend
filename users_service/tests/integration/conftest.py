@@ -1,16 +1,17 @@
-from sqlalchemy.pool import StaticPool
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from jose import jwt
-from httpx import ASGITransport, AsyncClient
-from fastapi import Depends, FastAPI, Header, HTTPException
-from app.models import User
-from app.database import User_Base, get_db
-from app.auth import ALGORITHM
-import pytest_asyncio
-import pytest
 import os
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+import pytest_asyncio
+from app.auth import ALGORITHM
+from app.database import User_Base, get_db
+from app.models import User
+from fastapi import Depends, FastAPI, Header, HTTPException
+from httpx import ASGITransport, AsyncClient
+from jose import jwt
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 # ============================================================================
 # 1. НАСТРОЙКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (до импортов app.*)
@@ -30,10 +31,8 @@ TEST_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY")
 # БАЗА ДАННЫХ
 # ============================================================================
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-engine = create_async_engine(TEST_DATABASE_URL, connect_args={
-                             "check_same_thread": False}, poolclass=StaticPool)
-TestingSessionLocal = async_sessionmaker(
-    autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+engine = create_async_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
+TestingSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -45,6 +44,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     async with engine.begin() as conn:
         await conn.run_sync(User_Base.metadata.drop_all)
 
+
 # ============================================================================
 # ФИКСТУРЫ ДАННЫХ
 # ============================================================================
@@ -53,9 +53,15 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 @pytest_asyncio.fixture(scope="function")
 async def test_user(db_session: AsyncSession) -> User:
     from passlib.context import CryptContext
+
     pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-    user = User(email="integration@test.com", hashed_password=pwd_context.hash(
-        "password123"), first_name="Integration", last_name="Test", is_active=True)
+    user = User(
+        email="integration@test.com",
+        hashed_password=pwd_context.hash("password123"),
+        first_name="Integration",
+        last_name="Test",
+        is_active=True,
+    )
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
@@ -65,10 +71,7 @@ async def test_user(db_session: AsyncSession) -> User:
 @pytest.fixture(scope="function")
 def auth_headers(test_user: User) -> dict:
 
-    to_encode = {
-        "sub": str(test_user.id),
-        "type": "access"
-    }
+    to_encode = {"sub": str(test_user.id), "type": "access"}
     # Ручное создание токена для тестов
     encoded_jwt = jwt.encode(to_encode, TEST_SECRET_KEY, algorithm=ALGORITHM)
 
@@ -80,8 +83,7 @@ def mock_bank_service():
     with patch("app.repository.bank_account_repository.httpx.AsyncClient") as mock_client:
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "balance": "10000.00", "currency": "RUB"}
+        mock_response.json.return_value = {"balance": "10000.00", "currency": "RUB"}
         mock_instance = AsyncMock()
         mock_instance.post.return_value = mock_response
         mock_client.return_value.__aenter__.return_value = mock_instance
@@ -90,8 +92,10 @@ def mock_bank_service():
 
 @pytest.fixture(scope="function")
 def mock_event_publisher():
-    with patch("app.repository.bank_account_repository.EventPublisher") as mock_pub, \
-            patch("app.repository.user_repository.EventPublisher"):
+    with (
+        patch("app.repository.bank_account_repository.EventPublisher") as mock_pub,
+        patch("app.repository.user_repository.EventPublisher"),
+    ):
         mock_instance = AsyncMock()
         mock_pub.return_value = mock_instance
         yield mock_instance
@@ -118,6 +122,7 @@ def mock_users_cache_client():
         mock_cache.delete_pattern = AsyncMock(return_value=0)
         yield mock_cache
 
+
 # ============================================================================
 # КЛИЕНТ (FIXTURE)
 # ============================================================================
@@ -125,10 +130,7 @@ def mock_users_cache_client():
 
 @pytest_asyncio.fixture(scope="function")
 async def client(
-    db_session: AsyncSession,
-    mock_event_publisher: AsyncMock,
-    mock_bank_account_cache_client,
-    mock_users_cache_client
+    db_session: AsyncSession, mock_event_publisher: AsyncMock, mock_bank_account_cache_client, mock_users_cache_client
 ) -> AsyncGenerator[AsyncClient, None]:
     # Импортируем роутеры
     from app.repository.bank_account_repository import Bank_AccountRepository
@@ -151,21 +153,18 @@ async def client(
     test_app.dependency_overrides[get_db] = override_get_db
     test_app.dependency_overrides[get_user_repository] = override_get_user_repository
 
-    if hasattr(bank_account, 'get_bank_account_repository'):
+    if hasattr(bank_account, "get_bank_account_repository"):
         test_app.dependency_overrides[bank_account.get_bank_account_repository] = override_get_bank_account_repository
 
     # 2. Переопределение АВТОРИЗАЦИИ
-    async def override_get_current_user(
-        authorization: str = Header(None, alias="Authorization")
-    ):
+    async def override_get_current_user(authorization: str = Header(None, alias="Authorization")):
         if not authorization:
             raise HTTPException(status_code=401, detail="Not authenticated")
 
         token = authorization.replace("Bearer ", "")
 
         try:
-            payload = jwt.decode(token, TEST_SECRET_KEY,
-                                 algorithms=[ALGORITHM])
+            payload = jwt.decode(token, TEST_SECRET_KEY, algorithms=[ALGORITHM])
             user_id = int(payload.get("sub"))
         except Exception:
             raise HTTPException(status_code=401, detail="Invalid token")

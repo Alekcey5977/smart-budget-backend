@@ -14,6 +14,7 @@ from pydantic import ValidationError  # noqa: E402
 
 # ==================== NotificationCreate ====================
 
+
 class TestNotificationCreate:
     """Тесты схемы создания уведомления."""
 
@@ -45,6 +46,7 @@ class TestNotificationCreate:
 
 
 # ==================== NotificationResponse ====================
+
 
 class TestNotificationResponse:
     """Тесты схемы ответа."""

@@ -8,7 +8,7 @@ class User_Base(DeclarativeBase):
 
 
 class User(User_Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
@@ -24,7 +24,7 @@ class User(User_Base):
 
 
 class Bank(User_Base):
-    __tablename__ = 'banks'
+    __tablename__ = "banks"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), nullable=False, unique=True)
@@ -33,7 +33,7 @@ class Bank(User_Base):
 
 
 class Bank_Accounts(User_Base):
-    __tablename__ = 'bank_accounts'
+    __tablename__ = "bank_accounts"
 
     bank_account_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

@@ -2,6 +2,7 @@
 E2E tests for /transactions/* endpoints.
 Транзакции появляются после синхронизации с pseudo-bank.
 """
+
 import asyncio
 import uuid
 
@@ -106,8 +107,7 @@ class TestGetTransactions:
         transactions = await _poll_transactions(http_client, headers)
         if not transactions:
             pytest.skip(
-                "No transactions appeared — transactions may be deduplicated from a previous run. "
-                "Run: make reset-db"
+                "No transactions appeared — transactions may be deduplicated from a previous run. Run: make reset-db"
             )
 
         tx = transactions[0]

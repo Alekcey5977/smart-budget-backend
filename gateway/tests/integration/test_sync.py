@@ -7,6 +7,7 @@
 
 Для этого используется side_effect со списком мок-контекстных менеджеров.
 """
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx

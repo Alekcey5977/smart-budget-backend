@@ -4,6 +4,7 @@ E2E tests for /history/* endpoints.
 (создание purpose, добавление банковского счёта и т.д.).
 Используем polling вместо фиксированного sleep.
 """
+
 import asyncio
 
 import pytest
@@ -32,9 +33,7 @@ async def _poll_history(http_client, headers, min_count=1, retries=10, delay=0.5
 class TestGetHistory:
     async def test_history_appears_after_purpose_create(self, http_client, auth_headers):
         _, headers = auth_headers
-        create_resp = http_client.post(
-            "/purposes/create", json=PURPOSE, headers=headers
-        )
+        create_resp = http_client.post("/purposes/create", json=PURPOSE, headers=headers)
         assert create_resp.status_code == 200
 
         history = await _poll_history(http_client, headers)
@@ -55,9 +54,7 @@ class TestGetHistory:
         assert "created_at" in entry
         assert "user_id" in entry
 
-    async def test_history_appears_after_bank_account_add(
-        self, http_client, auth_headers, bank_account
-    ):
+    async def test_history_appears_after_bank_account_add(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
         history = await _poll_history(http_client, headers)
         assert len(history) > 0
@@ -79,9 +76,7 @@ class TestGetHistory:
 
         await _poll_history(http_client, headers, min_count=2)
 
-        resp = http_client.get(
-            "/history/user/me", params={"skip": 0, "limit": 1}, headers=headers
-        )
+        resp = http_client.get("/history/user/me", params={"skip": 0, "limit": 1}, headers=headers)
         assert resp.status_code == 200
         assert len(resp.json()) <= 1
 
@@ -96,12 +91,8 @@ class TestGetHistory:
 
         await _poll_history(http_client, headers, min_count=2)
 
-        resp_p1 = http_client.get(
-            "/history/user/me", params={"skip": 0, "limit": 1}, headers=headers
-        )
-        resp_p2 = http_client.get(
-            "/history/user/me", params={"skip": 1, "limit": 1}, headers=headers
-        )
+        resp_p1 = http_client.get("/history/user/me", params={"skip": 0, "limit": 1}, headers=headers)
+        resp_p2 = http_client.get("/history/user/me", params={"skip": 1, "limit": 1}, headers=headers)
 
         assert resp_p1.status_code == 200
         assert resp_p2.status_code == 200
@@ -127,15 +118,11 @@ class TestGetHistoryById:
 
     def test_get_nonexistent_entry_returns_404(self, http_client, auth_headers):
         _, headers = auth_headers
-        resp = http_client.get(
-            "/history/00000000-0000-0000-0000-000000000000", headers=headers
-        )
+        resp = http_client.get("/history/00000000-0000-0000-0000-000000000000", headers=headers)
         assert resp.status_code == 404
 
     def test_get_history_by_id_without_token_returns_401(self, http_client):
-        resp = http_client.get(
-            "/history/00000000-0000-0000-0000-000000000000"
-        )
+        resp = http_client.get("/history/00000000-0000-0000-0000-000000000000")
         assert resp.status_code == 401
 
 
@@ -158,7 +145,5 @@ class TestDeleteHistory:
         assert get_resp.status_code == 404
 
     def test_delete_without_token_returns_401(self, http_client):
-        resp = http_client.delete(
-            "/history/00000000-0000-0000-0000-000000000000"
-        )
+        resp = http_client.delete("/history/00000000-0000-0000-0000-000000000000")
         assert resp.status_code == 401

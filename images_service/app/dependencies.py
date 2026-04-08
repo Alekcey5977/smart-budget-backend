@@ -21,7 +21,4 @@ async def get_user_id_from_header(x_user_id: str = Header(..., alias="X-User-ID"
         user_id = int(x_user_id)
         return user_id
     except (ValueError, TypeError):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid X-User-ID header"
-        )
+        raise HTTPException(status_code=400, detail="Invalid X-User-ID header")

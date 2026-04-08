@@ -24,30 +24,28 @@ from app.models import Transaction_Base  # noqa: E402
 
 # --- Фикстуры для БД ---
 
+
 @pytest_asyncio.fixture(scope="function")
 async def db_engine():
     """
     Создаем движок SQLite и таблицы.
     """
     engine = create_async_engine(
-        TEST_DATABASE_URL, 
-        echo=False, 
-        future=True,
-        poolclass=StaticPool,
-        connect_args={"check_same_thread": False}
+        TEST_DATABASE_URL, echo=False, future=True, poolclass=StaticPool, connect_args={"check_same_thread": False}
     )
-    
+
     # Создаем все таблицы
     async with engine.begin() as conn:
         await conn.execute(text("PRAGMA foreign_keys=ON"))
         await conn.run_sync(Transaction_Base.metadata.create_all)
-    
+
     yield engine
-    
+
     async with engine.begin() as conn:
         await conn.run_sync(Transaction_Base.metadata.drop_all)
-    
+
     await engine.dispose()
+
 
 @pytest_asyncio.fixture
 async def db_session(db_engine):
@@ -56,32 +54,29 @@ async def db_session(db_engine):
     Используем вложенную транзакцию (SAVEPOINT), чтобы репозиторий мог делать commit,
     но изменения откатывались в конце теста.
     """
-    async_session_maker = sessionmaker(
-        db_engine, class_=AsyncSession, expire_on_commit=False
-    )
-    
+    async_session_maker = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+
     async with async_session_maker() as session:
         async with session.begin():
-            async with session.begin_nested(): 
+            async with session.begin_nested():
                 yield session
+
 
 @pytest_asyncio.fixture
 async def client(db_engine: AsyncSession):
     """
     Асинхронный клиент.
     """
-    async_session_maker = sessionmaker(
-        db_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    async_session_maker = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
 
     async def override_get_db():
         async with async_session_maker() as session:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
-    
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
-    
+
     app.dependency_overrides.clear()

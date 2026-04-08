@@ -11,19 +11,11 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Создание асинхронного соединения для БД
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=True,
-    future=True
-)
+engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
 # Создание асинхронных сессий дл БД
 AsyncSessionLocal = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-    autocommit=False
+    engine, class_=AsyncSession, expire_on_commit=False, autoflush=False, autocommit=False
 )
 
 # Асинхронное открытие сессии для эндпоинтов при взаимодействии с БД

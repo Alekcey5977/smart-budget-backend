@@ -26,8 +26,7 @@ setup_logging(service_name="gateway")
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-app = FastAPI(title="Gateway Service",
-              description="Точка входа", version="1.0.0")
+app = FastAPI(title="Gateway Service", description="Точка входа", version="1.0.0")
 
 app.add_middleware(LoggingMiddleware)
 

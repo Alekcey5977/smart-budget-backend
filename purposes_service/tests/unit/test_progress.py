@@ -4,6 +4,7 @@ Unit-тесты для логики прогресса целей (get_crossed_t
 Чистая математика — без БД, Redis, HTTP.
 Паттерн: тестируем каждый граничный случай отдельным тестом.
 """
+
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -70,10 +71,7 @@ class TestGetCrossedThresholds:
 
     def test_decimal_amounts(self):
         """Работает с Decimal (как в реальном коде)."""
-        result = get_crossed_thresholds(
-            Decimal("0"), Decimal("1000"),
-            Decimal("500"), Decimal("1000")
-        )
+        result = get_crossed_thresholds(Decimal("0"), Decimal("1000"), Decimal("500"), Decimal("1000"))
         assert result == [25, 50]
 
     def test_total_amount_changed(self):

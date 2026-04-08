@@ -6,52 +6,23 @@ from pydantic import BaseModel, Field
 
 class TransactionFilterRequest(BaseModel):
     """Схема фильтрации транзакций"""
+
     transaction_type: Optional[str] = Field(
-        None,
-        description="Тип транзакции: 'income' или 'expense'",
-        pattern="^(income|expense)$"
+        None, description="Тип транзакции: 'income' или 'expense'", pattern="^(income|expense)$"
     )
-    category_ids: Optional[List[int]] = Field(
-        None,
-        description="Список ID категорий для фильтрации"
-    )
-    start_date: Optional[datetime] = Field(
-        None,
-        description="Начальная дата периода (ISO 8601)"
-    )
-    end_date: Optional[datetime] = Field(
-        None,
-        description="Конечная дата периода (ISO 8601)"
-    )
-    min_amount: Optional[float] = Field(
-        None,
-        ge=0,
-        description="Минимальная сумма транзакции"
-    )
-    max_amount: Optional[float] = Field(
-        None,
-        ge=0,
-        description="Максимальная сумма транзакции"
-    )
-    merchant_ids: Optional[List[int]] = Field(
-        None,
-        description="Список ID мерчантов для фильтрации"
-    )
-    limit: int = Field(
-        ...,
-        ge=1,
-        le=100,
-        description="Количество записей на странице"
-    )
-    offset: int = Field(
-        0,
-        ge=0,
-        description="Смещение для пагинации"
-    )
+    category_ids: Optional[List[int]] = Field(None, description="Список ID категорий для фильтрации")
+    start_date: Optional[datetime] = Field(None, description="Начальная дата периода (ISO 8601)")
+    end_date: Optional[datetime] = Field(None, description="Конечная дата периода (ISO 8601)")
+    min_amount: Optional[float] = Field(None, ge=0, description="Минимальная сумма транзакции")
+    max_amount: Optional[float] = Field(None, ge=0, description="Максимальная сумма транзакции")
+    merchant_ids: Optional[List[int]] = Field(None, description="Список ID мерчантов для фильтрации")
+    limit: int = Field(..., ge=1, le=100, description="Количество записей на странице")
+    offset: int = Field(0, ge=0, description="Смещение для пагинации")
 
 
 class TransactionResponse(BaseModel):
     """Схема ответа транзакции"""
+
     id: str
     user_id: int
     bank_account_id: int
@@ -67,6 +38,7 @@ class TransactionResponse(BaseModel):
 
 class CategoryResponse(BaseModel):
     """Схема ответа категории"""
+
     id: int
     name: str
     type: Optional[str] = None
@@ -74,4 +46,5 @@ class CategoryResponse(BaseModel):
 
 class UpdateTransactionCategoryRequest(BaseModel):
     """Схема запроса изменения категории транзакции"""
+
     category_id: int = Field(..., gt=0, description="ID новой категории")

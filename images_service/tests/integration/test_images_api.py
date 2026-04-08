@@ -69,8 +69,8 @@ async def create_merchant_image(
 
 # ==================== Health Check ====================
 
-class TestHealthCheck:
 
+class TestHealthCheck:
     async def test_health_returns_ok(self, client: AsyncClient):
         """GET /health → 200, status: healthy."""
         response = await client.get("/health")
@@ -88,19 +88,15 @@ class TestHealthCheck:
 
 # ==================== GET /images/avatars/default ====================
 
-class TestGetDefaultAvatars:
 
-    async def test_empty_when_no_avatars(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestGetDefaultAvatars:
+    async def test_empty_when_no_avatars(self, client: AsyncClient, db_session: AsyncSession):
         """Нет дефолтных аватарок → пустой список."""
         response = await client.get("/images/avatars/default")
         assert response.status_code == 200
         assert response.json() == []
 
-    async def test_returns_default_avatars(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_returns_default_avatars(self, client: AsyncClient, db_session: AsyncSession):
         """Дефолтные аватарки → список с метаданными."""
         avatar = await create_default_avatar(db_session)
 
@@ -125,11 +121,9 @@ class TestGetDefaultAvatars:
 
 # ==================== GET /images/avatars/me ====================
 
-class TestGetMyAvatar:
 
-    async def test_user_has_no_avatar_returns_404(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestGetMyAvatar:
+    async def test_user_has_no_avatar_returns_404(self, client: AsyncClient, db_session: AsyncSession):
         """Пользователь не выбрал аватарку → 404."""
         response = await client.get(
             "/images/avatars/me",
@@ -137,9 +131,7 @@ class TestGetMyAvatar:
         )
         assert response.status_code == 404
 
-    async def test_returns_avatar_after_update(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_returns_avatar_after_update(self, client: AsyncClient, db_session: AsyncSession):
         """После установки аватарки — GET /avatars/me возвращает метаданные."""
         default_avatar = await create_default_avatar(db_session)
 
@@ -174,11 +166,9 @@ class TestGetMyAvatar:
 
 # ==================== PUT /images/avatars/me ====================
 
-class TestUpdateMyAvatar:
 
-    async def test_valid_avatar_id_returns_metadata(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestUpdateMyAvatar:
+    async def test_valid_avatar_id_returns_metadata(self, client: AsyncClient, db_session: AsyncSession):
         """Корректный avatar_id → 200, is_default=False (пользовательская привязка)."""
         default_avatar = await create_default_avatar(db_session)
 
@@ -193,9 +183,7 @@ class TestUpdateMyAvatar:
         assert data["is_default"] is False
         assert data["mime_type"] == FAKE_MIME
 
-    async def test_update_replaces_previous_binding(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_update_replaces_previous_binding(self, client: AsyncClient, db_session: AsyncSession):
         """Повторный PUT заменяет предыдущую привязку — не падает."""
         avatar1 = await create_default_avatar(db_session)
         avatar2 = await create_default_avatar(db_session)
@@ -214,9 +202,7 @@ class TestUpdateMyAvatar:
         )
         assert response2.status_code == 200
 
-    async def test_nonexistent_avatar_id_returns_400(
-        self, client: AsyncClient
-    ):
+    async def test_nonexistent_avatar_id_returns_400(self, client: AsyncClient):
         """Несуществующий avatar_id → 400 (ValueError в репозитории)."""
         fake_id = "00000000-0000-0000-0000-000000000000"
         response = await client.put(
@@ -252,11 +238,9 @@ class TestUpdateMyAvatar:
 
 # ==================== GET /images/images/{image_id} ====================
 
-class TestGetImageById:
 
-    async def test_returns_binary_content(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestGetImageById:
+    async def test_returns_binary_content(self, client: AsyncClient, db_session: AsyncSession):
         """Существующее изображение → 200, бинарные данные совпадают."""
         avatar = await create_default_avatar(db_session)
 
@@ -264,9 +248,7 @@ class TestGetImageById:
         assert response.status_code == 200
         assert response.content == FAKE_SVG
 
-    async def test_correct_content_type_header(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_correct_content_type_header(self, client: AsyncClient, db_session: AsyncSession):
         """Content-Type соответствует mime_type изображения."""
         avatar = await create_default_avatar(db_session)
 
@@ -274,9 +256,7 @@ class TestGetImageById:
         assert response.status_code == 200
         assert FAKE_MIME in response.headers["content-type"]
 
-    async def test_cache_control_header_present(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_cache_control_header_present(self, client: AsyncClient, db_session: AsyncSession):
         """Cache-Control заголовок присутствует (кэш на год)."""
         avatar = await create_default_avatar(db_session)
 
@@ -291,9 +271,7 @@ class TestGetImageById:
         response = await client.get(f"/images/images/{fake_id}")
         assert response.status_code == 404
 
-    async def test_no_auth_required(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_no_auth_required(self, client: AsyncClient, db_session: AsyncSession):
         """Публичный эндпоинт — не требует X-User-ID."""
         avatar = await create_default_avatar(db_session)
         response = await client.get(f"/images/images/{avatar.id}")
@@ -302,11 +280,9 @@ class TestGetImageById:
 
 # ==================== GET /images/mappings/categories ====================
 
-class TestGetCategoriesMapping:
 
-    async def test_empty_when_no_categories(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestGetCategoriesMapping:
+    async def test_empty_when_no_categories(self, client: AsyncClient, db_session: AsyncSession):
         """Нет категорий → 200, пустой список mappings."""
         response = await client.get("/images/mappings/categories")
         assert response.status_code == 200
@@ -314,9 +290,7 @@ class TestGetCategoriesMapping:
         assert data["entity_type"] == "category"
         assert data["mappings"] == []
 
-    async def test_returns_category_mappings(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_returns_category_mappings(self, client: AsyncClient, db_session: AsyncSession):
         """Есть категория → маппинг содержит entity_id, image_id, mime_type."""
         cat_image = await create_category_image(db_session, entity_id="cat_food")
 
@@ -341,11 +315,9 @@ class TestGetCategoriesMapping:
 
 # ==================== GET /images/mappings/merchants ====================
 
-class TestGetMerchantsMapping:
 
-    async def test_empty_when_no_merchants(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestGetMerchantsMapping:
+    async def test_empty_when_no_merchants(self, client: AsyncClient, db_session: AsyncSession):
         """Нет мерчантов → 200, пустой список mappings."""
         response = await client.get("/images/mappings/merchants")
         assert response.status_code == 200
@@ -353,9 +325,7 @@ class TestGetMerchantsMapping:
         assert data["entity_type"] == "merchant"
         assert data["mappings"] == []
 
-    async def test_returns_merchant_mappings(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_returns_merchant_mappings(self, client: AsyncClient, db_session: AsyncSession):
         """Есть мерчант → маппинг содержит entity_id, image_id, mime_type."""
         merch_image = await create_merchant_image(db_session, entity_id="merch_sber")
 

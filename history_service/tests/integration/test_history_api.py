@@ -31,15 +31,13 @@ async def create_entry(
 ):
     """Создаёт запись истории в БД напрямую через репозиторий."""
     repo = HistoryRepository(db_session)
-    return await repo.create_entry(
-        HistoryEntryCreate(user_id=user_id, title=title, body=body)
-    )
+    return await repo.create_entry(HistoryEntryCreate(user_id=user_id, title=title, body=body))
 
 
 # ==================== Health Check ====================
 
-class TestHealthCheck:
 
+class TestHealthCheck:
     async def test_health_returns_ok(self, client: AsyncClient):
         """GET /health → 200, service: history-service."""
         response = await client.get("/health")
@@ -51,8 +49,8 @@ class TestHealthCheck:
 
 # ==================== GET /history/user/me ====================
 
-class TestGetUserHistory:
 
+class TestGetUserHistory:
     async def test_empty_list(self, client: AsyncClient, db_session: AsyncSession):
         """Нет записей у пользователя → пустой список."""
         response = await client.get(
@@ -72,9 +70,7 @@ class TestGetUserHistory:
         assert len(data) >= 1
         assert any(e["title"] == "Моя запись" for e in data)
 
-    async def test_does_not_return_other_user_entries(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_does_not_return_other_user_entries(self, client: AsyncClient, db_session: AsyncSession):
         """Не возвращает чужие записи."""
         await create_entry(db_session, user_id=USER_ID, title="Чужая запись")
 
@@ -128,11 +124,9 @@ class TestGetUserHistory:
 
 # ==================== GET /history/{entry_id} ====================
 
-class TestGetEntryById:
 
-    async def test_returns_entry(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestGetEntryById:
+    async def test_returns_entry(self, client: AsyncClient, db_session: AsyncSession):
         """Существующая запись → 200 с данными."""
         entry = await create_entry(db_session, title="По ID")
 
@@ -148,9 +142,7 @@ class TestGetEntryById:
         response = await client.get(f"/history/{fake_id}")
         assert response.status_code == 404
 
-    async def test_no_user_auth_required(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_no_user_auth_required(self, client: AsyncClient, db_session: AsyncSession):
         """GET /history/{id} не требует X-User-ID."""
         entry = await create_entry(db_session)
         response = await client.get(f"/history/{entry.id}")
@@ -159,11 +151,9 @@ class TestGetEntryById:
 
 # ==================== DELETE /history/{entry_id} ====================
 
-class TestDeleteEntry:
 
-    async def test_delete_success(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestDeleteEntry:
+    async def test_delete_success(self, client: AsyncClient, db_session: AsyncSession):
         """Удаление своей записи → success."""
         entry = await create_entry(db_session)
 
@@ -174,9 +164,7 @@ class TestDeleteEntry:
         assert response.status_code == 200
         assert response.json()["status"] == "success"
 
-    async def test_delete_then_not_found(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_delete_then_not_found(self, client: AsyncClient, db_session: AsyncSession):
         """После удаления запись недоступна по ID."""
         entry = await create_entry(db_session)
         entry_id = str(entry.id)
@@ -195,9 +183,7 @@ class TestDeleteEntry:
         )
         assert response.status_code == 404
 
-    async def test_404_for_other_user_entry(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_404_for_other_user_entry(self, client: AsyncClient, db_session: AsyncSession):
         """Удаление чужой записи → 404 (изоляция по user_id)."""
         entry = await create_entry(db_session, user_id=USER_ID)
 
@@ -207,9 +193,7 @@ class TestDeleteEntry:
         )
         assert response.status_code == 404
 
-    async def test_missing_user_id_header(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_missing_user_id_header(self, client: AsyncClient, db_session: AsyncSession):
         """Без X-User-ID → 422."""
         entry = await create_entry(db_session)
         response = await client.delete(f"/history/{entry.id}")

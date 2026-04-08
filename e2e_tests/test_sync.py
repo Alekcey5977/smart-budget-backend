@@ -1,8 +1,9 @@
 """
 E2E tests for /sync/* endpoints.
-Проверяет полный pipeline синхронизации: 
+Проверяет полный pipeline синхронизации:
 gateway → users-service (получить счета) → transactions-service → pseudo-bank
 """
+
 import asyncio
 
 import pytest
@@ -57,9 +58,7 @@ class TestSyncSingle:
         resp = http_client.post("/sync/999999", headers=headers)
         assert resp.status_code == 404
 
-    async def test_sync_and_verify_transactions_appear(
-        self, http_client, auth_headers, bank_account
-    ):
+    async def test_sync_and_verify_transactions_appear(self, http_client, auth_headers, bank_account):
         """После синхронизации транзакции должны быть доступны."""
         _, headers = auth_headers
         account_id = bank_account["bank_account_id"]
@@ -71,8 +70,7 @@ class TestSyncSingle:
         transactions = await _poll_transactions(http_client, headers)
         if not transactions:
             pytest.skip(
-                "No transactions appeared — transactions may be deduplicated from a previous run. "
-                "Run: make reset-db"
+                "No transactions appeared — transactions may be deduplicated from a previous run. Run: make reset-db"
             )
 
     def test_sync_single_without_token_returns_401(self, http_client):

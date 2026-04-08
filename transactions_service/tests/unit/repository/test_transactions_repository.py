@@ -5,16 +5,16 @@ import pytest
 
 
 class TestTransactionRepository:
-
     @pytest.mark.asyncio
-    async def test_get_transactions_with_filters_default(self, transaction_repository, mock_db_session, sample_transaction):
+    async def test_get_transactions_with_filters_default(
+        self, transaction_repository, mock_db_session, sample_transaction
+    ):
         """
         Тест получения транзакций с базовыми параметрами (только user_id).
         """
         # Настройка мока результата
         mock_scalars = MagicMock()
-        mock_scalars.unique.return_value.all.return_value = [
-            sample_transaction]
+        mock_scalars.unique.return_value.all.return_value = [sample_transaction]
 
         mock_result = MagicMock()
         mock_result.scalars.return_value = mock_scalars
@@ -47,14 +47,9 @@ class TestTransactionRepository:
         start = datetime(2023, 1, 1)
         end = datetime(2023, 1, 31)
 
-        await transaction_repository.get_transactions_with_filters(
-            user_id=1,
-            start_date=start,
-            end_date=end
-        )
+        await transaction_repository.get_transactions_with_filters(user_id=1, start_date=start, end_date=end)
 
         mock_db_session.execute.assert_awaited_once()
-
 
     @pytest.mark.asyncio
     async def test_get_transactions_with_filters_amount_range(self, transaction_repository, mock_db_session):
@@ -65,11 +60,7 @@ class TestTransactionRepository:
         mock_result.scalars.return_value.unique.return_value.all.return_value = []
         mock_db_session.execute.return_value = mock_result
 
-        await transaction_repository.get_transactions_with_filters(
-            user_id=1,
-            min_amount=10.0,
-            max_amount=100.0
-        )
+        await transaction_repository.get_transactions_with_filters(user_id=1, min_amount=10.0, max_amount=100.0)
 
         mock_db_session.execute.assert_awaited_once()
 
@@ -101,10 +92,7 @@ class TestTransactionRepository:
         mock_result.scalar_one_or_none.return_value = sample_transaction
         mock_db_session.execute.return_value = mock_result
 
-        tx = await transaction_repository.get_transaction_by_id(
-            transaction_id=str(sample_transaction.id),
-            user_id=123
-        )
+        tx = await transaction_repository.get_transaction_by_id(transaction_id=str(sample_transaction.id), user_id=123)
 
         assert tx is not None
         assert tx.id == sample_transaction.id
@@ -119,10 +107,7 @@ class TestTransactionRepository:
         mock_result.scalar_one_or_none.return_value = None
         mock_db_session.execute.return_value = mock_result
 
-        tx = await transaction_repository.get_transaction_by_id(
-            transaction_id="some-uuid",
-            user_id=999
-        )
+        tx = await transaction_repository.get_transaction_by_id(transaction_id="some-uuid", user_id=999)
 
         assert tx is None
 

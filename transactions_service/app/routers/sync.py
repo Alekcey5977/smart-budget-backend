@@ -16,10 +16,7 @@ class SyncUserAccountsRequest(BaseModel):
 
 
 @router.post("/trigger_sync", summary="Синхронизировать один счет")
-async def trigger_sync(
-    request: SyncTriggerRequest,
-    db: AsyncSession = Depends(get_db)
-):
+async def trigger_sync(request: SyncTriggerRequest, db: AsyncSession = Depends(get_db)):
     """
     Синхронизировать один конкретный счет с псевдо банком.
 
@@ -44,10 +41,7 @@ async def trigger_sync(
 
 
 @router.post("/sync_user_accounts", summary="Синхронизировать все счета пользователя")
-async def sync_user_accounts(
-    request: SyncUserAccountsRequest,
-    db: AsyncSession = Depends(get_db)
-):
+async def sync_user_accounts(request: SyncUserAccountsRequest, db: AsyncSession = Depends(get_db)):
     """
     Синхронизировать все счета конкретного пользователя с псевдо банком.
 
@@ -65,19 +59,14 @@ async def sync_user_accounts(
         return {
             "status": "success",
             "message": f"Synced {result['success']} accounts for user {request.user_id}",
-            **result
+            **result,
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Sync user accounts failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Sync user accounts failed: {str(e)}")
 
 
 @router.post("/sync_all", summary="Синхронизировать все активные счета")
-async def sync_all_accounts(
-    db: AsyncSession = Depends(get_db)
-):
+async def sync_all_accounts(db: AsyncSession = Depends(get_db)):
     """
     Синхронизировать все активные счета с псевдо банком.
 
@@ -93,16 +82,6 @@ async def sync_all_accounts(
 
     try:
         result = await repo.sync_incremental()
-        return {
-            "status": "success",
-            "message": "All accounts synchronized",
-            **result
-        }
+        return {"status": "success", "message": "All accounts synchronized", **result}
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Sync all failed: {str(e)}"
-        )
-
-
-
+        raise HTTPException(status_code=500, detail=f"Sync all failed: {str(e)}")

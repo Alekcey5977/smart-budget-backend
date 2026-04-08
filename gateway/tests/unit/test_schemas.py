@@ -2,6 +2,7 @@
 Юнит-тесты для Pydantic-схем gateway.
 Нет HTTP и БД — только логика валидации.
 """
+
 import pytest
 from app.schemas.authorization_schemas import RegisterRequest, UserLogin, UserUpdateRequest
 from pydantic import ValidationError

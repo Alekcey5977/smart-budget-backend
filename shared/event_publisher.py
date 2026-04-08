@@ -9,6 +9,7 @@ from shared.event_schema import DomainEvent
 logger = logging.getLogger(__name__)
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 
+
 class EventPublisher:
     def __init__(self):
         self.redis = redis.from_url(REDIS_URL)
@@ -17,8 +18,7 @@ class EventPublisher:
         try:
             payload = {"payload": event.model_dump_json()}
             await self.redis.xadd("domain-events", payload)
-            logger.info(
-                f"📤 Событие опубликовано: {event.event_type} (ID: {event.event_id})")
+            logger.info(f"📤 Событие опубликовано: {event.event_type} (ID: {event.event_id})")
         except (ConnectionError, TimeoutError) as e:
             logger.error(f"❌ Не удалось подключиться к Redis: {e}")
         except ResponseError as e:

@@ -3,6 +3,7 @@ E2E tests for /images/* endpoints.
 Публичные эндпоинты не требуют авторизации.
 Для тестов аватара нужно сначала запустить: make load-test-images
 """
+
 import pytest
 
 

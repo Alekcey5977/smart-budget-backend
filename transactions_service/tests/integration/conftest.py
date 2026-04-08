@@ -49,16 +49,11 @@ from app.main import app  # noqa: E402
 
 # Создаем асинхронный engine для SQLite
 engine = create_async_engine(
-    os.environ["DATABASE_URL"],
-    echo=False,
-    future=True,
-    connect_args={"check_same_thread": False}
+    os.environ["DATABASE_URL"], echo=False, future=True, connect_args={"check_same_thread": False}
 )
 
 
-TestingSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+TestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # --- ФИКСТУРЫ ---
 
@@ -90,7 +85,7 @@ async def db_session():
     # Адаптация типов под SQLite перед созданием таблиц
     for table in Transaction_Base.metadata.tables.values():
         for column in table.columns:
-            if hasattr(column.type, 'name') and column.type.name == 'jsonb':
+            if hasattr(column.type, "name") and column.type.name == "jsonb":
                 column.type = JSON()
 
     async with engine.begin() as conn:
@@ -108,6 +103,7 @@ async def client(db_session):
     """
     Создает асинхронный клиент, внедряя тестовую сессию БД.
     """
+
     async def override_get_db():
         yield db_session
 

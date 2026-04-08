@@ -9,8 +9,8 @@ from shared.cache import CacheClient
 cache_client = CacheClient(redis_url=os.getenv("REDIS_URL", "redis://redis:6379"))
 
 # TTL (в секундах)
-USER_PROFILE_TTL = 300       # 5 минут для профиля пользователя
-BANK_ACCOUNTS_TTL = 300      # 5 минут для списка банковских счетов
+USER_PROFILE_TTL = 300  # 5 минут для профиля пользователя
+BANK_ACCOUNTS_TTL = 300  # 5 минут для списка банковских счетов
 
 # Ключи кэша
 USER_PROFILE_PREFIX = "user:profile:"

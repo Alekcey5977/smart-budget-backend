@@ -4,6 +4,7 @@
 Все эндпоинты требуют JWT — get_current_user переопределяется через фикстуру `client`.
 Downstream notification-service мокается через patch("app.routers.notifications.httpx.AsyncClient").
 """
+
 from unittest.mock import AsyncMock, patch
 
 from tests.conftest import USER_ID, make_mock_http_response
@@ -30,9 +31,7 @@ class TestGetUserNotifications:
         with patch("app.routers.notifications.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(
-                200, json_data=[MOCK_NOTIFICATION]
-            )
+            mock_http.get.return_value = make_mock_http_response(200, json_data=[MOCK_NOTIFICATION])
 
             response = await client.get("/notifications/user/me")
 
@@ -77,9 +76,7 @@ class TestGetUnreadCount:
         with patch("app.routers.notifications.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(
-                200, json_data={"count": 5}
-            )
+            mock_http.get.return_value = make_mock_http_response(200, json_data={"count": 5})
 
             response = await client.get("/notifications/user/me/unread/count")
 
@@ -99,9 +96,7 @@ class TestGetNotificationById:
         with patch("app.routers.notifications.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(
-                200, json_data=MOCK_NOTIFICATION
-            )
+            mock_http.get.return_value = make_mock_http_response(200, json_data=MOCK_NOTIFICATION)
 
             response = await client.get(f"/notifications/{NOTIF_ID}")
 
@@ -112,9 +107,7 @@ class TestGetNotificationById:
         with patch("app.routers.notifications.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(
-                404, json_data={"detail": "Not found"}
-            )
+            mock_http.get.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
 
             response = await client.get(f"/notifications/{NOTIF_ID}")
 
@@ -129,9 +122,7 @@ class TestMarkAsRead:
         with patch("app.routers.notifications.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(
-                200, json_data=MOCK_MARK_RESPONSE
-            )
+            mock_http.post.return_value = make_mock_http_response(200, json_data=MOCK_MARK_RESPONSE)
 
             response = await client.post(f"/notifications/{NOTIF_ID}/mark-as-read")
 
@@ -142,9 +133,7 @@ class TestMarkAsRead:
         with patch("app.routers.notifications.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(
-                200, json_data=MOCK_MARK_RESPONSE
-            )
+            mock_http.post.return_value = make_mock_http_response(200, json_data=MOCK_MARK_RESPONSE)
 
             await client.post(f"/notifications/{NOTIF_ID}/mark-as-read")
 
@@ -155,9 +144,7 @@ class TestMarkAsRead:
         with patch("app.routers.notifications.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(
-                404, json_data={"detail": "Not found"}
-            )
+            mock_http.post.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
 
             response = await client.post(f"/notifications/{NOTIF_ID}/mark-as-read")
 
@@ -204,9 +191,7 @@ class TestDeleteNotification:
         with patch("app.routers.notifications.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.delete.return_value = make_mock_http_response(
-                404, json_data={"detail": "Not found"}
-            )
+            mock_http.delete.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
 
             response = await client.delete(f"/notifications/{NOTIF_ID}")
 

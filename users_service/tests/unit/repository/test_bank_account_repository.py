@@ -10,6 +10,7 @@ pytestmark = pytest.mark.asyncio
 
 # Натсройка моков
 
+
 def setup_execute_mocks(mock_db_session, side_effects: list):
     """Настройка side_effect для execute()."""
     mock_results = []
@@ -27,13 +28,14 @@ def setup_execute_mocks(mock_db_session, side_effects: list):
 
 def setup_add_mock_with_ids(mock_db_session, bank_id: int, account_id: int):
     """Настраивает mock_db_session.add для авто-присвоения ID объектам"""
+
     def mock_add(obj):
-        if isinstance(obj, Bank) and getattr(obj, 'id', None) is None:
+        if isinstance(obj, Bank) and getattr(obj, "id", None) is None:
             obj.id = bank_id
         if isinstance(obj, Bank_Accounts):
-            if getattr(obj, 'bank_account_id', None) is None:
+            if getattr(obj, "bank_account_id", None) is None:
                 obj.bank_account_id = account_id
-            if getattr(obj, 'bank_id', None) is None:
+            if getattr(obj, "bank_id", None) is None:
                 obj.bank_id = bank_id
         return MagicMock()
 
@@ -42,13 +44,10 @@ def setup_add_mock_with_ids(mock_db_session, bank_id: int, account_id: int):
 
 # ТЕСТЫ
 
+
 @patch("app.repository.bank_account_repository.EventPublisher")
 async def test_create_success(
-    mock_event_publisher_class,
-    mock_db_session,
-    mock_hash_function,
-    bank_account_create_schema,
-    mock_httpx_async_client
+    mock_event_publisher_class, mock_db_session, mock_hash_function, bank_account_create_schema, mock_httpx_async_client
 ):
     """Успешное создание банковского счёта"""
     from app.repository.bank_account_repository import Bank_AccountRepository
@@ -73,8 +72,9 @@ async def test_create_success(
 
     # 4. Мок refresh
     def mock_refresh(obj, attrs=None):
-        if isinstance(obj, Bank_Accounts) and (not hasattr(obj, 'bank') or obj.bank is None):
+        if isinstance(obj, Bank_Accounts) and (not hasattr(obj, "bank") or obj.bank is None):
             obj.bank = MagicMock(name="Сбербанк", id=99)
+
     mock_db_session.refresh.side_effect = mock_refresh
 
     # 5. Event publisher mock
@@ -97,9 +97,7 @@ async def test_create_success(
     mock_publisher_instance.publish.assert_called_once()
 
 
-async def test_create_duplicate_account(
-    mock_db_session, mock_hash_function, bank_account_create_schema
-):
+async def test_create_duplicate_account(mock_db_session, mock_hash_function, bank_account_create_schema):
     """Попытка создать дубликат счёта"""
     from app.repository.bank_account_repository import Bank_AccountRepository
 
@@ -174,8 +172,7 @@ async def test_create_bank_validation_error(
 
 @patch("app.repository.bank_account_repository.EventPublisher")
 async def test_create_invalid_balance_fallback(
-    mock_event_publisher_class,
-    mock_db_session, mock_hash_function, bank_account_create_schema, mock_httpx_async_client
+    mock_event_publisher_class, mock_db_session, mock_hash_function, bank_account_create_schema, mock_httpx_async_client
 ):
     """Некорректный balance в ответе банка -> fallback на 0.00"""
     from app.repository.bank_account_repository import Bank_AccountRepository
@@ -186,8 +183,7 @@ async def test_create_invalid_balance_fallback(
 
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "balance": "invalid_string", "currency": "USD"}
+    mock_response.json.return_value = {"balance": "invalid_string", "currency": "USD"}
 
     client_instance = mock_httpx_async_client.return_value.__aenter__.return_value
     client_instance.post.return_value = mock_response
@@ -195,8 +191,9 @@ async def test_create_invalid_balance_fallback(
     setup_add_mock_with_ids(mock_db_session, bank_id=5, account_id=456)
 
     def mock_refresh(obj, attrs=None):
-        if isinstance(obj, Bank_Accounts) and (not hasattr(obj, 'bank') or obj.bank is None):
+        if isinstance(obj, Bank_Accounts) and (not hasattr(obj, "bank") or obj.bank is None):
             obj.bank = MagicMock(name="TestBank", id=5)
+
     mock_db_session.refresh.side_effect = mock_refresh
 
     # ВАЖНО: Возвращаем AsyncMock
@@ -213,8 +210,7 @@ async def test_create_invalid_balance_fallback(
 
 @patch("app.repository.bank_account_repository.EventPublisher")
 async def test_create_bank_auto_created(
-    mock_event_publisher_class,
-    mock_db_session, mock_hash_function, bank_account_create_schema, mock_httpx_async_client
+    mock_event_publisher_class, mock_db_session, mock_hash_function, bank_account_create_schema, mock_httpx_async_client
 ):
     """Банк не существует - создаётся автоматически"""
     from app.repository.bank_account_repository import Bank_AccountRepository
@@ -236,6 +232,7 @@ async def test_create_bank_auto_created(
     def mock_refresh(obj, attrs=None):
         if isinstance(obj, Bank_Accounts):
             obj.bank = MagicMock(name=bank_account_create_schema.bank, id=777)
+
     mock_db_session.refresh.side_effect = mock_refresh
 
     mock_publisher_instance = AsyncMock()
@@ -249,28 +246,22 @@ async def test_create_bank_auto_created(
     assert result_account.bank_account_id == 888
 
     added_objects = [c[0][0] for c in mock_db_session.add.call_args_list]
-    assert any(isinstance(obj, Bank)
-               for obj in added_objects), "Bank object should be added to session"
+    assert any(isinstance(obj, Bank) for obj in added_objects), "Bank object should be added to session"
 
 
-async def test_create_strips_account_number(
-    mock_db_session, mock_hash_function, mock_httpx_async_client
-):
+async def test_create_strips_account_number(mock_db_session, mock_hash_function, mock_httpx_async_client):
     """Проверяем, что номер счёта очищается от пробелов"""
     from app.repository.bank_account_repository import Bank_AccountRepository
 
     user_id = 1
     schema_with_spaces = Bank_AccountCreate(
-        bank_account_number="  40817810099910004312  ",
-        bank_account_name="Test",
-        bank="TestBank"
+        bank_account_number="  40817810099910004312  ", bank_account_name="Test", bank="TestBank"
     )
 
     setup_execute_mocks(mock_db_session, [None, None])
 
     client_instance = mock_httpx_async_client.return_value.__aenter__.return_value
-    client_instance.post.return_value.json.return_value = {
-        "balance": "0.00", "currency": "RUB"}
+    client_instance.post.return_value.json.return_value = {"balance": "0.00", "currency": "RUB"}
 
     setup_add_mock_with_ids(mock_db_session, bank_id=1, account_id=1)
     mock_db_session.refresh.return_value = None

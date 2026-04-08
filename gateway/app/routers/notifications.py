@@ -7,15 +7,9 @@ from app.dependencies import get_current_user
 from app.schemas.notification_schema import MarkAsReadResponse, NotificationResponse, UnreadCountResponse
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-router = APIRouter(
-    prefix="/notifications",
-    tags=["notifications"]
-)
+router = APIRouter(prefix="/notifications", tags=["notifications"])
 
-NOTIFICATION_SERVICE_URL = os.getenv(
-    "NOTIFICATION_SERVICE_URL",
-    "http://notification-service:8006"
-)
+NOTIFICATION_SERVICE_URL = os.getenv("NOTIFICATION_SERVICE_URL", "http://notification-service:8006")
 
 
 @router.get(
@@ -52,7 +46,7 @@ Gateway автоматически передает user_id в сервис че
                             "title": "Новая цель создана",
                             "body": "Вы успешно создали цель 'Отпуск в Турции'",
                             "is_read": False,
-                            "created_at": "2026-01-21T10:30:00"
+                            "created_at": "2026-01-21T10:30:00",
                         },
                         {
                             "id": "660f9511-f30c-52e5-b827-55766541b001",
@@ -60,20 +54,20 @@ Gateway автоматически передает user_id в сервис че
                             "title": "Добро пожаловать!",
                             "body": "Ваш аккаунт успешно создан",
                             "is_read": True,
-                            "created_at": "2026-01-20T15:20:00"
-                        }
+                            "created_at": "2026-01-20T15:20:00",
+                        },
                     ]
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
-        503: {"description": "Сервис уведомлений недоступен"}
-    }
+        503: {"description": "Сервис уведомлений недоступен"},
+    },
 )
 async def get_user_notifications(
     skip: int = Query(0, ge=0, description="Пропустить N записей (для пагинации)"),
     limit: int = Query(20, ge=1, le=100, description="Максимум записей на страницу"),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     """
     Проксирует запрос на получение уведомлений к notification-service.
@@ -91,17 +85,14 @@ async def get_user_notifications(
                 f"{NOTIFICATION_SERVICE_URL}/notifications/user/me",
                 headers=headers,
                 params={"skip": skip, "limit": limit},
-                timeout=10.0
+                timeout=10.0,
             )
 
             if response.status_code == 200:
                 return response.json()
 
             error_detail = response.json().get("detail", "Failed to get notifications")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=error_detail
-            )
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Notification service is unavailable")
@@ -124,19 +115,13 @@ async def get_user_notifications(
     responses={
         200: {
             "description": "Количество непрочитанных уведомлений",
-            "content": {
-                "application/json": {
-                    "example": {"count": 5}
-                }
-            }
+            "content": {"application/json": {"example": {"count": 5}}},
         },
         401: {"description": "Не авторизован"},
-        503: {"description": "Сервис уведомлений недоступен"}
-    }
+        503: {"description": "Сервис уведомлений недоступен"},
+    },
 )
-async def get_unread_count(
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def get_unread_count(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Проксирует запрос на получение количества непрочитанных уведомлений.
 
@@ -149,19 +134,14 @@ async def get_unread_count(
             headers = {"X-User-ID": str(user_id)}
 
             response = await client.get(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/user/me/unread/count",
-                headers=headers,
-                timeout=10.0
+                f"{NOTIFICATION_SERVICE_URL}/notifications/user/me/unread/count", headers=headers, timeout=10.0
             )
 
             if response.status_code == 200:
                 return response.json()
 
             error_detail = response.json().get("detail", "Failed to get unread count")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=error_detail
-            )
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Notification service is unavailable")
@@ -185,13 +165,10 @@ async def get_unread_count(
         200: {"description": "Данные уведомления"},
         401: {"description": "Не авторизован"},
         404: {"description": "Уведомление не найдено"},
-        503: {"description": "Сервис уведомлений недоступен"}
-    }
+        503: {"description": "Сервис уведомлений недоступен"},
+    },
 )
-async def get_notification_by_id(
-    notification_id: UUID,
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def get_notification_by_id(notification_id: UUID, current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Проксирует запрос на получение уведомления по ID к notification-service.
 
@@ -199,10 +176,7 @@ async def get_notification_by_id(
     """
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}",
-                timeout=10.0
-            )
+            response = await client.get(f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}", timeout=10.0)
 
             if response.status_code == 200:
                 return response.json()
@@ -211,10 +185,7 @@ async def get_notification_by_id(
                 raise HTTPException(404, "Notification not found")
 
             error_detail = response.json().get("detail", "Failed to get notification")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=error_detail
-            )
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Notification service is unavailable")
@@ -240,23 +211,15 @@ async def get_notification_by_id(
         200: {
             "description": "Уведомление отмечено как прочитанное",
             "content": {
-                "application/json": {
-                    "example": {
-                        "status": "success",
-                        "message": "Notification marked as read"
-                    }
-                }
-            }
+                "application/json": {"example": {"status": "success", "message": "Notification marked as read"}}
+            },
         },
         401: {"description": "Не авторизован"},
         404: {"description": "Уведомление не найдено или доступ запрещен"},
-        503: {"description": "Сервис уведомлений недоступен"}
-    }
+        503: {"description": "Сервис уведомлений недоступен"},
+    },
 )
-async def mark_as_read(
-    notification_id: UUID,
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def mark_as_read(notification_id: UUID, current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Проксирует запрос на отметку уведомления как прочитанного.
 
@@ -272,7 +235,7 @@ async def mark_as_read(
             response = await client.post(
                 f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}/mark-as-read",
                 headers=headers,
-                timeout=10.0
+                timeout=10.0,
             )
 
             if response.status_code == 200:
@@ -282,10 +245,7 @@ async def mark_as_read(
                 raise HTTPException(404, "Notification not found or access denied")
 
             error_detail = response.json().get("detail", "Failed to mark notification as read")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=error_detail
-            )
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Notification service is unavailable")
@@ -313,21 +273,14 @@ async def mark_as_read(
         200: {
             "description": "Все уведомления отмечены как прочитанные",
             "content": {
-                "application/json": {
-                    "example": {
-                        "status": "success",
-                        "message": "All notifications marked as read"
-                    }
-                }
-            }
+                "application/json": {"example": {"status": "success", "message": "All notifications marked as read"}}
+            },
         },
         401: {"description": "Не авторизован"},
-        503: {"description": "Сервис уведомлений недоступен"}
-    }
+        503: {"description": "Сервис уведомлений недоступен"},
+    },
 )
-async def mark_all_as_read(
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def mark_all_as_read(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Проксирует запрос на отметку всех уведомлений как прочитанных.
 
@@ -341,19 +294,14 @@ async def mark_all_as_read(
             headers = {"X-User-ID": str(user_id)}
 
             response = await client.post(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/mark-all-as-read",
-                headers=headers,
-                timeout=10.0
+                f"{NOTIFICATION_SERVICE_URL}/notifications/mark-all-as-read", headers=headers, timeout=10.0
             )
 
             if response.status_code == 200:
                 return response.json()
 
             error_detail = response.json().get("detail", "Failed to mark all notifications as read")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=error_detail
-            )
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Notification service is unavailable")
@@ -378,24 +326,14 @@ async def mark_all_as_read(
     responses={
         200: {
             "description": "Уведомление успешно удалено",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status": "success",
-                        "message": "Notification deleted"
-                    }
-                }
-            }
+            "content": {"application/json": {"example": {"status": "success", "message": "Notification deleted"}}},
         },
         401: {"description": "Не авторизован"},
         404: {"description": "Уведомление не найдено или доступ запрещен"},
-        503: {"description": "Сервис уведомлений недоступен"}
-    }
+        503: {"description": "Сервис уведомлений недоступен"},
+    },
 )
-async def delete_notification(
-    notification_id: UUID,
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def delete_notification(notification_id: UUID, current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Проксирует запрос на удаление уведомления к notification-service.
 
@@ -409,9 +347,7 @@ async def delete_notification(
             headers = {"X-User-ID": str(user_id)}
 
             response = await client.delete(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}",
-                headers=headers,
-                timeout=10.0
+                f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}", headers=headers, timeout=10.0
             )
 
             if response.status_code == 200:
@@ -421,10 +357,7 @@ async def delete_notification(
                 raise HTTPException(404, "Notification not found or access denied")
 
             error_detail = response.json().get("detail", "Failed to delete notification")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=error_detail
-            )
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Notification service is unavailable")

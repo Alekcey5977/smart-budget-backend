@@ -65,7 +65,7 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 app.add_middleware(LoggingMiddleware)
@@ -88,11 +88,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 @app.get("/", tags=["health"])
 async def root():
     """Health check эндпоинт"""
-    return {
-        "service": "images-service",
-        "status": "running",
-        "version": "1.0.0"
-    }
+    return {"service": "images-service", "status": "running", "version": "1.0.0"}
 
 
 @app.get("/health", tags=["health"])

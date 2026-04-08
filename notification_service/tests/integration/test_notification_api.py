@@ -31,15 +31,13 @@ async def create_notification(
 ):
     """Создаёт уведомление в БД напрямую (нет POST-эндпоинта в API)."""
     repo = NotificationRepository(db_session)
-    return await repo.create_notification(
-        NotificationCreate(user_id=user_id, title=title, body=body)
-    )
+    return await repo.create_notification(NotificationCreate(user_id=user_id, title=title, body=body))
 
 
 # ==================== Health Check ====================
 
-class TestHealthCheck:
 
+class TestHealthCheck:
     async def test_health_returns_ok(self, client: AsyncClient):
         """GET /health → 200, service: notification-service."""
         response = await client.get("/health")
@@ -51,8 +49,8 @@ class TestHealthCheck:
 
 # ==================== GET /notifications/user/me ====================
 
-class TestGetNotifications:
 
+class TestGetNotifications:
     async def test_empty_list(self, client: AsyncClient, db_session: AsyncSession):
         """Нет уведомлений у пользователя → пустой список."""
         response = await client.get(
@@ -72,9 +70,7 @@ class TestGetNotifications:
         assert len(data) >= 1
         assert any(n["title"] == "Моё уведомление" for n in data)
 
-    async def test_does_not_return_other_user_notifications(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_does_not_return_other_user_notifications(self, client: AsyncClient, db_session: AsyncSession):
         """Не возвращает чужие уведомления."""
         await create_notification(db_session, user_id=USER_ID, title="Чужое")
 
@@ -126,14 +122,11 @@ class TestGetNotifications:
         assert "Invalid user ID" in response.json()["detail"]
 
 
-
 # ==================== GET /notifications/user/me/unread/count ====================
 
-class TestGetUnreadCount:
 
-    async def test_returns_zero_when_no_notifications(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestGetUnreadCount:
+    async def test_returns_zero_when_no_notifications(self, client: AsyncClient, db_session: AsyncSession):
         """Нет уведомлений → count=0."""
         response = await client.get(
             "/notifications/user/me/unread/count",
@@ -142,9 +135,7 @@ class TestGetUnreadCount:
         assert response.status_code == 200
         assert response.json()["count"] == 0
 
-    async def test_returns_correct_unread_count(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_returns_correct_unread_count(self, client: AsyncClient, db_session: AsyncSession):
         """Создали 2 непрочитанных уведомления → count=2."""
         await create_notification(db_session, user_id=2)
         await create_notification(db_session, user_id=2)
@@ -161,9 +152,7 @@ class TestGetUnreadCount:
         response = await client.get("/notifications/user/me/unread/count")
         assert response.status_code == 422
 
-    async def test_unread_count_decreases_after_mark_read(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_unread_count_decreases_after_mark_read(self, client: AsyncClient, db_session: AsyncSession):
         """Прочитанное уведомление не считается непрочитанным."""
         notif = await create_notification(db_session, user_id=10)
         await client.post(
@@ -180,11 +169,9 @@ class TestGetUnreadCount:
 
 # ==================== GET /notifications/{id} ====================
 
-class TestGetNotificationById:
 
-    async def test_returns_notification(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestGetNotificationById:
+    async def test_returns_notification(self, client: AsyncClient, db_session: AsyncSession):
         """Существующее уведомление → 200 с данными."""
         notif = await create_notification(db_session, title="По ID")
 
@@ -200,9 +187,7 @@ class TestGetNotificationById:
         response = await client.get(f"/notifications/{fake_id}")
         assert response.status_code == 404
 
-    async def test_no_user_auth_required(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_no_user_auth_required(self, client: AsyncClient, db_session: AsyncSession):
         """GET /notifications/{id} не требует X-User-ID (любой может получить по ID)."""
         notif = await create_notification(db_session)
         response = await client.get(f"/notifications/{notif.id}")
@@ -211,11 +196,9 @@ class TestGetNotificationById:
 
 # ==================== POST /notifications/{id}/mark-as-read ====================
 
-class TestMarkAsRead:
 
-    async def test_marks_notification_as_read(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestMarkAsRead:
+    async def test_marks_notification_as_read(self, client: AsyncClient, db_session: AsyncSession):
         """Отметить уведомление как прочитанное → success."""
         notif = await create_notification(db_session)
 
@@ -235,9 +218,7 @@ class TestMarkAsRead:
         )
         assert response.status_code == 404
 
-    async def test_404_for_other_user_notification(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_404_for_other_user_notification(self, client: AsyncClient, db_session: AsyncSession):
         """Отмечаем чужое уведомление → 404 (изоляция по user_id)."""
         notif = await create_notification(db_session, user_id=USER_ID)
 
@@ -247,9 +228,7 @@ class TestMarkAsRead:
         )
         assert response.status_code == 404
 
-    async def test_missing_user_id_header(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_missing_user_id_header(self, client: AsyncClient, db_session: AsyncSession):
         """Без X-User-ID → 422."""
         notif = await create_notification(db_session)
         response = await client.post(f"/notifications/{notif.id}/mark-as-read")
@@ -258,11 +237,9 @@ class TestMarkAsRead:
 
 # ==================== POST /notifications/mark-all-as-read ====================
 
-class TestMarkAllAsRead:
 
-    async def test_marks_all_as_read(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestMarkAllAsRead:
+    async def test_marks_all_as_read(self, client: AsyncClient, db_session: AsyncSession):
         """Отметить все как прочитанные → success."""
         await create_notification(db_session)
         await create_notification(db_session)
@@ -290,11 +267,9 @@ class TestMarkAllAsRead:
 
 # ==================== DELETE /notifications/{id} ====================
 
-class TestDeleteNotification:
 
-    async def test_delete_success(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+class TestDeleteNotification:
+    async def test_delete_success(self, client: AsyncClient, db_session: AsyncSession):
         """Удаление своего уведомления → success."""
         notif = await create_notification(db_session)
 
@@ -305,9 +280,7 @@ class TestDeleteNotification:
         assert response.status_code == 200
         assert response.json()["status"] == "success"
 
-    async def test_delete_then_not_found(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_delete_then_not_found(self, client: AsyncClient, db_session: AsyncSession):
         """После удаления уведомление недоступно по ID."""
         notif = await create_notification(db_session)
         notif_id = str(notif.id)
@@ -326,9 +299,7 @@ class TestDeleteNotification:
         )
         assert response.status_code == 404
 
-    async def test_404_for_other_user_notification(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_404_for_other_user_notification(self, client: AsyncClient, db_session: AsyncSession):
         """Удаление чужого уведомления → 404."""
         notif = await create_notification(db_session, user_id=USER_ID)
 
@@ -338,9 +309,7 @@ class TestDeleteNotification:
         )
         assert response.status_code == 404
 
-    async def test_missing_user_id_header(
-        self, client: AsyncClient, db_session: AsyncSession
-    ):
+    async def test_missing_user_id_header(self, client: AsyncClient, db_session: AsyncSession):
         """Без X-User-ID → 422."""
         notif = await create_notification(db_session)
         response = await client.delete(f"/notifications/{notif.id}")

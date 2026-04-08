@@ -4,6 +4,7 @@
 Все эндпоинты требуют JWT — get_current_user переопределяется через фикстуру `client`.
 Downstream purposes-service мокается через patch("app.routers.purposes.httpx.AsyncClient").
 """
+
 from unittest.mock import AsyncMock, patch
 
 from tests.conftest import USER_ID, make_mock_http_response
@@ -36,9 +37,7 @@ class TestCreatePurpose:
         with patch("app.routers.purposes.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(
-                200, json_data=MOCK_PURPOSE_RESPONSE
-            )
+            mock_http.post.return_value = make_mock_http_response(200, json_data=MOCK_PURPOSE_RESPONSE)
 
             response = await client.post("/purposes/create", json=VALID_PURPOSE_BODY)
 
@@ -51,9 +50,7 @@ class TestCreatePurpose:
         with patch("app.routers.purposes.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(
-                200, json_data=MOCK_PURPOSE_RESPONSE
-            )
+            mock_http.post.return_value = make_mock_http_response(200, json_data=MOCK_PURPOSE_RESPONSE)
 
             await client.post("/purposes/create", json=VALID_PURPOSE_BODY)
 
@@ -122,9 +119,7 @@ class TestUpdatePurpose:
             MockClient.return_value.__aenter__.return_value = mock_http
             mock_http.put.return_value = make_mock_http_response(200, json_data=updated)
 
-            response = await client.put(
-                f"/purposes/update/{PURPOSE_ID}", json={"title": "Updated Goal"}
-            )
+            response = await client.put(f"/purposes/update/{PURPOSE_ID}", json={"title": "Updated Goal"})
 
         assert response.status_code == 200
         assert response.json()["title"] == "Updated Goal"
@@ -133,13 +128,9 @@ class TestUpdatePurpose:
         with patch("app.routers.purposes.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.put.return_value = make_mock_http_response(
-                404, json_data={"detail": "Purpose not found"}
-            )
+            mock_http.put.return_value = make_mock_http_response(404, json_data={"detail": "Purpose not found"})
 
-            response = await client.put(
-                f"/purposes/update/{PURPOSE_ID}", json={"title": "Updated Goal"}
-            )
+            response = await client.put(f"/purposes/update/{PURPOSE_ID}", json={"title": "Updated Goal"})
 
         assert response.status_code == 404
 
@@ -152,9 +143,7 @@ class TestDeletePurpose:
         with patch("app.routers.purposes.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.delete.return_value = make_mock_http_response(
-                200, json_data={"status": "deleted"}
-            )
+            mock_http.delete.return_value = make_mock_http_response(200, json_data={"status": "deleted"})
 
             response = await client.delete(f"/purposes/delete/{PURPOSE_ID}")
 
@@ -164,9 +153,7 @@ class TestDeletePurpose:
         with patch("app.routers.purposes.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.delete.return_value = make_mock_http_response(
-                404, json_data={"detail": "Purpose not found"}
-            )
+            mock_http.delete.return_value = make_mock_http_response(404, json_data={"detail": "Purpose not found"})
 
             response = await client.delete(f"/purposes/delete/{PURPOSE_ID}")
 

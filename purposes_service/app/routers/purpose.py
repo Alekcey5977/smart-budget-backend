@@ -20,7 +20,7 @@ async def get_purpose_repository(db: AsyncSession = Depends(get_db)):
 async def create_purpose(
     purpose: PurposeCreate,
     user_id: int = Depends(get_user_id_from_header),
-    repo: PurposeRepository = Depends(get_purpose_repository)
+    repo: PurposeRepository = Depends(get_purpose_repository),
 ):
     """Создание цели"""
     purpose = await repo.create_purpose(user_id, purpose)
@@ -68,7 +68,6 @@ async def delete_purpose(
     """Удаление цели"""
     deleted_purpose = await repo.delete_purpose(user_id, purpose_id)
     if deleted_purpose is None:
-        raise HTTPException(
-            status_code=404, detail="Purpose not found or access denied")
+        raise HTTPException(status_code=404, detail="Purpose not found or access denied")
 
     return deleted_purpose

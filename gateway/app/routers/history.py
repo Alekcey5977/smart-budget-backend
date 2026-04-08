@@ -7,15 +7,9 @@ from app.dependencies import get_current_user
 from app.schemas.history_schema import DeleteResponse, HistoryEntryResponse
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-router = APIRouter(
-    prefix="/history",
-    tags=["history"]
-)
+router = APIRouter(prefix="/history", tags=["history"])
 
-HISTORY_SERVICE_URL = os.getenv(
-    "HISTORY_SERVICE_URL",
-    "http://history-service:8007"
-)
+HISTORY_SERVICE_URL = os.getenv("HISTORY_SERVICE_URL", "http://history-service:8007")
 
 
 @router.get(
@@ -56,28 +50,28 @@ Gateway автоматически передаёт user_id в сервис че
                             "user_id": 1,
                             "title": "Цель создана",
                             "body": "Цель «Отпуск в Турции» на сумму 150000 руб. создана",
-                            "created_at": "2026-01-21T10:30:00"
+                            "created_at": "2026-01-21T10:30:00",
                         },
                         {
                             "id": "660f9511-f30c-52e5-b827-55766541b001",
                             "user_id": 1,
                             "title": "Банковский счёт добавлен",
                             "body": "Добавлен счёт «Сбербанк» с балансом 50000 руб.",
-                            "created_at": "2026-01-20T15:20:00"
-                        }
+                            "created_at": "2026-01-20T15:20:00",
+                        },
                     ]
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
         503: {"description": "Сервис истории недоступен"},
-        504: {"description": "Таймаут сервиса истории"}
-    }
+        504: {"description": "Таймаут сервиса истории"},
+    },
 )
 async def get_user_history(
     skip: int = Query(0, ge=0, description="Пропустить N записей (для пагинации)"),
     limit: int = Query(20, ge=1, le=100, description="Максимум записей на страницу"),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     """Проксирует запрос на получение истории к history-service."""
     user_id = current_user["user_id"]
@@ -88,7 +82,7 @@ async def get_user_history(
                 f"{HISTORY_SERVICE_URL}/history/user/me",
                 headers={"X-User-ID": str(user_id)},
                 params={"skip": skip, "limit": limit},
-                timeout=10.0
+                timeout=10.0,
             )
 
             if response.status_code == 200:
@@ -124,28 +118,22 @@ async def get_user_history(
                         "user_id": 1,
                         "title": "Цель создана",
                         "body": "Цель «Отпуск в Турции» на сумму 150000 руб. создана",
-                        "created_at": "2026-01-21T10:30:00"
+                        "created_at": "2026-01-21T10:30:00",
                     }
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
         404: {"description": "Запись истории не найдена"},
         503: {"description": "Сервис истории недоступен"},
-        504: {"description": "Таймаут сервиса истории"}
-    }
+        504: {"description": "Таймаут сервиса истории"},
+    },
 )
-async def get_history_entry(
-    entry_id: UUID,
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def get_history_entry(entry_id: UUID, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Проксирует запрос на получение записи истории к history-service."""
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(
-                f"{HISTORY_SERVICE_URL}/history/{entry_id}",
-                timeout=10.0
-            )
+            response = await client.get(f"{HISTORY_SERVICE_URL}/history/{entry_id}", timeout=10.0)
 
             if response.status_code == 200:
                 return response.json()
@@ -179,34 +167,22 @@ async def get_history_entry(
     responses={
         200: {
             "description": "Запись успешно удалена",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status": "success",
-                        "message": "History entry deleted"
-                    }
-                }
-            }
+            "content": {"application/json": {"example": {"status": "success", "message": "History entry deleted"}}},
         },
         401: {"description": "Не авторизован"},
         404: {"description": "Запись не найдена или доступ запрещён"},
         503: {"description": "Сервис истории недоступен"},
-        504: {"description": "Таймаут сервиса истории"}
-    }
+        504: {"description": "Таймаут сервиса истории"},
+    },
 )
-async def delete_history_entry(
-    entry_id: UUID,
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def delete_history_entry(entry_id: UUID, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Проксирует запрос на удаление записи истории к history-service."""
     user_id = current_user["user_id"]
 
     async with httpx.AsyncClient() as client:
         try:
             response = await client.delete(
-                f"{HISTORY_SERVICE_URL}/history/{entry_id}",
-                headers={"X-User-ID": str(user_id)},
-                timeout=10.0
+                f"{HISTORY_SERVICE_URL}/history/{entry_id}", headers={"X-User-ID": str(user_id)}, timeout=10.0
             )
 
             if response.status_code == 200:

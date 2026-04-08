@@ -13,6 +13,7 @@ from pydantic import ValidationError  # noqa: E402
 
 # ==================== HistoryEntryCreate ====================
 
+
 class TestHistoryEntryCreate:
     """Тесты схемы создания записи истории."""
 
@@ -40,6 +41,7 @@ class TestHistoryEntryCreate:
 
 
 # ==================== HistoryEntryResponse ====================
+
 
 class TestHistoryEntryResponse:
     """Тесты схемы ответа записи истории."""
@@ -81,6 +83,7 @@ class TestHistoryEntryResponse:
 
 
 # ==================== DeleteResponse ====================
+
 
 class TestDeleteResponse:
     """Тесты схемы ответа на удаление."""

@@ -51,7 +51,7 @@ async def test_get_transactions_with_filters(client: AsyncClient, db_session: As
         bank_account_name="Main",
         bank_id=1,
         currency="RUB",
-        balance=1000.00
+        balance=1000.00,
     )
 
     tx1 = Transaction(
@@ -62,7 +62,7 @@ async def test_get_transactions_with_filters(client: AsyncClient, db_session: As
         merchant_id=5,
         amount=500.00,
         type="expense",
-        created_at=datetime(2023, 1, 1, 12, 0, 0)
+        created_at=datetime(2023, 1, 1, 12, 0, 0),
     )
 
     tx_other = Transaction(
@@ -72,7 +72,7 @@ async def test_get_transactions_with_filters(client: AsyncClient, db_session: As
         bank_account_id=1,
         amount=100.00,
         type="expense",
-        created_at=datetime(2023, 1, 1, 13, 0, 0)
+        created_at=datetime(2023, 1, 1, 13, 0, 0),
     )
 
     db_session.add_all([bank, category, merchant, account, tx1, tx_other])
@@ -80,13 +80,7 @@ async def test_get_transactions_with_filters(client: AsyncClient, db_session: As
 
     # Act: запрос с фильтром
     response = await client.post(
-        "/transactions/",
-        json={
-            "limit": 10,
-            "offset": 0,
-            "min_amount": 100,
-            "max_amount": 600
-        }
+        "/transactions/", json={"limit": 10, "offset": 0, "min_amount": 100, "max_amount": 600}
     )
 
     # Assert
@@ -113,23 +107,29 @@ async def test_update_category_success(client: AsyncClient, db_session: AsyncSes
     cat_old = Category(id=1, name="Food")
     cat_new = Category(id=2, name="Transport")
     account = Bank_Account(
-        id=1, user_id=user_id, bank_account_hash="hash_1",
-        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+        id=1,
+        user_id=user_id,
+        bank_account_hash="hash_1",
+        bank_account_name="Main",
+        bank_id=1,
+        currency="RUB",
+        balance=0,
     )
     tx_id = uuid.uuid4()
     tx = Transaction(
-        id=tx_id, user_id=user_id, category_id=1,
-        bank_account_id=1, amount=100.00, type="expense",
-        created_at=datetime(2024, 1, 1)
+        id=tx_id,
+        user_id=user_id,
+        category_id=1,
+        bank_account_id=1,
+        amount=100.00,
+        type="expense",
+        created_at=datetime(2024, 1, 1),
     )
 
     db_session.add_all([bank, cat_old, cat_new, account, tx])
     await db_session.flush()
 
-    response = await client.patch(
-        f"/transactions/{tx_id}/category",
-        json={"category_id": 2}
-    )
+    response = await client.patch(f"/transactions/{tx_id}/category", json={"category_id": 2})
 
     assert response.status_code == 200
     data = response.json()
@@ -146,10 +146,7 @@ async def test_update_category_transaction_not_found(client: AsyncClient, db_ses
     db_session.add(cat)
     await db_session.flush()
 
-    response = await client.patch(
-        f"/transactions/{uuid.uuid4()}/category",
-        json={"category_id": 1}
-    )
+    response = await client.patch(f"/transactions/{uuid.uuid4()}/category", json={"category_id": 1})
 
     assert response.status_code == 404
 
@@ -160,24 +157,24 @@ async def test_update_category_wrong_user(client: AsyncClient, db_session: Async
     bank = Bank(id=1, name="Test Bank")
     cat = Category(id=1, name="Food")
     account = Bank_Account(
-        id=1, user_id=999, bank_account_hash="hash_1",
-        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+        id=1, user_id=999, bank_account_hash="hash_1", bank_account_name="Main", bank_id=1, currency="RUB", balance=0
     )
     tx_id = uuid.uuid4()
     tx = Transaction(
-        id=tx_id, user_id=999, category_id=1,
-        bank_account_id=1, amount=100.00, type="expense",
-        created_at=datetime(2024, 1, 1)
+        id=tx_id,
+        user_id=999,
+        category_id=1,
+        bank_account_id=1,
+        amount=100.00,
+        type="expense",
+        created_at=datetime(2024, 1, 1),
     )
 
     db_session.add_all([bank, cat, account, tx])
     await db_session.flush()
 
     # client использует user_id=123, транзакция принадлежит 999
-    response = await client.patch(
-        f"/transactions/{tx_id}/category",
-        json={"category_id": 1}
-    )
+    response = await client.patch(f"/transactions/{tx_id}/category", json={"category_id": 1})
 
     assert response.status_code == 404
 
@@ -188,23 +185,23 @@ async def test_update_category_category_not_found(client: AsyncClient, db_sessio
     bank = Bank(id=1, name="Test Bank")
     cat = Category(id=1, name="Food")
     account = Bank_Account(
-        id=1, user_id=123, bank_account_hash="hash_1",
-        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+        id=1, user_id=123, bank_account_hash="hash_1", bank_account_name="Main", bank_id=1, currency="RUB", balance=0
     )
     tx_id = uuid.uuid4()
     tx = Transaction(
-        id=tx_id, user_id=123, category_id=1,
-        bank_account_id=1, amount=100.00, type="expense",
-        created_at=datetime(2024, 1, 1)
+        id=tx_id,
+        user_id=123,
+        category_id=1,
+        bank_account_id=1,
+        amount=100.00,
+        type="expense",
+        created_at=datetime(2024, 1, 1),
     )
 
     db_session.add_all([bank, cat, account, tx])
     await db_session.flush()
 
-    response = await client.patch(
-        f"/transactions/{tx_id}/category",
-        json={"category_id": 9999}
-    )
+    response = await client.patch(f"/transactions/{tx_id}/category", json={"category_id": 9999})
 
     assert response.status_code == 404
 
@@ -214,7 +211,7 @@ async def test_update_category_invalid_body(client: AsyncClient, db_session: Asy
     """Тест: невалидное тело запроса → 422"""
     response = await client.patch(
         f"/transactions/{uuid.uuid4()}/category",
-        json={"category_id": 0}  # gt=0 — не пройдёт валидацию
+        json={"category_id": 0},  # gt=0 — не пройдёт валидацию
     )
 
     assert response.status_code == 422
@@ -223,10 +220,7 @@ async def test_update_category_invalid_body(client: AsyncClient, db_session: Asy
 @pytest.mark.asyncio
 async def test_update_category_missing_body(client: AsyncClient, db_session: AsyncSession):
     """Тест: отсутствует тело запроса → 422"""
-    response = await client.patch(
-        f"/transactions/{uuid.uuid4()}/category",
-        json={}
-    )
+    response = await client.patch(f"/transactions/{uuid.uuid4()}/category", json={})
 
     assert response.status_code == 422
 
@@ -251,12 +245,12 @@ async def test_sync_repository_integration(client: AsyncClient, db_session: Asyn
             "bank_id": 99,
             "currency": "USD",
             "balance": 100,
-            "created_at": "2023-01-01T00:00:00Z"
+            "created_at": "2023-01-01T00:00:00Z",
         },
         "categories": [{"id": 50, "name": "Synced Cat"}],
         "mcc_categories": [],
         "merchants": [],
-        "transactions": []
+        "transactions": [],
     }
 
     mock_client_instance = AsyncMock()
@@ -273,6 +267,7 @@ async def test_sync_repository_integration(client: AsyncClient, db_session: Asyn
 
     # Проверяем прямым запросом
     from sqlalchemy import select
+
     result = await db_session.execute(select(Category).where(Category.id == 50))
     cat = result.scalar_one_or_none()
 
@@ -287,14 +282,23 @@ async def test_get_transaction_by_id_success(client: AsyncClient, db_session: As
     bank = Bank(id=1, name="Test Bank")
     cat = Category(id=1, name="Food")
     account = Bank_Account(
-        id=1, user_id=user_id, bank_account_hash="hash_1",
-        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+        id=1,
+        user_id=user_id,
+        bank_account_hash="hash_1",
+        bank_account_name="Main",
+        bank_id=1,
+        currency="RUB",
+        balance=0,
     )
     tx_id = uuid.uuid4()
     tx = Transaction(
-        id=tx_id, user_id=user_id, category_id=1,
-        bank_account_id=1, amount=250.00, type="expense",
-        created_at=datetime(2024, 3, 1)
+        id=tx_id,
+        user_id=user_id,
+        category_id=1,
+        bank_account_id=1,
+        amount=250.00,
+        type="expense",
+        created_at=datetime(2024, 3, 1),
     )
     db_session.add_all([bank, cat, account, tx])
     await db_session.flush()
@@ -323,14 +327,17 @@ async def test_get_transaction_by_id_wrong_user(client: AsyncClient, db_session:
     bank = Bank(id=1, name="Test Bank")
     cat = Category(id=1, name="Food")
     account = Bank_Account(
-        id=1, user_id=999, bank_account_hash="hash_1",
-        bank_account_name="Main", bank_id=1, currency="RUB", balance=0
+        id=1, user_id=999, bank_account_hash="hash_1", bank_account_name="Main", bank_id=1, currency="RUB", balance=0
     )
     tx_id = uuid.uuid4()
     tx = Transaction(
-        id=tx_id, user_id=999, category_id=1,
-        bank_account_id=1, amount=100.00, type="expense",
-        created_at=datetime(2024, 1, 1)
+        id=tx_id,
+        user_id=999,
+        category_id=1,
+        bank_account_id=1,
+        amount=100.00,
+        type="expense",
+        created_at=datetime(2024, 1, 1),
     )
     db_session.add_all([bank, cat, account, tx])
     await db_session.flush()
@@ -366,11 +373,13 @@ async def test_get_category_by_id_not_found(client: AsyncClient, db_session: Asy
 @pytest.mark.asyncio
 async def test_get_categories_includes_type(client: AsyncClient, db_session: AsyncSession):
     """Тест: поле type присутствует в ответе категорий"""
-    db_session.add_all([
-        Category(id=1, name="Food", type="expense"),
-        Category(id=2, name="Salary", type="income"),
-        Category(id=3, name="Investments", type=None),
-    ])
+    db_session.add_all(
+        [
+            Category(id=1, name="Food", type="expense"),
+            Category(id=2, name="Salary", type="income"),
+            Category(id=3, name="Investments", type=None),
+        ]
+    )
     await db_session.flush()
 
     response = await client.get("/transactions/categories")
@@ -387,11 +396,13 @@ async def test_get_categories_includes_type(client: AsyncClient, db_session: Asy
 @pytest.mark.asyncio
 async def test_get_categories_filter_expense(client: AsyncClient, db_session: AsyncSession):
     """Тест: ?type=expense — возвращает expense и null-категории"""
-    db_session.add_all([
-        Category(id=1, name="Food", type="expense"),
-        Category(id=2, name="Salary", type="income"),
-        Category(id=3, name="Investments", type=None),
-    ])
+    db_session.add_all(
+        [
+            Category(id=1, name="Food", type="expense"),
+            Category(id=2, name="Salary", type="income"),
+            Category(id=3, name="Investments", type=None),
+        ]
+    )
     await db_session.flush()
 
     response = await client.get("/transactions/categories?type=expense")
@@ -408,11 +419,13 @@ async def test_get_categories_filter_expense(client: AsyncClient, db_session: As
 @pytest.mark.asyncio
 async def test_get_categories_filter_income(client: AsyncClient, db_session: AsyncSession):
     """Тест: ?type=income — возвращает income и null-категории"""
-    db_session.add_all([
-        Category(id=1, name="Food", type="expense"),
-        Category(id=2, name="Salary", type="income"),
-        Category(id=3, name="Investments", type=None),
-    ])
+    db_session.add_all(
+        [
+            Category(id=1, name="Food", type="expense"),
+            Category(id=2, name="Salary", type="income"),
+            Category(id=3, name="Investments", type=None),
+        ]
+    )
     await db_session.flush()
 
     response = await client.get("/transactions/categories?type=income")

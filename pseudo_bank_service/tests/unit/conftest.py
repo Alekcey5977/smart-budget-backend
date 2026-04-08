@@ -17,30 +17,26 @@ from app.schemas import BankAccountCreate, BankCreate, CategoryCreate, Transacti
 
 # --- Фикстуры данных ---
 
+
 @pytest.fixture
 def category_data():
     return {"id": 1, "name": "Продукты"}
 
+
 @pytest.fixture
 def mcc_data(category_data):
-    return {
-        "mcc": 5411,
-        "name": "Супермаркеты",
-        "category_id": category_data["id"]
-    }
+    return {"mcc": 5411, "name": "Супермаркеты", "category_id": category_data["id"]}
+
 
 @pytest.fixture
 def merchant_data(category_data):
-    return {
-        "id": 100,
-        "name": "ООО Магазин",
-        "inn": "7701234567",
-        "category_id": category_data["id"]
-    }
+    return {"id": 100, "name": "ООО Магазин", "inn": "7701234567", "category_id": category_data["id"]}
+
 
 @pytest.fixture
 def bank_data():
     return {"id": 10, "name": "ТестБанк"}
+
 
 @pytest.fixture
 def bank_account_data(bank_data):
@@ -50,6 +46,7 @@ def bank_account_data(bank_data):
         "bank_account_name": "Мой счет",
         "bank_id": bank_data["id"],
     }
+
 
 @pytest.fixture
 def transaction_data():
@@ -61,10 +58,12 @@ def transaction_data():
         "type": "expense",
         "description": "Покупки",
         "merchant_id": 100,
-        "created_at": datetime.now()
+        "created_at": datetime.now(),
     }
 
+
 # --- Фикстуры моков ---
+
 
 @pytest.fixture
 def mock_db_session():
@@ -75,40 +74,37 @@ def mock_db_session():
     session.execute = AsyncMock()
     return session
 
+
 @pytest.fixture
 def transaction_repository(mock_db_session):
     return TransactionRepository(db=mock_db_session)
 
+
 # --- Фикстуры схем ---
+
 
 @pytest.fixture
 def sample_category_create():
     return CategoryCreate(id=1, name="Food")
 
+
 @pytest.fixture
 def sample_bank_create():
     return BankCreate(id=1, name="Test Bank")
 
+
 @pytest.fixture
 def sample_bank_account_create():
-    return BankAccountCreate(
-        user_id=1,
-        bank_account_hash="hash123",
-        bank_account_name="Main",
-        bank_id=1
-    )
+    return BankAccountCreate(user_id=1, bank_account_hash="hash123", bank_account_name="Main", bank_id=1)
+
 
 @pytest.fixture
 def sample_transaction_create():
-    return TransactionCreate(
-        user_id=1,
-        category_id=1,
-        bank_account_id=1,
-        amount=100.00,
-        type="expense"
-    )
+    return TransactionCreate(user_id=1, category_id=1, bank_account_id=1, amount=100.00, type="expense")
+
 
 # --- Фикстуры для API тестов ---
+
 
 @pytest.fixture
 def mock_transaction_repo():
@@ -127,22 +123,25 @@ def mock_transaction_repo():
     repo.bulk_create_transactions = AsyncMock(return_value={"created": 0})
     repo.bulk_create_merchants = AsyncMock(return_value={"created": 0})
     repo.bulk_create_mcc_categories = AsyncMock(return_value={"created": 0})
-    
+
     def default_to_dict(obj):
-        if hasattr(obj, '__table__'):
+        if hasattr(obj, "__table__"):
             return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
         return obj
+
     repo.to_dict = MagicMock(side_effect=default_to_dict)
     return repo
+
 
 @pytest_asyncio.fixture
 async def client(mock_transaction_repo):
     from app.routers.pseudo_bank import get_transactions_repository
+
     app.dependency_overrides[get_transactions_repository] = lambda: mock_transaction_repo
-    
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         ac.mock_repo = mock_transaction_repo
         yield ac
-    
+
     app.dependency_overrides.clear()

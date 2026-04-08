@@ -35,6 +35,7 @@ def listener() -> EventListener:
 
 # ==================== build_entry_payload ====================
 
+
 class TestBuildEntryPayload:
     """Тесты чистой функции построения payload записи истории."""
 
@@ -95,6 +96,7 @@ class TestBuildEntryPayload:
 
 # ==================== _extract_user_id ====================
 
+
 class TestExtractUserId:
     """Тесты извлечения user_id из payload события."""
 
@@ -120,6 +122,7 @@ class TestExtractUserId:
 
 
 # ==================== handle_event (диспетчеризация) ====================
+
 
 class TestHandleEvent:
     """Тесты диспетчеризации событий на обработчики."""
@@ -188,6 +191,7 @@ class TestHandleEvent:
 
 # ==================== Event Handlers ====================
 
+
 class TestEventHandlers:
     """Тесты обработчиков событий — правильные title/body и user_id."""
 
@@ -212,9 +216,14 @@ class TestEventHandlers:
 
     async def test_handle_purpose_created(self, listener):
         """purpose.created → title='Цель создана', body содержит название и сумму."""
-        event = make_event("purpose.created", {
-            "user_id": 3, "name": "Отпуск", "target_amount": "50000",
-        })
+        event = make_event(
+            "purpose.created",
+            {
+                "user_id": 3,
+                "name": "Отпуск",
+                "target_amount": "50000",
+            },
+        )
         await listener._handle_purpose_created(event)
         listener._create_and_broadcast_entry.assert_called_once()
         user_id, title, body = listener._create_and_broadcast_entry.call_args[0]
@@ -225,9 +234,14 @@ class TestEventHandlers:
 
     async def test_handle_purpose_deleted(self, listener):
         """purpose.deleted → title='Цель удалена', body содержит название цели."""
-        event = make_event("purpose.deleted", {
-            "user_id": 4, "name": "Машина", "target_amount": "300000",
-        })
+        event = make_event(
+            "purpose.deleted",
+            {
+                "user_id": 4,
+                "name": "Машина",
+                "target_amount": "300000",
+            },
+        )
         await listener._handle_purpose_deleted(event)
         listener._create_and_broadcast_entry.assert_called_once()
         user_id, title, body = listener._create_and_broadcast_entry.call_args[0]

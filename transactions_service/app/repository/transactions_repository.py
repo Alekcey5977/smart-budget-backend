@@ -22,7 +22,7 @@ class TransactionRepository:
         max_amount: Optional[float] = None,
         merchant_ids: Optional[List[int]] = None,
         limit: int = 50,
-        offset: int = 0
+        offset: int = 0,
     ):
         """
         Получение транзакций с фильтрацией.
@@ -45,10 +45,7 @@ class TransactionRepository:
         query = (
             select(Transaction)
             .where(Transaction.user_id == user_id)
-            .options(
-                joinedload(Transaction.category),
-                joinedload(Transaction.merchant)
-            )
+            .options(joinedload(Transaction.category), joinedload(Transaction.merchant))
         )
 
         if transaction_type:
@@ -72,12 +69,7 @@ class TransactionRepository:
         if merchant_ids:
             query = query.where(Transaction.merchant_id.in_(merchant_ids))
 
-        query = (
-            query
-            .order_by(Transaction.created_at.desc())
-            .limit(limit)
-            .offset(offset)
-        )
+        query = query.order_by(Transaction.created_at.desc()).limit(limit).offset(offset)
 
         result = await self.db.execute(query)
         return result.scalars().unique().all()
@@ -95,9 +87,7 @@ class TransactionRepository:
         """
         query = select(Category).order_by(Category.id)
         if type is not None:
-            query = query.where(
-                (Category.type == type) | (Category.type.is_(None))
-            )
+            query = query.where((Category.type == type) | (Category.type.is_(None)))
         result = await self.db.execute(query)
         return result.scalars().all()
 
@@ -116,10 +106,7 @@ class TransactionRepository:
             select(Transaction)
             .where(Transaction.id == transaction_id)
             .where(Transaction.user_id == user_id)
-            .options(
-                joinedload(Transaction.category),
-                joinedload(Transaction.merchant)
-            )
+            .options(joinedload(Transaction.category), joinedload(Transaction.merchant))
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()

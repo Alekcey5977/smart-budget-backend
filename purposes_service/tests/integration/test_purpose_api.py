@@ -9,6 +9,7 @@
 3. Проверяем и HTTP-код, и тело ответа
 4. Проверяем вызовы EventPublisher через mock
 """
+
 import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -45,8 +46,8 @@ def auth_headers(user_id: int = USER_ID):
 
 # ==================== Health Check ====================
 
-class TestHealthCheck:
 
+class TestHealthCheck:
     async def test_health_returns_ok(self, client: AsyncClient):
         """GET /health -> 200, service: purposes-service."""
         response = await client.get("/health")
@@ -58,8 +59,8 @@ class TestHealthCheck:
 
 # ==================== POST /purpose/create ====================
 
-class TestCreatePurpose:
 
+class TestCreatePurpose:
     async def test_create_success(self, client: AsyncClient, mock_event_publisher):
         """Создание цели — 200, amount=0, событие опубликовано."""
         response = await client.post(
@@ -109,8 +110,8 @@ class TestCreatePurpose:
 
 # ==================== GET /purpose/my ====================
 
-class TestGetPurposes:
 
+class TestGetPurposes:
     async def test_empty_list(self, client: AsyncClient):
         """Нет целей -> пустой список."""
         response = await client.get(
@@ -174,8 +175,8 @@ class TestGetPurposes:
 
 # ==================== PUT /purpose/update/{id} ====================
 
-class TestUpdatePurpose:
 
+class TestUpdatePurpose:
     async def _create_purpose(self, client: AsyncClient, user_id: int = USER_ID):
         """Хелпер: создаёт цель и возвращает её ID."""
         response = await client.post(
@@ -197,9 +198,7 @@ class TestUpdatePurpose:
         assert response.status_code == 200
         assert response.json()["title"] == "Новое название"
 
-    async def test_update_amount_triggers_progress_event(
-        self, client: AsyncClient, mock_event_publisher
-    ):
+    async def test_update_amount_triggers_progress_event(self, client: AsyncClient, mock_event_publisher):
         """Обновление amount с пересечением порога -> событие progress."""
         purpose_id = await self._create_purpose(client)
 
@@ -216,10 +215,7 @@ class TestUpdatePurpose:
 
         # Проверяем что событие progress опубликовано
         calls = mock_event_publisher.publish.call_args_list
-        progress_events = [
-            c for c in calls
-            if c[0][0].event_type == "purpose.progress"
-        ]
+        progress_events = [c for c in calls if c[0][0].event_type == "purpose.progress"]
         assert len(progress_events) >= 1
 
     async def test_update_nonexistent_purpose(self, client: AsyncClient):
@@ -290,8 +286,8 @@ class TestUpdatePurpose:
 
 # ==================== DELETE /purpose/delete/{id} ====================
 
-class TestDeletePurpose:
 
+class TestDeletePurpose:
     async def _create_purpose(self, client: AsyncClient, user_id: int = USER_ID):
         """Хелпер: создаёт цель и возвращает её ID."""
         response = await client.post(
@@ -315,10 +311,7 @@ class TestDeletePurpose:
 
         # Проверяем что событие purpose.deleted опубликовано
         calls = mock_event_publisher.publish.call_args_list
-        delete_events = [
-            c for c in calls
-            if c[0][0].event_type == "purpose.deleted"
-        ]
+        delete_events = [c for c in calls if c[0][0].event_type == "purpose.deleted"]
         assert len(delete_events) == 1
 
     async def test_delete_nonexistent(self, client: AsyncClient):
