@@ -2,19 +2,8 @@ import os
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-import pytest_asyncio
-from app.auth import ALGORITHM
-from app.database import User_Base, get_db
-from app.models import User
-from fastapi import Depends, FastAPI, Header, HTTPException
-from httpx import ASGITransport, AsyncClient
-from jose import jwt
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import StaticPool
-
 # ============================================================================
-# 1. НАСТРОЙКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (до импортов app.*)
+# 1. НАСТРОЙКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (ДО импортов app.*)
 # ============================================================================
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["ACCESS_SECRET_KEY"] = "test_access_secret_key_integ"
@@ -24,6 +13,16 @@ os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
 os.environ["TRANSACTIONS_SERVICE_URL"] = "http://fake-transactions-service"
 os.environ["REDIS_URL"] = "redis://localhost:6379"
 
+import pytest  # noqa: E402
+import pytest_asyncio  # noqa: E402
+from app.auth import ALGORITHM  # noqa: E402
+from app.database import User_Base, get_db  # noqa: E402
+from app.models import User  # noqa: E402
+from fastapi import Depends, FastAPI, Header, HTTPException  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from jose import jwt  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
+from sqlalchemy.pool import StaticPool  # noqa: E402
 
 TEST_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY")
 
@@ -31,10 +30,17 @@ TEST_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY")
 # БАЗА ДАННЫХ
 # ============================================================================
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-engine = create_async_engine(TEST_DATABASE_URL, connect_args={
-                             "check_same_thread": False}, poolclass=StaticPool)
+engine = create_async_engine(
+    TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
 TestingSessionLocal = async_sessionmaker(
-    autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+    class_=AsyncSession,
+)
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -72,11 +78,8 @@ async def test_user(db_session: AsyncSession) -> User:
 
 @pytest.fixture(scope="function")
 def auth_headers(test_user: User) -> dict:
-
     to_encode = {"sub": str(test_user.id), "type": "access"}
-    # Ручное создание токена для тестов
     encoded_jwt = jwt.encode(to_encode, TEST_SECRET_KEY, algorithm=ALGORITHM)
-
     return {"Authorization": f"Bearer {encoded_jwt}"}
 
 
@@ -133,9 +136,11 @@ def mock_users_cache_client():
 
 @pytest_asyncio.fixture(scope="function")
 async def client(
-    db_session: AsyncSession, mock_event_publisher: AsyncMock, mock_bank_account_cache_client, mock_users_cache_client
+    db_session: AsyncSession,
+    mock_event_publisher: AsyncMock,
+    mock_bank_account_cache_client,
+    mock_users_cache_client,
 ) -> AsyncGenerator[AsyncClient, None]:
-    # Импортируем роутеры
     from app.repository.bank_account_repository import Bank_AccountRepository
     from app.repository.user_repository import UserRepository
     from app.routers import bank_account, users
@@ -157,7 +162,9 @@ async def client(
     test_app.dependency_overrides[get_user_repository] = override_get_user_repository
 
     if hasattr(bank_account, "get_bank_account_repository"):
-        test_app.dependency_overrides[bank_account.get_bank_account_repository] = override_get_bank_account_repository
+        test_app.dependency_overrides[bank_account.get_bank_account_repository] = (
+            override_get_bank_account_repository
+        )
 
     # 2. Переопределение АВТОРИЗАЦИИ
     async def override_get_current_user(authorization: str = Header(None, alias="Authorization")):
@@ -173,7 +180,6 @@ async def client(
         except Exception:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        # Находим пользователя в БД
         user_repo = UserRepository(db_session)
         user = await user_repo.get_by_id(user_id)
 
