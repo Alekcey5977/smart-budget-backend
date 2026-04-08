@@ -1,5 +1,6 @@
 import os
 import sys
+from unittest.mock import AsyncMock, patch
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -14,13 +15,32 @@ TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-service"
 
-SERVICE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SERVICE_ROOT = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
 if SERVICE_ROOT not in sys.path:
     sys.path.insert(0, SERVICE_ROOT)
 
 from app.database import get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Transaction_Base  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# Мок CacheClient (тесты не зависят от Redis)
+# ---------------------------------------------------------------------------
+@pytest_asyncio.fixture(autouse=True)
+async def mock_cache_client():
+    """
+    Подменяет cache_client на AsyncMock.
+    Предотвращает попытки подключения к Redis для кэширования.
+    """
+    with patch("app.routers.pseudo_bank.cache_client") as mock:
+        mock.get = AsyncMock(return_value=None)
+        mock.set = AsyncMock()
+        mock.delete = AsyncMock()
+        mock.delete_pattern = AsyncMock(return_value=0)
+        yield mock
+
 
 # --- Фикстуры для БД ---
 
@@ -54,7 +74,8 @@ async def db_session(db_engine):
     Используем вложенную транзакцию (SAVEPOINT), чтобы репозиторий мог делать commit,
     но изменения откатывались в конце теста.
     """
-    async_session_maker = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+    async_session_maker = sessionmaker(
+        db_engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session_maker() as session:
         async with session.begin():
@@ -67,7 +88,8 @@ async def client(db_engine: AsyncSession):
     """
     Асинхронный клиент.
     """
-    async_session_maker = sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+    async_session_maker = sessionmaker(
+        db_engine, class_=AsyncSession, expire_on_commit=False)
 
     async def override_get_db():
         async with async_session_maker() as session:

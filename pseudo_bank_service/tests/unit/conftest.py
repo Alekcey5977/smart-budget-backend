@@ -1,7 +1,7 @@
 import pathlib
 import sys
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -14,6 +14,24 @@ if str(SERVICE_ROOT) not in sys.path:
 from app.main import app  # noqa: E402
 from app.repository.transactions_repository import TransactionRepository  # noqa: E402
 from app.schemas import BankAccountCreate, BankCreate, CategoryCreate, TransactionCreate  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# Мок CacheClient (тесты не зависят от Redis)
+# ---------------------------------------------------------------------------
+@pytest.fixture(autouse=True)
+def mock_cache_client():
+    """
+    Подменяет cache_client на AsyncMock.
+    Предотвращает попытки подключения к Redis для кэширования.
+    """
+    with patch("app.routers.pseudo_bank.cache_client") as mock:
+        mock.get = AsyncMock(return_value=None)
+        mock.set = AsyncMock()
+        mock.delete = AsyncMock()
+        mock.delete_pattern = AsyncMock(return_value=0)
+        yield mock
+
 
 # --- Фикстуры данных ---
 

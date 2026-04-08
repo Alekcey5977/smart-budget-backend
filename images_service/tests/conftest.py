@@ -3,13 +3,14 @@ import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-# Задаём переменные окружения ДО импорта app
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
-
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+# Задаём переменные окружения ДО импорта app
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+
 
 # Добавляем корень проекта в sys.path чтобы shared/ был доступен
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -88,6 +89,23 @@ def mock_event_publisher():
         mock_instance = MockPub.return_value
         mock_instance.publish = AsyncMock(return_value=None)
         yield mock_instance
+
+
+# ---------------------------------------------------------------------------
+# 4.5) Фикстура: мок CacheClient (тесты не зависят от Redis)
+# ---------------------------------------------------------------------------
+@pytest.fixture(autouse=True)
+def mock_cache_client():
+    """
+    Подменяет cache_client на AsyncMock.
+    Предотвращает попытки подключения к Redis для кэширования.
+    """
+    with patch("app.routers.images.cache_client") as mock:
+        mock.get = AsyncMock(return_value=None)
+        mock.set = AsyncMock()
+        mock.delete = AsyncMock()
+        mock.delete_pattern = AsyncMock(return_value=0)
+        yield mock
 
 
 # ---------------------------------------------------------------------------
