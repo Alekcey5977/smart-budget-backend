@@ -1,16 +1,17 @@
-from sqlalchemy.pool import StaticPool
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from jose import jwt
-from httpx import ASGITransport, AsyncClient
-from fastapi import Depends, FastAPI, Header, HTTPException
-from app.models import User
-from app.database import User_Base, get_db
-from app.auth import ALGORITHM
-import pytest_asyncio
-import pytest
 import os
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+import pytest_asyncio
+from app.auth import ALGORITHM
+from app.database import User_Base, get_db
+from app.models import User
+from fastapi import Depends, FastAPI, Header, HTTPException
+from httpx import ASGITransport, AsyncClient
+from jose import jwt
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 # ============================================================================
 # 1. НАСТРОЙКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (до импортов app.*)
