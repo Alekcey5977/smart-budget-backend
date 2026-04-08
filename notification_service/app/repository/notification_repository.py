@@ -40,8 +40,8 @@ class NotificationRepository:
         """Получение количества непрочитанных уведомлений"""
         result = await self.db.execute(
             select(func.count(Notification.id)).where(
-                (Notification.user_id == user_id) & (Notification.is_read == False)
-            )  # noqa: E712
+                (Notification.user_id == user_id) & (~Notification.is_read)
+            )
         )
         return result.scalar()
 
@@ -59,14 +59,16 @@ class NotificationRepository:
 
     async def mark_all_notifications_as_read(self, user_id: int):
         """Отметить все уведомления пользователя как прочитанные"""
-        stmt = update(Notification).where(Notification.user_id == user_id).values(is_read=True)
+        stmt = update(Notification).where(
+            Notification.user_id == user_id).values(is_read=True)
         result = await self.db.execute(stmt)
         await self.db.commit()
         return result.rowcount
 
     async def delete_notification(self, notification_id: UUID, user_id: int):
         """Удаление уведомления"""
-        stmt = delete(Notification).where((Notification.id == notification_id) & (Notification.user_id == user_id))
+        stmt = delete(Notification).where(
+            (Notification.id == notification_id) & (Notification.user_id == user_id))
         result = await self.db.execute(stmt)
         await self.db.commit()
         return result.rowcount
