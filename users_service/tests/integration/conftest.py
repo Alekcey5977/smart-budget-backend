@@ -1,17 +1,16 @@
+from sqlalchemy.pool import StaticPool
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from jose import jwt
+from httpx import ASGITransport, AsyncClient
+from fastapi import Depends, FastAPI, Header, HTTPException
+from app.models import User
+from app.database import User_Base, get_db
+from app.auth import ALGORITHM
+import pytest_asyncio
+import pytest
 import os
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
-import pytest_asyncio
-from app.auth import ALGORITHM
-from app.database import User_Base, get_db
-from app.models import User
-from fastapi import Depends, FastAPI, Header, HTTPException
-from httpx import ASGITransport, AsyncClient
-from jose import jwt
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import StaticPool
 
 # ============================================================================
 # 1. НАСТРОЙКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (до импортов app.*)
@@ -31,8 +30,10 @@ TEST_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY")
 # БАЗА ДАННЫХ
 # ============================================================================
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-engine = create_async_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
-TestingSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+engine = create_async_engine(TEST_DATABASE_URL, connect_args={
+                             "check_same_thread": False}, poolclass=StaticPool)
+TestingSessionLocal = async_sessionmaker(
+    autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -83,7 +84,8 @@ def mock_bank_service():
     with patch("app.repository.bank_account_repository.httpx.AsyncClient") as mock_client:
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"balance": "10000.00", "currency": "RUB"}
+        mock_response.json.return_value = {
+            "balance": "10000.00", "currency": "RUB"}
         mock_instance = AsyncMock()
         mock_instance.post.return_value = mock_response
         mock_client.return_value.__aenter__.return_value = mock_instance
@@ -164,7 +166,8 @@ async def client(
         token = authorization.replace("Bearer ", "")
 
         try:
-            payload = jwt.decode(token, TEST_SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(token, TEST_SECRET_KEY,
+                                 algorithms=[ALGORITHM])
             user_id = int(payload.get("sub"))
         except Exception:
             raise HTTPException(status_code=401, detail="Invalid token")
