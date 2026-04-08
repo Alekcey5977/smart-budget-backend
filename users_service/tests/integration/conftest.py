@@ -1,3 +1,13 @@
+from sqlalchemy.pool import StaticPool
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from jose import jwt
+from httpx import ASGITransport, AsyncClient
+from fastapi import Depends, FastAPI, Header, HTTPException
+from app.models import User
+from app.database import User_Base, get_db
+from app.auth import ALGORITHM
+import pytest_asyncio
+import pytest
 import os
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -11,17 +21,8 @@ os.environ["REFRESH_SECRET_KEY"] = "test_refresh_secret_key_integ"
 os.environ["BANK_SECRET_KEY"] = "test_bank_secret_key_integ"
 os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
 os.environ["TRANSACTIONS_SERVICE_URL"] = "http://fake-transactions-service"
+os.environ["REDIS_URL"] = "redis://localhost:6379"
 
-import pytest
-import pytest_asyncio
-from app.auth import ALGORITHM
-from app.database import User_Base, get_db
-from app.models import User
-from fastapi import Depends, FastAPI, Header, HTTPException
-from httpx import ASGITransport, AsyncClient
-from jose import jwt
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import StaticPool
 
 TEST_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY")
 
@@ -95,6 +96,28 @@ def mock_event_publisher():
         mock_pub.return_value = mock_instance
         yield mock_instance
 
+
+@pytest.fixture(scope="function")
+def mock_bank_account_cache_client():
+    """Мокирует cache_client в модуле bank_account."""
+    with patch("app.routers.bank_account.cache_client") as mock_cache:
+        mock_cache.get = AsyncMock(return_value=None)
+        mock_cache.set = AsyncMock()
+        mock_cache.delete = AsyncMock()
+        mock_cache.delete_pattern = AsyncMock(return_value=0)
+        yield mock_cache
+
+
+@pytest.fixture(scope="function")
+def mock_users_cache_client():
+    """Мокирует cache_client в модуле users."""
+    with patch("app.routers.users.cache_client") as mock_cache:
+        mock_cache.get = AsyncMock(return_value=None)
+        mock_cache.set = AsyncMock()
+        mock_cache.delete = AsyncMock()
+        mock_cache.delete_pattern = AsyncMock(return_value=0)
+        yield mock_cache
+
 # ============================================================================
 # КЛИЕНТ (FIXTURE)
 # ============================================================================
@@ -103,7 +126,9 @@ def mock_event_publisher():
 @pytest_asyncio.fixture(scope="function")
 async def client(
     db_session: AsyncSession,
-    mock_event_publisher: AsyncMock
+    mock_event_publisher: AsyncMock,
+    mock_bank_account_cache_client,
+    mock_users_cache_client
 ) -> AsyncGenerator[AsyncClient, None]:
     # Импортируем роутеры
     from app.repository.bank_account_repository import Bank_AccountRepository

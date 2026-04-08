@@ -15,6 +15,40 @@ os.environ["JWT_SECRET_KEY"] = "test_secret_key_for_testing_only"
 os.environ["JWT_REFRESH_SECRET_KEY"] = "test_refresh_secret_key_for_testing"
 os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-url"
 os.environ["TRANSACTIONS_SERVICE_URL"] = "http://fake-transactions-url"
+os.environ["REDIS_URL"] = "redis://localhost:6379"
+
+
+@pytest.fixture
+def mock_cache_client():
+    """Мокирует cache_client для всех тестов."""
+    with patch("app.cache.cache_client") as mock_cache:
+        mock_cache.get = AsyncMock(return_value=None)
+        mock_cache.set = AsyncMock()
+        mock_cache.delete = AsyncMock()
+        mock_cache.delete_pattern = AsyncMock(return_value=0)
+        yield mock_cache
+
+
+@pytest.fixture
+def mock_bank_account_cache_client():
+    """Мокирует cache_client в модуле bank_account."""
+    with patch("app.routers.bank_account.cache_client") as mock_cache:
+        mock_cache.get = AsyncMock(return_value=None)
+        mock_cache.set = AsyncMock()
+        mock_cache.delete = AsyncMock()
+        mock_cache.delete_pattern = AsyncMock(return_value=0)
+        yield mock_cache
+
+
+@pytest.fixture
+def mock_users_cache_client():
+    """Мокирует cache_client в модуле users."""
+    with patch("app.routers.users.cache_client") as mock_cache:
+        mock_cache.get = AsyncMock(return_value=None)
+        mock_cache.set = AsyncMock()
+        mock_cache.delete = AsyncMock()
+        mock_cache.delete_pattern = AsyncMock(return_value=0)
+        yield mock_cache
 
 
 @pytest.fixture
@@ -129,7 +163,7 @@ def app():
 
 
 @pytest_asyncio.fixture(scope="function")
-async def client(app, mock_user_repo):
+async def client(app, mock_user_repo, mock_bank_account_cache_client, mock_users_cache_client):
     """Асинхронный клиент с переопределением зависимостей"""
     from app.routers.bank_account import router as bank_router
     from app.routers.users import get_user_repository

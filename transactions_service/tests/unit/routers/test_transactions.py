@@ -148,10 +148,16 @@ class TestGetCategories:
 
     @pytest.fixture
     def client(self, mock_db_session):
-        test_app = FastAPI()
-        test_app.include_router(transactions.router)
-        test_app.dependency_overrides[get_db] = lambda: mock_db_session
-        return TestClient(test_app)
+        with patch('app.routers.transactions.cache_client') as mock_cache:
+            mock_cache.get = AsyncMock(return_value=None)
+            mock_cache.set = AsyncMock()
+            mock_cache.delete = AsyncMock()
+            mock_cache.delete_pattern = AsyncMock()
+
+            test_app = FastAPI()
+            test_app.include_router(transactions.router)
+            test_app.dependency_overrides[get_db] = lambda: mock_db_session
+            return TestClient(test_app)
 
     @pytest.mark.asyncio
     async def test_get_categories_success(self, client, mock_db_session):
@@ -193,7 +199,8 @@ class TestGetCategories:
             response = client.get("/transactions/categories?type=expense")
 
         assert response.status_code == status.HTTP_200_OK
-        mock_repo_instance.get_all_categories.assert_called_once_with(type="expense")
+        mock_repo_instance.get_all_categories.assert_called_once_with(
+            type="expense")
 
 
 class TestUpdateTransactionCategory:
@@ -227,8 +234,10 @@ class TestUpdateTransactionCategory:
     async def test_update_category_success(self, client, mock_db_session, sample_transaction):
         """Тест: успешное изменение категории"""
         mock_repo = MagicMock()
-        mock_repo.get_category_by_id = AsyncMock(return_value=Category(id=2, name="Transport"))
-        mock_repo.update_transaction_category = AsyncMock(return_value=sample_transaction)
+        mock_repo.get_category_by_id = AsyncMock(
+            return_value=Category(id=2, name="Transport"))
+        mock_repo.update_transaction_category = AsyncMock(
+            return_value=sample_transaction)
 
         with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
             response = client.patch(
@@ -245,7 +254,8 @@ class TestUpdateTransactionCategory:
     async def test_update_category_transaction_not_found(self, client, mock_db_session):
         """Тест: транзакция не найдена → 404"""
         mock_repo = MagicMock()
-        mock_repo.get_category_by_id = AsyncMock(return_value=Category(id=1, name="Food"))
+        mock_repo.get_category_by_id = AsyncMock(
+            return_value=Category(id=1, name="Food"))
         mock_repo.update_transaction_category = AsyncMock(return_value=None)
 
         with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
@@ -293,7 +303,8 @@ class TestUpdateTransactionCategory:
     async def test_update_category_internal_error(self, client, mock_db_session):
         """Тест: неожиданная ошибка → 500"""
         mock_repo = MagicMock()
-        mock_repo.get_category_by_id = AsyncMock(side_effect=Exception("DB error"))
+        mock_repo.get_category_by_id = AsyncMock(
+            side_effect=Exception("DB error"))
 
         with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
             response = client.patch(
@@ -375,7 +386,8 @@ class TestGetTransactionById:
     async def test_get_transaction_by_id_success(self, client, mock_db_session, sample_transaction):
         """Тест: успешное получение транзакции"""
         mock_repo_instance = MagicMock()
-        mock_repo_instance.get_transaction_by_id = AsyncMock(return_value=sample_transaction)
+        mock_repo_instance.get_transaction_by_id = AsyncMock(
+            return_value=sample_transaction)
 
         with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
             response = client.get(f"/transactions/{sample_transaction.id}")
@@ -420,17 +432,24 @@ class TestGetCategoryById:
 
     @pytest.fixture
     def client(self, mock_db_session):
-        test_app = FastAPI()
-        test_app.include_router(transactions.router)
-        test_app.dependency_overrides[get_db] = lambda: mock_db_session
-        return TestClient(test_app)
+        with patch('app.routers.transactions.cache_client') as mock_cache:
+            mock_cache.get = AsyncMock(return_value=None)
+            mock_cache.set = AsyncMock()
+            mock_cache.delete = AsyncMock()
+            mock_cache.delete_pattern = AsyncMock()
+
+            test_app = FastAPI()
+            test_app.include_router(transactions.router)
+            test_app.dependency_overrides[get_db] = lambda: mock_db_session
+            return TestClient(test_app)
 
     @pytest.mark.asyncio
     async def test_get_category_by_id_success(self, client, mock_db_session):
         """Тест: успешное получение категории"""
         mock_category = Category(id=5, name="Transport")
         mock_repo_instance = MagicMock()
-        mock_repo_instance.get_category_by_id = AsyncMock(return_value=mock_category)
+        mock_repo_instance.get_category_by_id = AsyncMock(
+            return_value=mock_category)
 
         with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
             response = client.get("/transactions/categories/5")

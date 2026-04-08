@@ -28,6 +28,17 @@ def mock_event_publisher():
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def mock_cache_client():
+    """Мокируем cache_client для всех тестов"""
+    with patch("app.routers.transactions.cache_client") as mock:
+        mock.get = AsyncMock(return_value=None)
+        mock.set = AsyncMock()
+        mock.delete = AsyncMock()
+        mock.delete_pattern = AsyncMock()
+        yield mock
+
+
 @pytest.fixture
 def mock_db_session():
     """

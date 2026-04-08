@@ -20,6 +20,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Создаем универсальный тип, который умеет работать и со строками, и с объектами uuid.UUID.
+
+
 class UniversalUUID(TypeDecorator):
     impl = String(36)
     cache_ok = True
@@ -31,6 +33,7 @@ class UniversalUUID(TypeDecorator):
 
     def process_result_value(self, value, dialect):
         return value
+
 
 import sqlalchemy as sa  # noqa: E402
 
@@ -59,10 +62,22 @@ TestingSessionLocal = sessionmaker(
 
 # --- ФИКСТУРЫ ---
 
+
 @pytest.fixture(autouse=True)
 def mock_event_publisher():
     with patch("app.routers.transactions.EventPublisher") as mock:
         mock.return_value.publish = AsyncMock()
+        yield mock
+
+
+@pytest.fixture(autouse=True)
+def mock_cache_client():
+    """Мокируем cache_client для всех интеграционных тестов"""
+    with patch("app.routers.transactions.cache_client") as mock:
+        mock.get = AsyncMock(return_value=None)
+        mock.set = AsyncMock()
+        mock.delete = AsyncMock()
+        mock.delete_pattern = AsyncMock()
         yield mock
 
 

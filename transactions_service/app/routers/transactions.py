@@ -7,12 +7,8 @@ from app.cache import (
     CATEGORIES_EXPENSE_KEY,
     CATEGORIES_INCOME_KEY,
     CATEGORIES_TTL,
-    TRANSACTION_TTL,
-    TRANSACTIONS_LIST_TTL,
     cache_client,
     category_by_id_key,
-    transaction_by_id_key,
-    transactions_list_key,
 )
 from app.database import get_db
 from app.dependencies import get_user_id_from_header
@@ -54,25 +50,6 @@ async def get_transactions(
     - merchant_ids: список ID мерчантов
     - limit, offset: пагинация
     """
-    # Формируем ключ кэша из всех фильтров
-    filter_dict = {
-        "type": filters.transaction_type,
-        "categories": filters.category_ids,
-        "start": filters.start_date,
-        "end": filters.end_date,
-        "min": filters.min_amount,
-        "max": filters.max_amount,
-        "merchants": filters.merchant_ids,
-        "limit": filters.limit,
-        "offset": filters.offset,
-    }
-    cache_key = transactions_list_key(user_id, filter_dict)
-
-    # Cache-Aside: пробуем получить из кэша
-    cached = await cache_client.get(cache_key)
-    if cached is not None:
-        return cached
-
     try:
         repo = TransactionRepository(db)
         transactions = await repo.get_transactions_with_filters(
@@ -103,9 +80,6 @@ async def get_transactions(
                 "merchant_id": t.merchant_id,
                 "merchant_name": t.merchant.name if t.merchant else None
             })
-
-        # Сохраняем в кэш
-        await cache_client.set(cache_key, result, ttl=TRANSACTIONS_LIST_TTL)
 
         return result
 
@@ -155,11 +129,6 @@ async def update_transaction_category(
             }
         ))
 
-        # Инвалидация кэша изменённой транзакции
-        await cache_client.delete(transaction_by_id_key(str(transaction_id)))
-        # Инвалидация кэшей списков транзакций пользователя (все варианты фильтров)
-        await cache_client.delete_pattern(f"transactions:list:user{user_id}:*")
-
         return {
             "id": transaction.id,
             "user_id": transaction.user_id,
@@ -201,7 +170,7 @@ async def get_categories(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    """Получить категории с кэша в Redis"""
+    """Получить категории с кэшем в Redis"""
     # Определяем ключ кэша
     if type == "income":
         cache_key = CATEGORIES_INCOME_KEY
@@ -226,7 +195,6 @@ async def get_categories(
                 "id": cat.id,
                 "name": cat.name,
                 "type": cat.type,
-                "icon": cat.icon,
             }
             for cat in categories
         ]
@@ -250,7 +218,7 @@ async def get_category_by_id(
     category_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    """Получить категорию по ID с кэша в Redis"""
+    """Получить категорию по ID с кэшем в Redis"""
     cache_key = category_by_id_key(category_id)
 
     # Cache-Aside
@@ -268,7 +236,6 @@ async def get_category_by_id(
             "id": category.id,
             "name": category.name,
             "type": category.type,
-            "icon": category.icon,
         }
 
         await cache_client.set(cache_key, result, ttl=CATEGORIES_TTL)
@@ -291,16 +258,7 @@ async def get_transaction_by_id(
     user_id: int = Depends(get_user_id_from_header),
     db: AsyncSession = Depends(get_db)
 ):
-    """Получить транзакцию по ID с кэшем в Redis"""
-    cache_key = transaction_by_id_key(transaction_id)
-
-    # Cache-Aside: пробуем получить из кэша
-    cached = await cache_client.get(cache_key)
-    if cached is not None:
-        # Проверяем, что транзакция принадлежит пользователю
-        if cached.get("user_id") == user_id:
-            return cached
-
+    """Получить транзакцию по ID без кэширования"""
     try:
         repo = TransactionRepository(db)
         transaction = await repo.get_transaction_by_id(transaction_id, user_id)
@@ -320,9 +278,6 @@ async def get_transaction_by_id(
             "merchant_id": transaction.merchant_id,
             "merchant_name": transaction.merchant.name if transaction.merchant else None,
         }
-
-        # Сохраняем в кэш
-        await cache_client.set(cache_key, result, ttl=TRANSACTION_TTL)
 
         return result
 
