@@ -311,6 +311,19 @@ services:
     networks:
       - monitoring-net
 
+  # --- Redis Commander (веб-интерфейс для Redis) ---
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - monitoring-net
+
   # --- Prometheus ---
   prometheus:
     image: prom/prometheus
