@@ -6,11 +6,12 @@ import os
 
 from shared.cache import CacheClient
 
-cache_client = CacheClient(redis_url=os.getenv("REDIS_URL", "redis://redis:6379"))
+cache_client = CacheClient(redis_url=os.getenv(
+    "REDIS_URL", "redis://redis:6379"))
 
 # TTL (в секундах)
-BANK_ACCOUNT_TTL = 300  # 5 минут для данных банковского счёта
-DICTIONARIES_TTL = 3600  # 1 час для категорий, мерчантов, MCC, банков
+BANK_ACCOUNT_TTL = 900  # 15 минут
+DICTIONARIES_TTL = 10800  # 3 часа
 
 # Ключи кэша
 BANK_ACCOUNT_PREFIX = "bank:account:"
