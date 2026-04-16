@@ -180,15 +180,15 @@ test-e2e-start:
 	$(TEST_COMPOSE) up -d
 	@echo ""
 	@echo "Waiting for services to be ready..."
-	@echo "Polling pseudo-bank at http://localhost:28004 ..."
+	@echo "Polling gateway at http://localhost:28000 ..."
 	@for i in $$(seq 1 60); do \
-		if curl -sf http://localhost:28004/health > /dev/null 2>&1; then \
-			echo "Pseudo-bank is ready!"; \
+		if $(TEST_COMPOSE) exec -T gateway curl -sf http://localhost:8000/health > /dev/null 2>&1; then \
+			echo "Gateway is ready!"; \
 			break; \
 		fi; \
 		if [ $$i -eq 60 ]; then \
-			echo "ERROR: Pseudo-bank failed to start after 60 attempts"; \
-			$(TEST_COMPOSE) logs pseudo-bank-service; \
+			echo "ERROR: Gateway failed to start after 60 attempts"; \
+			$(TEST_COMPOSE) logs gateway; \
 			exit 1; \
 		fi; \
 		echo "  waiting... ($$i/60)"; \

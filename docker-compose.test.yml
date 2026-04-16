@@ -11,7 +11,8 @@ services:
     ports:
       - "${USERS_DB_HOST_PORT:-15433}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${USERS_DB_USER} -d $${USERS_DB_NAME}"]
+      test:
+        ["CMD-SHELL", "pg_isready -U $${USERS_DB_USER} -d $${USERS_DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -29,7 +30,7 @@ services:
     depends_on:
       users-db:
         condition: service_healthy
-      redis: 
+      redis:
         condition: service_healthy
     environment:
       DATABASE_URL: ${USERS_DATABASE_URL}
@@ -53,7 +54,11 @@ services:
     ports:
       - "${TRANSACTIONS_DB_HOST_PORT:-15434}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${TRANSACTIONS_DB_USER} -d $${TRANSACTIONS_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${TRANSACTIONS_DB_USER} -d $${TRANSACTIONS_DB_NAME}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -90,7 +95,8 @@ services:
     ports:
       - "${IMAGES_DB_HOST_PORT:-15435}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${IMAGES_DB_USER} -d $${IMAGES_DB_NAME}"]
+      test:
+        ["CMD-SHELL", "pg_isready -U $${IMAGES_DB_USER} -d $${IMAGES_DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -108,7 +114,7 @@ services:
     depends_on:
       images-db:
         condition: service_healthy
-      redis: 
+      redis:
         condition: service_healthy
     environment:
       DATABASE_URL: ${IMAGES_DATABASE_URL}
@@ -131,7 +137,11 @@ services:
     ports:
       - "${PSEUDO_BANK_DB_HOST_PORT:-15436}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${PSEUDO_BANK_DB_USER} -d $${PSEUDO_BANK_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${PSEUDO_BANK_DB_USER} -d $${PSEUDO_BANK_DB_NAME}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -149,7 +159,7 @@ services:
     depends_on:
       pseudo-bank-db:
         condition: service_healthy
-      redis: 
+      redis:
         condition: service_healthy
     environment:
       DATABASE_URL: ${PSEUDO_BANK_DATABASE_URL}
@@ -177,7 +187,11 @@ services:
     ports:
       - "${PURPOSES_DB_HOST_PORT:-15437}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${PURPOSES_DB_USER} -d $${PURPOSES_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${PURPOSES_DB_USER} -d $${PURPOSES_DB_NAME}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -195,7 +209,7 @@ services:
     depends_on:
       purposes-db:
         condition: service_healthy
-      redis: 
+      redis:
         condition: service_healthy
     environment:
       DATABASE_URL: ${PURPOSES_DATABASE_URL}
@@ -217,7 +231,11 @@ services:
     ports:
       - "${NOTIFICATION_DB_HOST_PORT:-15438}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${NOTIFICATION_DB_USER} -d $${NOTIFICATION_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${NOTIFICATION_DB_USER} -d $${NOTIFICATION_DB_NAME}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -235,7 +253,7 @@ services:
     depends_on:
       notification-db:
         condition: service_healthy
-      redis: 
+      redis:
         condition: service_healthy
     environment:
       DATABASE_URL: ${NOTIFICATION_DATABASE_URL}
@@ -258,7 +276,11 @@ services:
     ports:
       - "${HISTORY_DB_HOST_PORT:-15439}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${HISTORY_DB_USER} -d $${HISTORY_DB_NAME}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${HISTORY_DB_USER} -d $${HISTORY_DB_NAME}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -276,7 +298,7 @@ services:
     depends_on:
       history-db:
         condition: service_healthy
-      redis: 
+      redis:
         condition: service_healthy
     environment:
       DATABASE_URL: ${HISTORY_DATABASE_URL}
@@ -316,6 +338,12 @@ services:
       ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
       REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - test-network
 
