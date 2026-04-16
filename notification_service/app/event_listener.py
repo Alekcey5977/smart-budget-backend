@@ -25,16 +25,19 @@ class EventListener:
             try:
                 # Создаем новое соединение с Redis
                 if redis_client is None:
-                    redis_client = redis.from_url(REDIS_URL, decode_responses=False)
+                    redis_client = redis.from_url(
+                        REDIS_URL, decode_responses=False)
                     logger.info("🔌 Подключение к Redis установлено")
 
                 # Создаем поток, если он не существует
                 try:
                     await redis_client.xgroup_create("domain-events", "notification-group", id="0", mkstream=True)
-                    logger.info("✅ Группа потребителей 'notification-group' создана")
+                    logger.info(
+                        "✅ Группа потребителей 'notification-group' создана")
                 except ResponseError as e:
                     if "BUSYGROUP" in str(e):
-                        logger.info("ℹ️ Группа потребителей 'notification-group' уже существует")
+                        logger.info(
+                            "ℹ️ Группа потребителей 'notification-group' уже существует")
                     else:
                         raise e
 
@@ -57,13 +60,16 @@ class EventListener:
                             for stream, message_list in messages:
                                 for message_id, message_data in message_list:
                                     try:
-                                        payload_json = message_data.get(b"payload") or message_data.get("payload")
+                                        payload_json = message_data.get(
+                                            b"payload") or message_data.get("payload")
 
                                         if payload_json:
                                             if isinstance(payload_json, bytes):
-                                                payload_json = payload_json.decode("utf-8")
+                                                payload_json = payload_json.decode(
+                                                    "utf-8")
 
-                                            event_dict = json.loads(payload_json)
+                                            event_dict = json.loads(
+                                                payload_json)
                                             event = DomainEvent(**event_dict)
 
                                             logger.info(
@@ -75,10 +81,12 @@ class EventListener:
 
                                             # Подтверждаем обработку сообщения
                                             await redis_client.xack("domain-events", "notification-group", message_id)
-                                            logger.info(f"✅ Событие {event.event_type} обработано успешно")
+                                            logger.info(
+                                                f"✅ Событие {event.event_type} обработано успешно")
 
                                     except Exception as e:
-                                        logger.error(f"❌ Ошибка обработки сообщения {message_id}: {e}", exc_info=True)
+                                        logger.error(
+                                            f"❌ Ошибка обработки сообщения {message_id}: {e}", exc_info=True)
                                         # Не ACK'аем сообщение при ошибке, чтобы попробовать позже
 
                     except TimeoutError:
@@ -94,7 +102,8 @@ class EventListener:
                         break  # Выходим из внутреннего цикла, чтобы переподключиться
 
             except Exception as e:
-                logger.error(f"❌ Критическая ошибка Event Listener: {e}", exc_info=True)
+                logger.error(
+                    f"❌ Критическая ошибка Event Listener: {e}", exc_info=True)
                 if redis_client:
                     await redis_client.close()
                     redis_client = None
@@ -104,6 +113,7 @@ class EventListener:
     _event_handlers = {
         "purpose.progress": "_handle_purpose_progress",
         "user.registered": "_handle_user_registered",
+        "bank_account.added": "_handle_bank_account_added",
     }
 
     async def _send_notification_websocket(self, user_id: int, notification_data: dict):
@@ -115,7 +125,8 @@ class EventListener:
                 try:
                     await ws.send_text(message)
                 except Exception as e:
-                    logger.warning(f"Ошибка отправки WebSocket пользователю {user_id}: {e}")
+                    logger.warning(
+                        f"Ошибка отправки WebSocket пользователю {user_id}: {e}")
                     disconnected.append(ws)
 
             # Удаляем разорванные соединения
@@ -130,7 +141,8 @@ class EventListener:
         # Сохраняем в БД
         async with get_db_session() as db:
             repo = NotificationRepository(db)
-            notification_data = NotificationCreate(user_id=user_id, title=title, body=body)
+            notification_data = NotificationCreate(
+                user_id=user_id, title=title, body=body)
             saved = await repo.create_notification(notification_data)
 
         # Формируем payload
@@ -139,7 +151,8 @@ class EventListener:
         # Рассылаем по WebSocket
         await self._send_notification_websocket(user_id, ws_payload)
 
-        logger.info(f"✅ Уведомление сохранено и отправлено пользователю {user_id}")
+        logger.info(
+            f"✅ Уведомление сохранено и отправлено пользователю {user_id}")
 
     def build_notification_payload(self, saved, is_read: bool = False) -> dict:
         """Создание объекта уведомления"""
@@ -173,10 +186,12 @@ class EventListener:
                 handler = getattr(self, handler_name)
                 await handler(event)
             else:
-                logger.warning(f"⚠️ Неизвестный тип события: {event.event_type}")
+                logger.warning(
+                    f"⚠️ Неизвестный тип события: {event.event_type}")
 
         except Exception as e:
-            logger.error(f"❌ Ошибка при обработке события {event.event_type}: {e}")
+            logger.error(
+                f"❌ Ошибка при обработке события {event.event_type}: {e}")
 
     async def _handle_purpose_progress(self, event: DomainEvent):
         """Обработка события прогресса цели"""
@@ -207,6 +222,22 @@ class EventListener:
 
         title = "Добро пожаловать!"
         message = f"🎉 Добро пожаловать в Smart Budget, {first_name}!"
+        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
+
+        # Сохраняем уведомление в базу данных
+        await self._create_and_broadcast_notification(user_id, title, message)
+
+    async def _handle_bank_account_added(self, event: DomainEvent):
+        """Обработка события добавления банковского счёта"""
+        payload = event.payload
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+
+        bank_name = payload.get("bank_name", "неизвестный банк")
+
+        title = "Новый счёт добавлен"
+        message = f"💳 Банковский счёт в {bank_name} успешно добавлен!"
         logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
 
         # Сохраняем уведомление в базу данных

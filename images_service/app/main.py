@@ -1,6 +1,7 @@
 # Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 from contextlib import asynccontextmanager
 
+from app.cache import cache_client
 from app.database import engine
 from app.models import Base
 from app.routers import images
@@ -21,10 +22,11 @@ async def lifespan(_app: FastAPI):
     Создает таблицы при старте и закрывает соединения при остановке.
     """
     # Startup: Создание таблиц
+    await cache_client.connect()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
     yield
+    await cache_client.close()
 
     # Shutdown: Закрытие соединений
     await engine.dispose()

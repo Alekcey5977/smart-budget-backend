@@ -58,8 +58,12 @@ async def get_default_avatars(db: AsyncSession = Depends(get_db)):
         # Возвращаем только метаданные без бинарных данных
         result = [ImageMetadata.model_validate(avatar) for avatar in avatars]
 
-        # Сохраняем в кэш
-        await cache_client.set(DEFAULT_AVATARS_KEY, result, ttl=DEFAULT_AVATARS_TTL)
+        # Сохраняем в кэш (сериализуем в dict)
+        await cache_client.set(
+            DEFAULT_AVATARS_KEY,
+            [avatar.model_dump() for avatar in result],
+            ttl=DEFAULT_AVATARS_TTL,
+        )
 
         return result
 
@@ -222,7 +226,8 @@ async def get_categories_mapping(db: AsyncSession = Depends(get_db)):
     cached = await cache_client.get(CATEGORIES_MAP_KEY)
     if cached is not None:
         return ImageMappingResponse(
-            entity_type=EntityType.CATEGORY, mappings=[ImageMappingItem(**item) for item in cached]
+            entity_type=EntityType.CATEGORY, mappings=[
+                ImageMappingItem(**item) for item in cached]
         )
 
     try:
@@ -232,7 +237,8 @@ async def get_categories_mapping(db: AsyncSession = Depends(get_db)):
         result = ImageMappingResponse(
             entity_type=EntityType.CATEGORY,
             mappings=[
-                ImageMappingItem(entity_id=entity_id, image_id=image_id, mime_type=mime_type)
+                ImageMappingItem(entity_id=entity_id,
+                                 image_id=image_id, mime_type=mime_type)
                 for entity_id, image_id, mime_type in mappings
             ],
         )
@@ -275,7 +281,8 @@ async def get_merchants_mapping(db: AsyncSession = Depends(get_db)):
     cached = await cache_client.get(MERCHANTS_MAP_KEY)
     if cached is not None:
         return ImageMappingResponse(
-            entity_type=EntityType.MERCHANT, mappings=[ImageMappingItem(**item) for item in cached]
+            entity_type=EntityType.MERCHANT, mappings=[
+                ImageMappingItem(**item) for item in cached]
         )
 
     try:
@@ -285,7 +292,8 @@ async def get_merchants_mapping(db: AsyncSession = Depends(get_db)):
         result = ImageMappingResponse(
             entity_type=EntityType.MERCHANT,
             mappings=[
-                ImageMappingItem(entity_id=entity_id, image_id=image_id, mime_type=mime_type)
+                ImageMappingItem(entity_id=entity_id,
+                                 image_id=image_id, mime_type=mime_type)
                 for entity_id, image_id, mime_type in mappings
             ],
         )

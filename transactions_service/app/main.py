@@ -34,8 +34,8 @@ async def periodic_sync():
 async def life_span(app: FastAPI):
     print("[LIFESPAN] Starting up...")
 
-    await create_tables()
     await cache_client.connect()
+    await create_tables()
 
     try:
         async with AsyncSessionLocal() as db:

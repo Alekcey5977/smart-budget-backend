@@ -6,7 +6,10 @@ import os
 
 from shared.cache import CacheClient
 
-cache_client = CacheClient(redis_url=os.getenv("REDIS_URL", "redis://redis:6379"))
+# Инициализация клиента Redis
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
+cache_client = CacheClient(redis_url=REDIS_URL)
+
 
 # TTL (в секундах)
 USER_PROFILE_TTL = 300  # 5 минут для профиля пользователя

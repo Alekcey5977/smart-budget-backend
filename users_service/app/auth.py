@@ -108,6 +108,8 @@ def create_refresh_token(data: dict, expires_delta: timedelta):
 # Проверка валидности токена
 def verify_token(token: str, refresh_token_from_cookie: str | None = None):
     try:
+        if not ACCESS_SECRET_KEY:
+            return None
         payload = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=[ALGORITHM])
         refresh_jti_in_access = str(payload.get("refresh_jti"))
 

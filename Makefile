@@ -1,7 +1,7 @@
 .PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop
 
 TEST_PROJECT = smartbudget-test
-TEST_COMPOSE = docker compose -p $(TEST_PROJECT) --env-file .env.test
+TEST_COMPOSE = docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) --env-file .env.test
 
 help:
 	@echo "Smart Budget Backend - Make Commands"
@@ -174,15 +174,15 @@ test-unit:
 
 test-e2e-start:
 	@echo "Starting isolated E2E test stack..."
-	@echo "  Gateway:      http://localhost:18000"
-	@echo "  Pseudo Bank:  http://localhost:18004"
+	@echo "  Gateway:      http://localhost:28000"
+	@echo "  Pseudo Bank:  http://localhost:28004"
 	@echo ""
 	$(TEST_COMPOSE) up -d
 	@echo ""
 	@echo "Waiting for services to be ready..."
-	@echo "Polling pseudo-bank at http://localhost:18004 ..."
+	@echo "Polling pseudo-bank at http://localhost:28004 ..."
 	@for i in $$(seq 1 30); do \
-		if curl -sf http://localhost:18004/health > /dev/null 2>&1; then \
+		if curl -sf http://localhost:28004/health > /dev/null 2>&1; then \
 			echo "Pseudo-bank is ready!"; \
 			break; \
 		fi; \
@@ -191,7 +191,7 @@ test-e2e-start:
 	done
 	@echo ""
 	@echo "Loading test data into pseudo bank..."
-	cd testData && python3 load_pseudo_bank_data.py http://localhost:18004
+	cd testData && python3 load_pseudo_bank_data.py http://localhost:28004
 	@echo ""
 	@echo "Loading test images..."
 	$(TEST_COMPOSE) exec -w /app images-service python /testData/load_test_images.py
@@ -209,7 +209,7 @@ test-e2e:
 	@echo "Running E2E tests against isolated test stack..."
 	@echo "Requires: make test-e2e-start"
 	@echo ""
-	GATEWAY_URL=http://localhost:18000 python -m pytest e2e_tests/ -v --tb=short
+	GATEWAY_URL=http://localhost:28000 .venv/bin/python -m pytest e2e_tests/ -v --tb=short
 	@echo ""
 
 reset-db:

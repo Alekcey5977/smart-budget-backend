@@ -52,7 +52,8 @@ async def get_transactions_repository(db: AsyncSession = Depends(get_db)):
 async def validate_account(
     request: Validate_Bank_Account,
     db: AsyncSession = Depends(get_db),
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository),
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository),
 ):
     """
     Проверка существования банковского счета в псевдо банке.
@@ -183,7 +184,8 @@ async def validate_account(
 async def export_account_data(
     account_hash: str,
     since: Optional[datetime] = None,
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository),
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository),
 ):
     """
     Экспорт полных данных о банковском счете.
@@ -551,7 +553,8 @@ async def create_merchant(
     status_code=status.HTTP_201_CREATED,
     summary="Массовое создание мерчантов",
     description="Создает несколько мерчантов за один запрос",
-    responses={201: {"description": "Мерчанты созданы", "content": {"application/json": {"example": {"created": 30}}}}},
+    responses={201: {"description": "Мерчанты созданы", "content": {
+        "application/json": {"example": {"created": 30}}}}},
     tags=["Загрузка данных"],
 )
 async def create_merchants_bulk(
@@ -646,7 +649,8 @@ async def create_bank(bank: BankCreate, transaction_repo: TransactionRepository 
     status_code=status.HTTP_201_CREATED,
     summary="Массовое создание банков",
     description="Создает несколько банков за один запрос",
-    responses={201: {"description": "Банки созданы", "content": {"application/json": {"example": {"created": 3}}}}},
+    responses={201: {"description": "Банки созданы", "content": {
+        "application/json": {"example": {"created": 3}}}}},
     tags=["Загрузка данных"],
 )
 async def create_banks_bulk(
@@ -766,7 +770,8 @@ async def create_bank_account(
     status_code=status.HTTP_201_CREATED,
     summary="Массовое создание банковских счетов",
     description="Создает несколько банковских счетов за один запрос",
-    responses={201: {"description": "Счета созданы", "content": {"application/json": {"example": {"created": 4}}}}},
+    responses={201: {"description": "Счета созданы", "content": {
+        "application/json": {"example": {"created": 4}}}}},
     tags=["Загрузка данных"],
 )
 async def create_bank_accounts_bulk(
@@ -914,7 +919,8 @@ async def create_transaction(
 )
 async def create_transactions_bulk(
     transactions: List[TransactionCreate],
-    transaction_repo: TransactionRepository = Depends(get_transactions_repository),
+    transaction_repo: TransactionRepository = Depends(
+        get_transactions_repository),
 ):
     """
     Массовое создание транзакций.

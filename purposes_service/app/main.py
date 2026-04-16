@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
+from app.cache import cache_client
 from app.database import create_tables, shutdown
 from app.routers import purpose
 from fastapi import FastAPI
@@ -14,8 +15,10 @@ setup_logging(service_name="purposes-service")
 
 @asynccontextmanager
 async def life_span(app: FastAPI):
+    await cache_client.connect()
     await create_tables()
     yield
+    await cache_client.close()
     await shutdown()
 
 

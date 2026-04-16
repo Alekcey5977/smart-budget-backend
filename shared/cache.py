@@ -8,6 +8,7 @@
 """
 
 import json
+import os
 from typing import Any
 
 import redis.asyncio as aioredis
@@ -18,15 +19,26 @@ class CacheClient:
 
     def __init__(self, redis_url: str = "redis://redis:6379") -> None:
         self._redis: aioredis.Redis | None = None
-        self._url = redis_url
+        self._url = redis_url  # Проблема с подключением к Redis, проверьте настройки и запущенность сервиса
 
     async def connect(self) -> None:
         """Подключиться к Redis"""
-        self._redis = aioredis.from_url(
-            self._url,
-            decode_responses=True,
-            encoding="utf-8",
-        )
+        import sys
+        print(f"[CacheClient] Connecting to {self._url}", file=sys.stderr)
+        try:
+            self._redis = aioredis.from_url(
+                self._url,
+                decode_responses=True,
+                encoding="utf-8",
+                socket_connect_timeout=10,  # Таймаут подключения
+                socket_keepalive=True,
+                retry_on_timeout=True,
+                health_check_interval=30  # Периодическая проверка состояния
+            )
+            print(f"[CacheClient] Connected successfully", file=sys.stderr)
+        except Exception as e:
+            print(f"[CacheClient] FAILED to connect: {e}", file=sys.stderr)
+            raise
 
     async def close(self) -> None:
         """Закрыть соединение"""
@@ -37,7 +49,8 @@ class CacheClient:
     def redis(self) -> aioredis.Redis:
         """Получить экземпляр Redis-клиента."""
         if self._redis is None:
-            raise RuntimeError("CacheClient не подключён. Сначала вызовите connect().")
+            raise RuntimeError(
+                "CacheClient не подключён. Сначала вызовите connect().")
         return self._redis
 
     async def get(self, key: str) -> Any | None:
@@ -74,3 +87,9 @@ class CacheClient:
     async def set_raw(self, key: str, value: str, ttl: int = 3600) -> None:
         """Сохранить строковое значение"""
         await self.redis.set(key, value, ex=ttl)
+
+
+# Глобальный экземпляр для использования в сервисах
+# Берёт REDIS_URL из окружения, fallback на дефолт
+cache_client = CacheClient(redis_url=os.getenv(
+    "REDIS_URL", "redis://redis:6379"))
