@@ -4,7 +4,7 @@ import uuid
 import httpx
 import pytest
 
-GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://localhost:28000")
+GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://localhost:8000")
 PASSWORD = "StrongPass1!"
 # All account numbers loaded by `make load-test-data`.
 # The constraint is global (not per-user), so the fixture tries each until one is free.

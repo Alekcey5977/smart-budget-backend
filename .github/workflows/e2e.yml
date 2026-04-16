@@ -22,10 +22,12 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
           echo "${{ secrets.ENV_TEST_FILE }}" > .env.test
-      - name: Install E2E test dependencies
+      - name: Install Docker Compose
         run: |
-          pip install -r e2e_tests/requirements.txt
-          pip install requests
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+      - name: Build test stack
+        run: docker compose -f docker-compose.test.yml -p smartbudget-test build
       - name: Start test stack
         run: make test-e2e-start
       - name: Run E2E tests

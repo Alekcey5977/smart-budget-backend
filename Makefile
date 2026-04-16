@@ -214,7 +214,7 @@ test-e2e:
 	@echo "Running E2E tests against isolated test stack..."
 	@echo "Requires: make test-e2e-start"
 	@echo ""
-	docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) exec -T gateway GATEWAY_URL=http://localhost:8000 pytest e2e_tests/ -v --tb=short
+	docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) exec -e GATEWAY_URL=http://localhost:8000 -T gateway pytest e2e_tests/ -v --tb=short
 	@echo ""
 
 reset-db:
