@@ -181,13 +181,18 @@ test-e2e-start:
 	@echo ""
 	@echo "Waiting for services to be ready..."
 	@echo "Polling pseudo-bank at http://localhost:28004 ..."
-	@for i in $$(seq 1 30); do \
+	@for i in $$(seq 1 60); do \
 		if curl -sf http://localhost:28004/health > /dev/null 2>&1; then \
 			echo "Pseudo-bank is ready!"; \
 			break; \
 		fi; \
-		echo "  waiting... ($$i/30)"; \
-		sleep 2; \
+		if [ $$i -eq 60 ]; then \
+			echo "ERROR: Pseudo-bank failed to start after 60 attempts"; \
+			$(TEST_COMPOSE) logs pseudo-bank-service; \
+			exit 1; \
+		fi; \
+		echo "  waiting... ($$i/60)"; \
+		sleep 3; \
 	done
 	@echo ""
 	@echo "Loading test data into pseudo bank..."

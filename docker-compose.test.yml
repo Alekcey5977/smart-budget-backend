@@ -156,6 +156,12 @@ services:
       SERVICE_PORT: ${PSEUDO_BANK_SERVICE_PORT}
       REDIS_URL: ${REDIS_URL}
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - test-network
 
@@ -297,6 +303,7 @@ services:
       - purposes-service
       - notification-service
       - history-service
+      - pseudo-bank-service
     environment:
       GATEWAY_PORT: ${GATEWAY_PORT}
       USERS_SERVICE_URL: ${USERS_SERVICE_URL}

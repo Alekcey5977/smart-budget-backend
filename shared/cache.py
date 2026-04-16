@@ -35,7 +35,7 @@ class CacheClient:
                 retry_on_timeout=True,
                 health_check_interval=30  # Периодическая проверка состояния
             )
-            print(f"[CacheClient] Connected successfully", file=sys.stderr)
+            print("[CacheClient] Connected successfully", file=sys.stderr)
         except Exception as e:
             print(f"[CacheClient] FAILED to connect: {e}", file=sys.stderr)
             raise
