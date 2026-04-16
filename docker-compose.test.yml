@@ -346,6 +346,9 @@ services:
       start_period: 30s
     networks:
       - test-network
+    volumes:
+      - ./e2e_tests:/app/e2e_tests
+      - ./shared:/app/shared
 
   # --- Redis ---
   redis:

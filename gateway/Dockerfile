@@ -14,4 +14,7 @@ COPY ./shared ./shared
 # Копируем приложение
 COPY gateway/app ./app
 
+# Копируем e2e tests (для запуска внутри контейнера)
+COPY e2e_tests ./e2e_tests
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
