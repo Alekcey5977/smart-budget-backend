@@ -162,7 +162,7 @@ async def get_image(image_id: str):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
-                f"{IMAGES_SERVICE_URL}/images/images/{image_id}",
+                f"{IMAGES_SERVICE_URL}/images/{image_id}",
                 timeout=30.0,  # Больше таймаут для загрузки изображений
             )
 

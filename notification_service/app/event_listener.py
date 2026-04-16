@@ -113,7 +113,6 @@ class EventListener:
     _event_handlers = {
         "purpose.progress": "_handle_purpose_progress",
         "user.registered": "_handle_user_registered",
-        "bank_account.added": "_handle_bank_account_added",
     }
 
     async def _send_notification_websocket(self, user_id: int, notification_data: dict):
@@ -222,22 +221,6 @@ class EventListener:
 
         title = "Добро пожаловать!"
         message = f"🎉 Добро пожаловать в Smart Budget, {first_name}!"
-        logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
-
-        # Сохраняем уведомление в базу данных
-        await self._create_and_broadcast_notification(user_id, title, message)
-
-    async def _handle_bank_account_added(self, event: DomainEvent):
-        """Обработка события добавления банковского счёта"""
-        payload = event.payload
-        user_id = self._extract_user_id(payload)
-        if user_id is None:
-            return
-
-        bank_name = payload.get("bank_name", "неизвестный банк")
-
-        title = "Новый счёт добавлен"
-        message = f"💳 Банковский счёт в {bank_name} успешно добавлен!"
         logger.info(f"🔔 Уведомление для пользователя {user_id}: {message}")
 
         # Сохраняем уведомление в базу данных
