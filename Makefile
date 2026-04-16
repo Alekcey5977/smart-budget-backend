@@ -196,7 +196,7 @@ test-e2e-start:
 	done
 	@echo ""
 	@echo "Loading test data into pseudo bank..."
-	cd testData && python3 load_pseudo_bank_data.py http://localhost:28004
+	$(TEST_COMPOSE) exec -T pseudo-bank-service /app/scripts/load_test_data.sh
 	@echo ""
 	@echo "Loading test images..."
 	$(TEST_COMPOSE) exec -w /app images-service python /testData/load_test_images.py
