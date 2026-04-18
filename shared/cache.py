@@ -23,22 +23,15 @@ class CacheClient:
 
     async def connect(self) -> None:
         """Подключиться к Redis"""
-        import sys
-        print(f"[CacheClient] Connecting to {self._url}", file=sys.stderr)
-        try:
-            self._redis = aioredis.from_url(
-                self._url,
-                decode_responses=True,
-                encoding="utf-8",
-                socket_connect_timeout=10,  # Таймаут подключения
-                socket_keepalive=True,
-                retry_on_timeout=True,
-                health_check_interval=30  # Периодическая проверка состояния
-            )
-            print("[CacheClient] Connected successfully", file=sys.stderr)
-        except Exception as e:
-            print(f"[CacheClient] FAILED to connect: {e}", file=sys.stderr)
-            raise
+        self._redis = aioredis.from_url(
+            self._url,
+            decode_responses=True,
+            encoding="utf-8",
+            socket_connect_timeout=10,
+            socket_keepalive=True,
+            retry_on_timeout=True,
+            health_check_interval=30,
+        )
 
     async def close(self) -> None:
         """Закрыть соединение"""

@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop
+.PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop k6-smoke k6-load k6-stress k6-spike k6-max k6
 
 TEST_PROJECT = smartbudget-test
 TEST_COMPOSE = docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) --env-file .env.test
@@ -28,6 +28,14 @@ help:
 	@echo "  make test-e2e          - Run E2E tests against test stack (port 18000)"
 	@echo "  make test-e2e-stop     - Stop and remove test stack (deletes test data)"
 	@echo ""
+	@echo "Load tests (k6, requires: make test-e2e-start):"
+	@echo "  make k6-smoke          - Smoke test: 1 VU, 30s — sanity check"
+	@echo "  make k6-load           - Load test: 50 VUs, ~4 min — realistic traffic"
+	@echo "  make k6-stress         - Stress test: up to 150 VUs, ~5 min — find limits"
+	@echo "  make k6-spike          - Spike test: burst to 1000 VUs, ~1 min"
+	@echo "  make k6-max            - Max test: up to 3000 VUs, ~1 min — absolute breaking point"
+	@echo "  make k6                - Run smoke → load → stress in sequence"
+	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean             - Stop services and remove volumes"
 	@echo "  make reset-db          - Full DB reset (IDs start from 1)"
@@ -43,15 +51,19 @@ start:
 	@echo "Services started!"
 	@echo ""
 	@echo "Available services:"
-	@echo "  Gateway:             	http://localhost:8000"
-	@echo "  Gateway Swagger:     	http://localhost:8000/docs"
-	@echo "  Users Service:       	http://localhost:8001/docs"
-	@echo "  Transactions:        	http://localhost:8002/docs"
-	@echo "  Images:              	http://localhost:8003/docs"
-	@echo "  Pseudo Bank:         	http://localhost:8004/docs"
-	@echo "  Purposes Service:    	http://localhost:8005/docs"
+	@echo "  Gateway:               http://localhost:8000"
+	@echo "  Gateway Swagger:       http://localhost:8000/docs"
+	@echo "  Users Service:         http://localhost:8001/docs"
+	@echo "  Transactions:          http://localhost:8002/docs"
+	@echo "  Images:                http://localhost:8003/docs"
+	@echo "  Pseudo Bank:           http://localhost:8004/docs"
+	@echo "  Purposes Service:      http://localhost:8005/docs"
 	@echo "  Notifications Service: http://localhost:8006/docs"
 	@echo "  History Service:       http://localhost:8007/docs"
+	@echo ""
+	@echo "Monitoring:"
+	@echo "  Grafana:               http://localhost:3000"
+	@echo "  Prometheus:            http://localhost:9090"
 	@echo ""
 
 stop:
@@ -195,6 +207,25 @@ test-e2e-start:
 		sleep 3; \
 	done
 	@echo ""
+	@echo "Patching containers with prometheus-fastapi-instrumentator..."
+	@for svc in gateway users-service transactions-service history-service notification-service purposes-service images-service pseudo-bank-service; do \
+		CONTAINER="$(TEST_PROJECT)-$${svc}-1"; \
+		echo "  Patching $$CONTAINER..."; \
+		docker exec $$CONTAINER pip install prometheus-fastapi-instrumentator==7.1.0 -q 2>/dev/null || true; \
+		MAIN_FILE=$$(docker exec $$CONTAINER find /app -name "main.py" -not -path "*/test*" 2>/dev/null | head -1); \
+		if [ -n "$$MAIN_FILE" ]; then \
+			HAS_INSTR=$$(docker exec $$CONTAINER grep -l "Instrumentator" $$MAIN_FILE 2>/dev/null); \
+			if [ -z "$$HAS_INSTR" ]; then \
+				docker exec $$CONTAINER sh -c "sed -i '1s/^/from prometheus_fastapi_instrumentator import Instrumentator\n/' $$MAIN_FILE"; \
+				docker exec $$CONTAINER sh -c "sed -i 's/if __name__ == \"__main__\":/Instrumentator().instrument(app).expose(app, endpoint=\"\/metrics\")\n\nif __name__ == \"__main__\":/' $$MAIN_FILE" || \
+				docker exec $$CONTAINER sh -c "echo 'from prometheus_fastapi_instrumentator import Instrumentator' >> $$MAIN_FILE; echo 'Instrumentator().instrument(app).expose(app, endpoint=\"/metrics\")' >> $$MAIN_FILE"; \
+			fi; \
+		fi; \
+		docker restart $$CONTAINER > /dev/null 2>&1; \
+	done
+	@echo "Waiting for patched services to restart..."
+	@sleep 6
+	@echo ""
 	@echo "Loading test data into pseudo bank..."
 	$(TEST_COMPOSE) exec -T pseudo-bank-service /app/scripts/load_test_data.sh
 	@echo ""
@@ -202,6 +233,9 @@ test-e2e-start:
 	$(TEST_COMPOSE) exec -w /app images-service python /testData/load_test_images.py
 	@echo ""
 	@echo "Test stack ready! Run: make test-e2e"
+	@echo "  Gateway:    http://localhost:18000"
+	@echo "  Grafana:    http://localhost:13000"
+	@echo "  Prometheus: http://localhost:19090"
 	@echo ""
 
 test-e2e-stop:
@@ -216,6 +250,44 @@ test-e2e:
 	@echo ""
 	docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) exec -e GATEWAY_URL=http://localhost:8000 -T gateway pytest e2e_tests/ -v --tb=short
 	@echo ""
+
+K6_BASE_URL ?= http://localhost:18000
+
+k6-smoke:
+	@echo "Running smoke test (1 VU, 30s) against $(K6_BASE_URL)..."
+	k6 run --env BASE_URL=$(K6_BASE_URL) k6/smoke.js
+
+k6-load:
+	@echo "Running load test (50 VUs, ~4 min) against $(K6_BASE_URL)..."
+	k6 run --env BASE_URL=$(K6_BASE_URL) k6/load.js
+
+k6-stress:
+	@echo "Running stress test (up to 150 VUs, ~5 min) against $(K6_BASE_URL)..."
+	k6 run --env BASE_URL=$(K6_BASE_URL) k6/stress.js
+
+k6-spike:
+	@echo "Running spike test (burst to 1000 VUs, ~1 min) against $(K6_BASE_URL)..."
+	k6 run --env BASE_URL=$(K6_BASE_URL) k6/spike.js
+
+k6-max:
+	@echo "Running max test (up to 3000 VUs, ~1 min) against $(K6_BASE_URL)..."
+	@echo "WARNING: This test is designed to break the system. For observation only."
+	k6 run --env BASE_URL=$(K6_BASE_URL) k6/max.js
+
+k6:
+	@echo "Running smoke → load → stress sequence against $(K6_BASE_URL)..."
+	@echo "Requires: make test-e2e-start"
+	@echo ""
+	@echo "=== [1/3] Smoke ==="
+	k6 run --env BASE_URL=$(K6_BASE_URL) k6/smoke.js
+	@echo ""
+	@echo "=== [2/3] Load ==="
+	k6 run --env BASE_URL=$(K6_BASE_URL) k6/load.js
+	@echo ""
+	@echo "=== [3/3] Stress ==="
+	k6 run --env BASE_URL=$(K6_BASE_URL) k6/stress.js
+	@echo ""
+	@echo "All load tests complete! Check Grafana: http://localhost:3000"
 
 reset-db:
 	@echo "=============================================="

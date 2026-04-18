@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from shared.event_publisher import EventPublisher
 from shared.logging import LoggingMiddleware, setup_logging
 
 setup_logging(service_name="transactions-service")
@@ -35,6 +36,7 @@ async def life_span(app: FastAPI):
     print("[LIFESPAN] Starting up...")
 
     await cache_client.connect()
+    await EventPublisher.connect()
     await create_tables()
 
     try:
@@ -53,6 +55,7 @@ async def life_span(app: FastAPI):
 
     print("[LIFESPAN] Shutting down...")
     await cache_client.close()
+    await EventPublisher.close()
     scheduler.shutdown(wait=False)
     print("[LIFESPAN] Scheduler stopped")
 
