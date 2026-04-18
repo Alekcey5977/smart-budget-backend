@@ -368,7 +368,7 @@ services:
 
   # --- Redis Commander (веб-интерфейс для Redis) ---
   redis-commander:
-    image: rediscommander/redis-commander:latest
+    image: ghcr.io/joeferner/redis-commander:latest
     container_name: smartbudget-redis-commander
     ports:
       - "8081:8081"
