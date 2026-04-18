@@ -1,6 +1,7 @@
 """
 E2E tests for /purposes/* — полный CRUD жизненный цикл.
 """
+
 import uuid
 
 PURPOSE = {
@@ -60,9 +61,7 @@ class TestGetPurposes:
 class TestUpdatePurpose:
     def test_update_title(self, http_client, auth_headers):
         _, headers = auth_headers
-        create_resp = http_client.post(
-            "/purposes/create", json=PURPOSE, headers=headers
-        )
+        create_resp = http_client.post("/purposes/create", json=PURPOSE, headers=headers)
         purpose_id = create_resp.json()["id"]
 
         resp = http_client.put(
@@ -86,9 +85,7 @@ class TestUpdatePurpose:
     def test_update_other_users_purpose_returns_404(self, http_client, auth_headers):
         # Пользователь A создаёт purpose
         _, headers_a = auth_headers
-        create_resp = http_client.post(
-            "/purposes/create", json=PURPOSE, headers=headers_a
-        )
+        create_resp = http_client.post("/purposes/create", json=PURPOSE, headers=headers_a)
         purpose_id = create_resp.json()["id"]
 
         # Пользователь B пытается изменить
@@ -124,14 +121,10 @@ class TestUpdatePurpose:
 class TestDeletePurpose:
     def test_delete_purpose_success(self, http_client, auth_headers):
         _, headers = auth_headers
-        create_resp = http_client.post(
-            "/purposes/create", json=PURPOSE, headers=headers
-        )
+        create_resp = http_client.post("/purposes/create", json=PURPOSE, headers=headers)
         purpose_id = create_resp.json()["id"]
 
-        resp = http_client.delete(
-            f"/purposes/delete/{purpose_id}", headers=headers
-        )
+        resp = http_client.delete(f"/purposes/delete/{purpose_id}", headers=headers)
         assert resp.status_code == 200
 
         # Проверяем что удалено
@@ -145,7 +138,5 @@ class TestDeletePurpose:
         assert resp.status_code == 404
 
     def test_delete_without_token_returns_401(self, http_client):
-        resp = http_client.delete(
-            "/purposes/delete/00000000-0000-0000-0000-000000000000"
-        )
+        resp = http_client.delete("/purposes/delete/00000000-0000-0000-0000-000000000000")
         assert resp.status_code == 401

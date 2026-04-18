@@ -23,7 +23,7 @@ class TestTransactionFilterRequest:
             "min_amount": 10.5,
             "max_amount": 100.0,
             "limit": 50,
-            "offset": 0
+            "offset": 0,
         }
         schema = TransactionFilterRequest(**data)
         assert schema.transaction_type == "income"
@@ -36,14 +36,11 @@ class TestTransactionFilterRequest:
             TransactionFilterRequest()
 
         errors = exc_info.value.errors()
-        assert any(error['loc'][0] == 'limit' for error in errors)
+        assert any(error["loc"][0] == "limit" for error in errors)
 
     def test_invalid_transaction_type(self):
         """Неверный тип транзакции"""
-        data = {
-            "limit": 10,
-            "transaction_type": "invalid_type"
-        }
+        data = {"limit": 10, "transaction_type": "invalid_type"}
         with pytest.raises(ValidationError) as exc_info:
             TransactionFilterRequest(**data)
 
@@ -88,7 +85,7 @@ class TestTransactionResponse:
             "description": "Test",
             "merchant_id": None,
             "category_name": "Food",
-            "merchant_name": None
+            "merchant_name": None,
         }
 
         response = TransactionResponse.model_validate(response_data)
@@ -110,7 +107,7 @@ class TestTransactionResponse:
             "amount": 500.0,
             "created_at": now,
             "type": "income",
-            "category_name": "Salary"
+            "category_name": "Salary",
         }
 
         response = TransactionResponse(**data)

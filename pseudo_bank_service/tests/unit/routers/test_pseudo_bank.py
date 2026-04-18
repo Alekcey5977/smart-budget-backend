@@ -14,24 +14,17 @@ class TestValidateAccount:
         mock_account.currency = "RUB"
         client.mock_repo.get_account_bank.return_value = mock_account
 
-        response = await client.post(
-            "/pseudo_bank/validate_account",
-            json={"bank_account_hash": "valid_hash_123"}
-        )
+        response = await client.post("/pseudo_bank/validate_account", json={"bank_account_hash": "valid_hash_123"})
 
         assert response.status_code == 200
         assert response.json() == {"balance": "1000.5", "currency": "RUB"}
-        client.mock_repo.get_account_bank.assert_awaited_once_with(
-            "valid_hash_123")
+        client.mock_repo.get_account_bank.assert_awaited_once_with("valid_hash_123")
 
     async def test_validate_account_not_found(self, client):
         """Счет не найден (404)"""
         client.mock_repo.get_account_bank.return_value = None
 
-        response = await client.post(
-            "/pseudo_bank/validate_account",
-            json={"bank_account_hash": "invalid_hash"}
-        )
+        response = await client.post("/pseudo_bank/validate_account", json={"bank_account_hash": "invalid_hash"})
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Account not found"
@@ -51,8 +44,8 @@ class TestExportData:
 
         client.mock_repo.to_dict.side_effect = lambda obj: {
             "id": obj.id,
-            "name": getattr(obj, 'name', None),
-            "balance": getattr(obj, 'balance', None)
+            "name": getattr(obj, "name", None),
+            "balance": getattr(obj, "balance", None),
         }
 
         client.mock_repo.export_account_data.return_value = {
@@ -61,7 +54,7 @@ class TestExportData:
             "transactions": [],
             "merchants": [],
             "categories": [],
-            "mccs": []
+            "mccs": [],
         }
 
         response = await client.get("/pseudo_bank/account/some_hash/export")
@@ -99,8 +92,7 @@ class TestCreateEndpoints:
     async def test_create_transaction(self, client):
         mock_obj = MagicMock(spec=Transaction, id=100, amount=100.0)
         client.mock_repo.create_transaction.return_value = mock_obj
-        payload = {"user_id": 1, "category_id": 1,
-                   "bank_account_id": 1, "amount": 100.0, "type": "income"}
+        payload = {"user_id": 1, "category_id": 1, "bank_account_id": 1, "amount": 100.0, "type": "income"}
         response = await client.post("/pseudo_bank/transactions", json=payload)
         assert response.status_code == 201
 
@@ -117,10 +109,8 @@ class TestBulkEndpoints:
     async def test_bulk_create_transactions(self, client):
         client.mock_repo.bulk_create_transactions.return_value = {"created": 3}
         payload = [
-            {"user_id": 1, "category_id": 1, "bank_account_id": 1,
-                "amount": "10.0", "type": "exp"},
-            {"user_id": 1, "category_id": 1, "bank_account_id": 1,
-                "amount": "20.0", "type": "exp"}
+            {"user_id": 1, "category_id": 1, "bank_account_id": 1, "amount": "10.0", "type": "exp"},
+            {"user_id": 1, "category_id": 1, "bank_account_id": 1, "amount": "20.0", "type": "exp"},
         ]
         response = await client.post("/pseudo_bank/transactions/bulk", json=payload)
         assert response.status_code == 201

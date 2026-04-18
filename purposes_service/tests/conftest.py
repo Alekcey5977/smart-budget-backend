@@ -2,6 +2,7 @@
 Фикстуры для тестирования purposes_service.
 
 """
+
 import os
 import sys
 from pathlib import Path
@@ -93,9 +94,7 @@ def mock_event_publisher():
     Подменяет EventPublisher.publish на AsyncMock.
     Тесты могут проверять вызовы через mock_publish.
     """
-    with patch(
-        "app.repository.purpose_repository.EventPublisher"
-    ) as MockPublisher:
+    with patch("app.repository.purpose_repository.EventPublisher") as MockPublisher:
         mock_instance = MockPublisher.return_value
         mock_instance.publish = AsyncMock()
         yield mock_instance

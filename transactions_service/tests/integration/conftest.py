@@ -20,6 +20,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Создаем универсальный тип, который умеет работать и со строками, и с объектами uuid.UUID.
+
+
 class UniversalUUID(TypeDecorator):
     impl = String(36)
     cache_ok = True
@@ -31,6 +33,7 @@ class UniversalUUID(TypeDecorator):
 
     def process_result_value(self, value, dialect):
         return value
+
 
 import sqlalchemy as sa  # noqa: E402
 
@@ -46,23 +49,30 @@ from app.main import app  # noqa: E402
 
 # Создаем асинхронный engine для SQLite
 engine = create_async_engine(
-    os.environ["DATABASE_URL"],
-    echo=False,
-    future=True,
-    connect_args={"check_same_thread": False}
+    os.environ["DATABASE_URL"], echo=False, future=True, connect_args={"check_same_thread": False}
 )
 
 
-TestingSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+TestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # --- ФИКСТУРЫ ---
+
 
 @pytest.fixture(autouse=True)
 def mock_event_publisher():
     with patch("app.routers.transactions.EventPublisher") as mock:
         mock.return_value.publish = AsyncMock()
+        yield mock
+
+
+@pytest.fixture(autouse=True)
+def mock_cache_client():
+    """Мокируем cache_client для всех интеграционных тестов"""
+    with patch("app.routers.transactions.cache_client") as mock:
+        mock.get = AsyncMock(return_value=None)
+        mock.set = AsyncMock()
+        mock.delete = AsyncMock()
+        mock.delete_pattern = AsyncMock()
         yield mock
 
 
@@ -75,7 +85,7 @@ async def db_session():
     # Адаптация типов под SQLite перед созданием таблиц
     for table in Transaction_Base.metadata.tables.values():
         for column in table.columns:
-            if hasattr(column.type, 'name') and column.type.name == 'jsonb':
+            if hasattr(column.type, "name") and column.type.name == "jsonb":
                 column.type = JSON()
 
     async with engine.begin() as conn:
@@ -93,6 +103,7 @@ async def client(db_session):
     """
     Создает асинхронный клиент, внедряя тестовую сессию БД.
     """
+
     async def override_get_db():
         yield db_session
 

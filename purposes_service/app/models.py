@@ -17,4 +17,3 @@ class Purpose(Purpose_Base):
     amount = Column(DECIMAL(12, 2), nullable=False, default=0.0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-

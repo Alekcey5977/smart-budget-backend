@@ -16,21 +16,14 @@ class TestUserUpdate:
 
     def test_user_update_multiple_fields(self):
         """Тест: обновление нескольких полей"""
-        update = UserUpdate(
-            first_name="New",
-            last_name="NewLast"
-        )
+        update = UserUpdate(first_name="New", last_name="NewLast")
         assert update.first_name == "New"
         assert update.last_name == "NewLast"
         assert update.middle_name is None
 
     def test_user_update_all_fields(self):
         """Тест: обновление всех полей"""
-        update = UserUpdate(
-            first_name="New",
-            last_name="NewLast",
-            middle_name="NewMiddle"
-        )
+        update = UserUpdate(first_name="New", last_name="NewLast", middle_name="NewMiddle")
         assert update.first_name == "New"
         assert update.last_name == "NewLast"
         assert update.middle_name == "NewMiddle"
@@ -44,11 +37,7 @@ class TestUserUpdate:
     def test_user_update_all_none_raises_error(self):
         """Тест: все поля None вызывают ошибку"""
         with pytest.raises(ValidationError) as exc_info:
-            UserUpdate(
-                first_name=None,
-                last_name=None,
-                middle_name=None
-            )
+            UserUpdate(first_name=None, last_name=None, middle_name=None)
         assert "At least one field must be provided" in str(exc_info.value)
 
     def test_user_update_middle_name_empty_string(self):
@@ -72,13 +61,16 @@ class TestUserUpdate:
         update = UserUpdate(first_name="  NewName  ")
         assert update.first_name == "NewName"
 
-    @pytest.mark.parametrize("field, value, error_msg", [
-        ("first_name", "", "Name cannot be empty"),
-        ("first_name", "   ", "Name cannot be empty"),
-        ("first_name", "A", "Name must be at least 2 characters long"),
-        ("last_name", "A" * 51, "Name must be less than 50 characters"),
-        ("middle_name", "A", "Middle name must be at least 2 characters long"),
-    ])
+    @pytest.mark.parametrize(
+        "field, value, error_msg",
+        [
+            ("first_name", "", "Name cannot be empty"),
+            ("first_name", "   ", "Name cannot be empty"),
+            ("first_name", "A", "Name must be at least 2 characters long"),
+            ("last_name", "A" * 51, "Name must be less than 50 characters"),
+            ("middle_name", "A", "Middle name must be at least 2 characters long"),
+        ],
+    )
     def test_user_update_validation_errors(self, field, value, error_msg):
         """Тест: ошибки валидации в UserUpdate"""
         data = {field: value}

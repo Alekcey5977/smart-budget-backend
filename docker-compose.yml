@@ -12,6 +12,11 @@ services:
       - "${USERS_DB_HOST_PORT:-5433}:5432"
     volumes:
       - users-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${USERS_DB_USER} -d $${USERS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - monitoring-net
 
@@ -24,8 +29,10 @@ services:
     ports:
       - "${USERS_SERVICE_HOST_PORT:-8001}:${USERS_SERVICE_PORT}"
     depends_on:
-      - users-db
-      - redis
+      users-db:
+        condition: service_healthy
+      redis: 
+        condition: service_healthy
     environment:
       DATABASE_URL: ${USERS_DATABASE_URL}
       SERVICE_PORT: ${USERS_SERVICE_PORT}
@@ -52,6 +59,11 @@ services:
       - "${TRANSACTIONS_DB_HOST_PORT:-5434}:5432"
     volumes:
       - transactions-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${TRANSACTIONS_DB_USER} -d $${TRANSACTIONS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - monitoring-net
 
@@ -64,7 +76,8 @@ services:
     ports:
       - "${TRANSACTIONS_SERVICE_HOST_PORT:-8002}:${TRANSACTIONS_SERVICE_PORT}"
     depends_on:
-      - transactions-db
+      transactions-db:
+        condition: service_healthy
     environment:
       DATABASE_URL: ${TRANSACTIONS_DATABASE_URL}
       SERVICE_PORT: ${TRANSACTIONS_SERVICE_PORT}
@@ -88,6 +101,11 @@ services:
       - "${IMAGES_DB_HOST_PORT:-5435}:5432"
     volumes:
       - images-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${IMAGES_DB_USER} -d $${IMAGES_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - monitoring-net
 
@@ -100,8 +118,10 @@ services:
     ports:
       - "${IMAGES_SERVICE_HOST_PORT:-8003}:${IMAGES_SERVICE_PORT}"
     depends_on:
-      - images-db
-      - redis
+      images-db:
+        condition: service_healthy
+      redis: 
+        condition: service_healthy
     environment:
       DATABASE_URL: ${IMAGES_DATABASE_URL}
       SERVICE_PORT: ${IMAGES_SERVICE_PORT}
@@ -127,6 +147,11 @@ services:
       - "${PSEUDO_BANK_DB_HOST_PORT:-5436}:5432"
     volumes:
       - pseudo-bank-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${PSEUDO_BANK_DB_USER} -d $${PSEUDO_BANK_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - monitoring-net
 
@@ -139,10 +164,14 @@ services:
     ports:
       - "${PSEUDO_BANK_SERVICE_HOST_PORT:-8004}:${PSEUDO_BANK_SERVICE_PORT}"
     depends_on:
-      - pseudo-bank-db
+      pseudo-bank-db:
+        condition: service_healthy
+      redis: 
+        condition: service_healthy
     environment:
       DATABASE_URL: ${PSEUDO_BANK_DATABASE_URL}
       SERVICE_PORT: ${PSEUDO_BANK_SERVICE_PORT}
+      REDIS_URL: ${REDIS_URL}
     restart: on-failure
     labels:
       - "logging=promtail"
@@ -163,6 +192,11 @@ services:
       - "${PURPOSES_DB_HOST_PORT:-5437}:5432"
     volumes:
       - purposes-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${PURPOSES_DB_USER} -d $${PURPOSES_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - monitoring-net
 
@@ -175,8 +209,10 @@ services:
     ports:
       - "${PURPOSES_SERVICE_HOST_PORT:-8005}:${PURPOSES_SERVICE_PORT}"
     depends_on:
-      - purposes-db
-      - redis
+      purposes-db:
+        condition: service_healthy
+      redis: 
+        condition: service_healthy
     environment:
       DATABASE_URL: ${PURPOSES_DATABASE_URL}
       SERVICE_PORT: ${PURPOSES_SERVICE_PORT}
@@ -201,6 +237,11 @@ services:
       - "${NOTIFICATION_DB_HOST_PORT:-5438}:5432"
     volumes:
       - notification-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${NOTIFICATION_DB_USER} -d $${NOTIFICATION_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - monitoring-net
 
@@ -213,8 +254,10 @@ services:
     ports:
       - "${NOTIFICATION_SERVICE_HOST_PORT:-8006}:${NOTIFICATION_SERVICE_PORT}"
     depends_on:
-      - notification-db
-      - redis
+      notification-db:
+        condition: service_healthy
+      redis: 
+        condition: service_healthy
     environment:
       DATABASE_URL: ${NOTIFICATION_DATABASE_URL}
       SERVICE_PORT: ${NOTIFICATION_SERVICE_PORT}
@@ -240,6 +283,11 @@ services:
       - "${HISTORY_DB_HOST_PORT:-5439}:5432"
     volumes:
       - history-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${HISTORY_DB_USER} -d $${HISTORY_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - monitoring-net
 
@@ -252,8 +300,10 @@ services:
     ports:
       - "${HISTORY_SERVICE_HOST_PORT:-8007}:${HISTORY_SERVICE_PORT}"
     depends_on:
-      - history-db
-      - redis
+      history-db:
+        condition: service_healthy
+      redis: 
+        condition: service_healthy
     environment:
       DATABASE_URL: ${HISTORY_DATABASE_URL}
       SERVICE_PORT: ${HISTORY_SERVICE_PORT}
@@ -306,19 +356,38 @@ services:
     ports:
       - "${REDIS_HOST_PORT:-6379}:6379"
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
     volumes:
       - redis_data:/data
+    networks:
+      - monitoring-net
+
+  # --- Redis Commander (веб-интерфейс для Redis) ---
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: smartbudget-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
     networks:
       - monitoring-net
 
   # --- Prometheus ---
   prometheus:
     image: prom/prometheus
-    container_name: prometheus
+    container_name: smartbudget-prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--config.file=/etc/prometheus/pr`ometheus.yml"
       - "--storage.tsdb.path=/prometheus"
     ports:
       - "9090:9090"
@@ -336,7 +405,7 @@ services:
   # --- Loki (для сбора и хранения логов) ---
   loki:
     image: grafana/loki:latest
-    container_name: loki
+    container_name: smartbudget-loki
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
@@ -346,7 +415,7 @@ services:
   # --- Promtail (для сбора логов с контейнеров и отправки в Loki) ---
   promtail:
     image: grafana/promtail:latest
-    container_name: promtail
+    container_name: smartbudget-promtail
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./promtail-config.yml:/etc/promtail/config.yml:ro
@@ -359,7 +428,7 @@ services:
   # --- Grafana ---
   grafana:
     image: grafana/grafana
-    container_name: grafana
+    container_name: smartbudget-grafana
     ports:
       - "3000:3000"
     environment:

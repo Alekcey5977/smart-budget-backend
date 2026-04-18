@@ -4,6 +4,7 @@
 Downstream (transactions-service) мокается через httpx.AsyncClient.
 Зависимость get_current_user переопределяется через dependency_overrides.
 """
+
 from unittest.mock import AsyncMock, patch
 
 from tests.conftest import make_mock_http_response

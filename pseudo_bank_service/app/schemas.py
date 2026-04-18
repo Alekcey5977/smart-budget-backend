@@ -7,11 +7,13 @@ from pydantic import BaseModel, Field
 
 class Validate_Bank_Account(BaseModel):
     """Схема хэша счёта карты"""
+
     bank_account_hash: str
 
 
 class CategoryCreate(BaseModel):
     """Схема для создания категории"""
+
     id: int
     name: str = Field(..., max_length=100)
     type: Optional[str] = Field(None, max_length=10)
@@ -19,6 +21,7 @@ class CategoryCreate(BaseModel):
 
 class MCCCategoryCreate(BaseModel):
     """Схема для создания MCC категории"""
+
     mcc: int
     name: str = Field(..., max_length=100)
     category_id: int
@@ -26,6 +29,7 @@ class MCCCategoryCreate(BaseModel):
 
 class MerchantCreate(BaseModel):
     """Схема для создания мерчанта"""
+
     id: int
     name: str = Field(..., max_length=200)
     inn: str = Field(..., max_length=100)
@@ -34,12 +38,14 @@ class MerchantCreate(BaseModel):
 
 class BankCreate(BaseModel):
     """Схема для создания банка"""
+
     id: int
     name: str = Field(..., max_length=50)
 
 
 class BankAccountCreate(BaseModel):
     """Схема для создания банковского счета"""
+
     user_id: int
     bank_account_hash: str = Field(..., max_length=64)
     bank_account_name: str = Field(..., max_length=100)
@@ -50,6 +56,7 @@ class BankAccountCreate(BaseModel):
 
 class TransactionCreate(BaseModel):
     """Схема для создания транзакции"""
+
     user_id: int
     category_id: int
     bank_account_id: int

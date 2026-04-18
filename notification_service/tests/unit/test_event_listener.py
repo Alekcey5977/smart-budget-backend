@@ -35,6 +35,7 @@ def listener() -> EventListener:
 
 # ==================== build_notification_payload ====================
 
+
 class TestBuildNotificationPayload:
     """Тесты чистой функции построения payload уведомления."""
 
@@ -93,6 +94,7 @@ class TestBuildNotificationPayload:
 
 # ==================== _extract_user_id ====================
 
+
 class TestExtractUserId:
     """Тесты извлечения user_id из payload события."""
 
@@ -119,16 +121,22 @@ class TestExtractUserId:
 
 # ==================== handle_event ====================
 
+
 class TestHandleEvent:
     """Тесты диспетчеризации событий."""
 
     async def test_dispatches_purpose_progress(self, listener):
         """purpose.progress → вызывает _handle_purpose_progress."""
         listener._handle_purpose_progress = AsyncMock()
-        event = make_event("purpose.progress", {
-            "user_id": 1, "purpose_name": "Отпуск",
-            "progress_percent": 25.0, "threshold": 25,
-        })
+        event = make_event(
+            "purpose.progress",
+            {
+                "user_id": 1,
+                "purpose_name": "Отпуск",
+                "progress_percent": 25.0,
+                "threshold": 25,
+            },
+        )
         await listener.handle_event(event)
         listener._handle_purpose_progress.assert_called_once_with(event)
 
@@ -171,24 +179,35 @@ class TestHandleEvent:
 
     async def test_missing_user_id_does_not_call_create(self, listener):
         """Если user_id отсутствует — уведомление не создаётся."""
-        event = make_event("purpose.progress", {
-            "purpose_name": "Без юзера", "progress_percent": 25.0, "threshold": 25,
-        })
+        event = make_event(
+            "purpose.progress",
+            {
+                "purpose_name": "Без юзера",
+                "progress_percent": 25.0,
+                "threshold": 25,
+            },
+        )
         await listener.handle_event(event)
         listener._create_and_broadcast_notification.assert_not_called()
 
 
 # ==================== Event Handlers ====================
 
+
 class TestEventHandlers:
     """Тесты оставшихся обработчиков — правильные title/body и user_id."""
 
     async def test_handle_purpose_progress(self, listener):
         """purpose.progress → title содержит порог, body — прогресс."""
-        event = make_event("purpose.progress", {
-            "user_id": 2, "purpose_name": "Отпуск",
-            "progress_percent": 50.0, "threshold": 50,
-        })
+        event = make_event(
+            "purpose.progress",
+            {
+                "user_id": 2,
+                "purpose_name": "Отпуск",
+                "progress_percent": 50.0,
+                "threshold": 50,
+            },
+        )
         await listener._handle_purpose_progress(event)
         listener._create_and_broadcast_notification.assert_called_once()
         user_id, title, body = listener._create_and_broadcast_notification.call_args[0]
@@ -198,9 +217,13 @@ class TestEventHandlers:
 
     async def test_handle_user_registered(self, listener):
         """user.registered → приветствие с именем пользователя."""
-        event = make_event("user.registered", {
-            "user_id": 3, "first_name": "Алексей",
-        })
+        event = make_event(
+            "user.registered",
+            {
+                "user_id": 3,
+                "first_name": "Алексей",
+            },
+        )
         await listener._handle_user_registered(event)
         user_id, title, body = listener._create_and_broadcast_notification.call_args[0]
         assert user_id == 3

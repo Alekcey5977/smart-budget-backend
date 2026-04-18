@@ -47,7 +47,7 @@ class TestGetTransactions:
             created_at=datetime.now(),
             type="expense",
             description="Groceries",
-            merchant_id=10
+            merchant_id=10,
         )
 
         tx.category = Category(id=1, name="Products")
@@ -59,15 +59,10 @@ class TestGetTransactions:
         """Тест: успешное получение списка транзакций"""
         # Настраиваем мок репозитория
         mock_repo_instance = MagicMock()
-        mock_repo_instance.get_transactions_with_filters = AsyncMock(
-            return_value=[sample_transaction]
-        )
+        mock_repo_instance.get_transactions_with_filters = AsyncMock(return_value=[sample_transaction])
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
-            response = client.post(
-                "/transactions/",
-                json={"limit": 10, "offset": 0}
-            )
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
+            response = client.post("/transactions/", json={"limit": 10, "offset": 0})
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -82,14 +77,10 @@ class TestGetTransactions:
     async def test_get_transactions_empty_list(self, client, mock_db_session):
         """Тест: транзакции не найдены (пустой список)"""
         mock_repo_instance = MagicMock()
-        mock_repo_instance.get_transactions_with_filters = AsyncMock(
-            return_value=[])
+        mock_repo_instance.get_transactions_with_filters = AsyncMock(return_value=[])
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
-            response = client.post(
-                "/transactions/",
-                json={"limit": 10, "offset": 0}
-            )
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
+            response = client.post("/transactions/", json={"limit": 10, "offset": 0})
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == []
@@ -98,42 +89,31 @@ class TestGetTransactions:
     async def test_get_transactions_filter_params_passed(self, client, mock_db_session):
         """Тест: параметры фильтрации передаются в репозиторий"""
         mock_repo_instance = MagicMock()
-        mock_repo_instance.get_transactions_with_filters = AsyncMock(
-            return_value=[])
+        mock_repo_instance.get_transactions_with_filters = AsyncMock(return_value=[])
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
             response = client.post(
                 "/transactions/",
-                json={
-                    "limit": 5,
-                    "transaction_type": "expense",
-                    "min_amount": 50.0,
-                    "category_ids": [1, 2]
-                }
+                json={"limit": 5, "transaction_type": "expense", "min_amount": 50.0, "category_ids": [1, 2]},
             )
 
         assert response.status_code == status.HTTP_200_OK
 
         # Проверяем, что метод репозитория был вызван с правильными аргументами
         called_kwargs = mock_repo_instance.get_transactions_with_filters.call_args.kwargs
-        assert called_kwargs['limit'] == 5
-        assert called_kwargs['transaction_type'] == "expense"
-        assert called_kwargs['min_amount'] == 50.0
-        assert called_kwargs['category_ids'] == [1, 2]
+        assert called_kwargs["limit"] == 5
+        assert called_kwargs["transaction_type"] == "expense"
+        assert called_kwargs["min_amount"] == 50.0
+        assert called_kwargs["category_ids"] == [1, 2]
 
     @pytest.mark.asyncio
     async def test_get_transactions_internal_error(self, client, mock_db_session):
         """Тест: внутренняя ошибка сервера (Exception -> HTTP 500)"""
         mock_repo_instance = MagicMock()
-        mock_repo_instance.get_transactions_with_filters = AsyncMock(
-            side_effect=Exception("DB connection lost")
-        )
+        mock_repo_instance.get_transactions_with_filters = AsyncMock(side_effect=Exception("DB connection lost"))
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
-            response = client.post(
-                "/transactions/",
-                json={"limit": 10}
-            )
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
+            response = client.post("/transactions/", json={"limit": 10})
 
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Internal server error" in response.json()["detail"]
@@ -148,10 +128,16 @@ class TestGetCategories:
 
     @pytest.fixture
     def client(self, mock_db_session):
-        test_app = FastAPI()
-        test_app.include_router(transactions.router)
-        test_app.dependency_overrides[get_db] = lambda: mock_db_session
-        return TestClient(test_app)
+        with patch("app.routers.transactions.cache_client") as mock_cache:
+            mock_cache.get = AsyncMock(return_value=None)
+            mock_cache.set = AsyncMock()
+            mock_cache.delete = AsyncMock()
+            mock_cache.delete_pattern = AsyncMock()
+
+            test_app = FastAPI()
+            test_app.include_router(transactions.router)
+            test_app.dependency_overrides[get_db] = lambda: mock_db_session
+            return TestClient(test_app)
 
     @pytest.mark.asyncio
     async def test_get_categories_success(self, client, mock_db_session):
@@ -159,10 +145,9 @@ class TestGetCategories:
         mock_category = Category(id=1, name="Food", type="expense")
 
         mock_repo_instance = MagicMock()
-        mock_repo_instance.get_all_categories = AsyncMock(
-            return_value=[mock_category])
+        mock_repo_instance.get_all_categories = AsyncMock(return_value=[mock_category])
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
             response = client.get("/transactions/categories")
 
         assert response.status_code == status.HTTP_200_OK
@@ -177,7 +162,7 @@ class TestGetCategories:
         mock_repo_instance = MagicMock()
         mock_repo_instance.get_all_categories = AsyncMock(return_value=[])
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
             response = client.get("/transactions/categories")
 
         assert response.status_code == status.HTTP_200_OK
@@ -189,7 +174,7 @@ class TestGetCategories:
         mock_repo_instance = MagicMock()
         mock_repo_instance.get_all_categories = AsyncMock(return_value=[])
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
             response = client.get("/transactions/categories?type=expense")
 
         assert response.status_code == status.HTTP_200_OK
@@ -215,9 +200,13 @@ class TestUpdateTransactionCategory:
     def sample_transaction(self):
         tx_id = uuid.uuid4()
         tx = Transaction(
-            id=tx_id, user_id=123, category_id=2,
-            bank_account_id=1, amount=100.50,
-            created_at=datetime.now(), type="expense"
+            id=tx_id,
+            user_id=123,
+            category_id=2,
+            bank_account_id=1,
+            amount=100.50,
+            created_at=datetime.now(),
+            type="expense",
         )
         tx.category = Category(id=2, name="Transport")
         tx.merchant = None
@@ -230,11 +219,8 @@ class TestUpdateTransactionCategory:
         mock_repo.get_category_by_id = AsyncMock(return_value=Category(id=2, name="Transport"))
         mock_repo.update_transaction_category = AsyncMock(return_value=sample_transaction)
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
-            response = client.patch(
-                f"/transactions/{sample_transaction.id}/category",
-                json={"category_id": 2}
-            )
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo):
+            response = client.patch(f"/transactions/{sample_transaction.id}/category", json={"category_id": 2})
 
         assert response.status_code == 200
         data = response.json()
@@ -248,11 +234,8 @@ class TestUpdateTransactionCategory:
         mock_repo.get_category_by_id = AsyncMock(return_value=Category(id=1, name="Food"))
         mock_repo.update_transaction_category = AsyncMock(return_value=None)
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
-            response = client.patch(
-                f"/transactions/{uuid.uuid4()}/category",
-                json={"category_id": 1}
-            )
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo):
+            response = client.patch(f"/transactions/{uuid.uuid4()}/category", json={"category_id": 1})
 
         assert response.status_code == 404
 
@@ -262,11 +245,8 @@ class TestUpdateTransactionCategory:
         mock_repo = MagicMock()
         mock_repo.get_category_by_id = AsyncMock(return_value=None)
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
-            response = client.patch(
-                f"/transactions/{uuid.uuid4()}/category",
-                json={"category_id": 999}
-            )
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo):
+            response = client.patch(f"/transactions/{uuid.uuid4()}/category", json={"category_id": 999})
 
         assert response.status_code == 404
         mock_repo.update_transaction_category.assert_not_called()
@@ -274,19 +254,13 @@ class TestUpdateTransactionCategory:
     @pytest.mark.asyncio
     async def test_update_category_invalid_category_id(self, client, mock_db_session):
         """Тест: category_id <= 0 → 422"""
-        response = client.patch(
-            f"/transactions/{uuid.uuid4()}/category",
-            json={"category_id": 0}
-        )
+        response = client.patch(f"/transactions/{uuid.uuid4()}/category", json={"category_id": 0})
         assert response.status_code == 422
 
     @pytest.mark.asyncio
     async def test_update_category_missing_body(self, client, mock_db_session):
         """Тест: отсутствует category_id → 422"""
-        response = client.patch(
-            f"/transactions/{uuid.uuid4()}/category",
-            json={}
-        )
+        response = client.patch(f"/transactions/{uuid.uuid4()}/category", json={})
         assert response.status_code == 422
 
     @pytest.mark.asyncio
@@ -295,11 +269,8 @@ class TestUpdateTransactionCategory:
         mock_repo = MagicMock()
         mock_repo.get_category_by_id = AsyncMock(side_effect=Exception("DB error"))
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo):
-            response = client.patch(
-                f"/transactions/{uuid.uuid4()}/category",
-                json={"category_id": 1}
-            )
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo):
+            response = client.patch(f"/transactions/{uuid.uuid4()}/category", json={"category_id": 1})
 
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -322,19 +293,13 @@ class TestValidation:
     @pytest.mark.asyncio
     async def test_invalid_limit_value(self, client):
         """Тест: некорректное значение limit (отрицательное)"""
-        response = client.post(
-            "/transactions/",
-            json={"limit": -5}
-        )
+        response = client.post("/transactions/", json={"limit": -5})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     @pytest.mark.asyncio
     async def test_invalid_transaction_type(self, client):
         """Тест: некорректный тип транзакции"""
-        response = client.post(
-            "/transactions/",
-            json={"limit": 10, "transaction_type": "invalid_type"}
-        )
+        response = client.post("/transactions/", json={"limit": 10, "transaction_type": "invalid_type"})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
@@ -365,7 +330,7 @@ class TestGetTransactionById:
             created_at=datetime.now(),
             type="expense",
             description="Test",
-            merchant_id=None
+            merchant_id=None,
         )
         tx.category = Category(id=1, name="Food")
         tx.merchant = None
@@ -377,7 +342,7 @@ class TestGetTransactionById:
         mock_repo_instance = MagicMock()
         mock_repo_instance.get_transaction_by_id = AsyncMock(return_value=sample_transaction)
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
             response = client.get(f"/transactions/{sample_transaction.id}")
 
         assert response.status_code == status.HTTP_200_OK
@@ -393,7 +358,7 @@ class TestGetTransactionById:
         mock_repo_instance = MagicMock()
         mock_repo_instance.get_transaction_by_id = AsyncMock(return_value=None)
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
             response = client.get(f"/transactions/{uuid.uuid4()}")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -420,10 +385,16 @@ class TestGetCategoryById:
 
     @pytest.fixture
     def client(self, mock_db_session):
-        test_app = FastAPI()
-        test_app.include_router(transactions.router)
-        test_app.dependency_overrides[get_db] = lambda: mock_db_session
-        return TestClient(test_app)
+        with patch("app.routers.transactions.cache_client") as mock_cache:
+            mock_cache.get = AsyncMock(return_value=None)
+            mock_cache.set = AsyncMock()
+            mock_cache.delete = AsyncMock()
+            mock_cache.delete_pattern = AsyncMock()
+
+            test_app = FastAPI()
+            test_app.include_router(transactions.router)
+            test_app.dependency_overrides[get_db] = lambda: mock_db_session
+            return TestClient(test_app)
 
     @pytest.mark.asyncio
     async def test_get_category_by_id_success(self, client, mock_db_session):
@@ -432,7 +403,7 @@ class TestGetCategoryById:
         mock_repo_instance = MagicMock()
         mock_repo_instance.get_category_by_id = AsyncMock(return_value=mock_category)
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
             response = client.get("/transactions/categories/5")
 
         assert response.status_code == status.HTTP_200_OK
@@ -446,7 +417,7 @@ class TestGetCategoryById:
         mock_repo_instance = MagicMock()
         mock_repo_instance.get_category_by_id = AsyncMock(return_value=None)
 
-        with patch('app.routers.transactions.TransactionRepository', return_value=mock_repo_instance):
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
             response = client.get("/transactions/categories/9999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND

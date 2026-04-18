@@ -1,7 +1,7 @@
-# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 from contextlib import asynccontextmanager
 
 import uvicorn
+from app.cache import cache_client
 from app.database import create_tables, shutdown
 from app.models import *  # noqa: F403
 from app.routers import bank_account, users
@@ -16,8 +16,10 @@ setup_logging(service_name="users-service")
 
 @asynccontextmanager
 async def life_span(app: FastAPI):
+    await cache_client.connect()
     await create_tables()
     yield
+    await cache_client.close()
     await shutdown()
 
 
@@ -42,6 +44,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 @app.get("/health")
 async def health():
     return {"status": "healthy", "service": "users-service"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)

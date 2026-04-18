@@ -2,6 +2,7 @@
 E2E tests for /transactions/* endpoints.
 Транзакции появляются после синхронизации с pseudo-bank.
 """
+
 import asyncio
 import uuid
 
@@ -13,7 +14,8 @@ async def _poll_transactions(http_client, headers, payload=None, min_count=1, re
     if payload is None:
         payload = {"limit": 50}
     for _ in range(retries):
-        resp = http_client.post("/transactions/", json=payload, headers=headers)
+        resp = http_client.post(
+            "/transactions/", json=payload, headers=headers)
         assert resp.status_code == 200
         data = resp.json()
         if len(data) >= min_count:
@@ -23,8 +25,10 @@ async def _poll_transactions(http_client, headers, payload=None, min_count=1, re
 
 
 class TestGetCategories:
-    def test_categories_returned_for_authed_user(self, http_client, auth_headers):
+    def test_categories_returned_for_authed_user(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
+        # Trigger sync so categories are populated from pseudo-bank
+        http_client.post("/sync/", headers=headers)
         resp = http_client.get("/transactions/categories", headers=headers)
         assert resp.status_code == 200
         categories = resp.json()
@@ -37,37 +41,48 @@ class TestGetCategories:
         resp = http_client.get("/transactions/categories")
         assert resp.status_code == 401
 
-    def test_categories_include_type_field(self, http_client, auth_headers):
+    def test_categories_include_type_field(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
-        categories = http_client.get("/transactions/categories", headers=headers).json()
-        assert categories, "No categories in DB — run: make load-test-data"
+        http_client.post("/sync/", headers=headers)
+        categories = http_client.get(
+            "/transactions/categories", headers=headers).json()
+        assert categories, "No categories in DB after sync"
         assert "type" in categories[0]
 
-    def test_categories_filter_expense(self, http_client, auth_headers):
+    def test_categories_filter_expense(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
-        resp = http_client.get("/transactions/categories?type=expense", headers=headers)
+        http_client.post("/sync/", headers=headers)
+        resp = http_client.get(
+            "/transactions/categories?type=expense", headers=headers)
         assert resp.status_code == 200
         categories = resp.json()
-        assert categories, "No categories — run: make load-test-data"
+        assert categories, "No expense categories — sync may have not loaded them"
         for cat in categories:
-            assert cat["type"] in ("expense", None), f"Unexpected type: {cat['type']}"
+            assert cat["type"] in (
+                "expense", None), f"Unexpected type: {cat['type']}"
 
-    def test_categories_filter_income(self, http_client, auth_headers):
+    def test_categories_filter_income(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
-        resp = http_client.get("/transactions/categories?type=income", headers=headers)
+        http_client.post("/sync/", headers=headers)
+        resp = http_client.get(
+            "/transactions/categories?type=income", headers=headers)
         assert resp.status_code == 200
         categories = resp.json()
-        assert categories, "No income categories — run: make load-test-data"
+        assert categories, "No income categories — sync may have not loaded them"
         for cat in categories:
-            assert cat["type"] in ("income", None), f"Unexpected type: {cat['type']}"
+            assert cat["type"] in (
+                "income", None), f"Unexpected type: {cat['type']}"
 
-    def test_get_category_by_id(self, http_client, auth_headers):
+    def test_get_category_by_id(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
-        categories = http_client.get("/transactions/categories", headers=headers).json()
-        assert categories, "No categories in DB — run: make load-test-data"
+        http_client.post("/sync/", headers=headers)
+        categories = http_client.get(
+            "/transactions/categories", headers=headers).json()
+        assert categories, "No categories in DB after sync"
         category_id = categories[0]["id"]
 
-        resp = http_client.get(f"/transactions/categories/{category_id}", headers=headers)
+        resp = http_client.get(
+            f"/transactions/categories/{category_id}", headers=headers)
         assert resp.status_code == 200
         data = resp.json()
         assert data["id"] == category_id
@@ -76,7 +91,8 @@ class TestGetCategories:
 
     def test_get_category_by_id_not_found(self, http_client, auth_headers):
         _, headers = auth_headers
-        resp = http_client.get("/transactions/categories/999999", headers=headers)
+        resp = http_client.get(
+            "/transactions/categories/999999", headers=headers)
         assert resp.status_code == 404
 
     def test_get_category_by_id_without_token(self, http_client):
@@ -106,8 +122,7 @@ class TestGetTransactions:
         transactions = await _poll_transactions(http_client, headers)
         if not transactions:
             pytest.skip(
-                "No transactions appeared — transactions may be deduplicated from a previous run. "
-                "Run: make reset-db"
+                "No transactions appeared — transactions may be deduplicated from a previous run. Run: make reset-db"
             )
 
         tx = transactions[0]
@@ -180,7 +195,8 @@ class TestUpdateTransactionCategory:
         """Синхронизируем и возвращаем первую транзакцию (с polling)."""
         http_client.post("/sync/", headers=headers)
         for _ in range(15):
-            resp = http_client.post("/transactions/", json={"limit": 1}, headers=headers)
+            resp = http_client.post(
+                "/transactions/", json={"limit": 1}, headers=headers)
             data = resp.json()
             if data:
                 return data[0]["id"]
@@ -194,7 +210,8 @@ class TestUpdateTransactionCategory:
         if tx_id is None:
             pytest.skip("No transactions available — run: make reset-db")
 
-        categories = http_client.get("/transactions/categories", headers=headers).json()
+        categories = http_client.get(
+            "/transactions/categories", headers=headers).json()
         assert categories, "No categories in DB"
         target_category = categories[0]
 

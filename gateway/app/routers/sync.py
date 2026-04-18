@@ -35,31 +35,19 @@ USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL", "http://users-service:8001")
                         "synced_accounts": 3,
                         "total_transactions": 45,
                         "details": [
-                            {
-                                "account_name": "Основная карта",
-                                "new_transactions": 15
-                            },
-                            {
-                                "account_name": "Накопительная",
-                                "new_transactions": 10
-                            },
-                            {
-                                "account_name": "Зарплатная",
-                                "new_transactions": 20
-                            }
-                        ]
+                            {"account_name": "Основная карта", "new_transactions": 15},
+                            {"account_name": "Накопительная", "new_transactions": 10},
+                            {"account_name": "Зарплатная", "new_transactions": 20},
+                        ],
                     }
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
-        504: {"description": "Таймаут синхронизации"}
-    }
+        504: {"description": "Таймаут синхронизации"},
+    },
 )
-async def sync_all_user_accounts(
-    request: Request,
-    current_user: dict = Depends(get_current_user)
-):
+async def sync_all_user_accounts(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Синхронизировать все банковские счета пользователя.
 
@@ -96,7 +84,7 @@ async def sync_all_user_accounts(
             accounts_response = await client.get(
                 f"{USERS_SERVICE_URL}/users/me/bank_accounts",
                 headers={"Authorization": f"Bearer {current_user.get('token')}"},
-                cookies=cookies
+                cookies=cookies,
             )
             accounts_response.raise_for_status()
             accounts = accounts_response.json()
@@ -106,7 +94,7 @@ async def sync_all_user_accounts(
                 "synced_accounts": 0,
                 "total_transactions": 0,
                 "details": [],
-                "message": "У вас нет добавленных банковских счетов"
+                "message": "У вас нет добавленных банковских счетов",
             }
 
         # 2. Синхронизируем все счета пользователя одним запросом
@@ -115,56 +103,45 @@ async def sync_all_user_accounts(
         async with httpx.AsyncClient(timeout=60.0) as client:
             try:
                 sync_response = await client.post(
-                    f"{TRANSACTIONS_SERVICE_URL}/transactions/sync_user_accounts",
-                    json={"user_id": user_id}
+                    f"{TRANSACTIONS_SERVICE_URL}/transactions/sync_user_accounts", json={"user_id": user_id}
                 )
 
                 if sync_response.status_code == 200:
                     # Синхронизация прошла успешно для всех счетов
                     for account in accounts:
-                        results.append({
-                            "account_name": account.get("bank_account_name"),
-                            "status": "success"
-                        })
+                        results.append({"account_name": account.get("bank_account_name"), "status": "success"})
                 else:
                     # Ошибка синхронизации
                     for account in accounts:
-                        results.append({
-                            "account_name": account.get("bank_account_name"),
-                            "status": "failed",
-                            "error": f"HTTP {sync_response.status_code}"
-                        })
+                        results.append(
+                            {
+                                "account_name": account.get("bank_account_name"),
+                                "status": "failed",
+                                "error": f"HTTP {sync_response.status_code}",
+                            }
+                        )
 
             except Exception as e:
                 # Если произошла ошибка, отмечаем все счета как failed
                 for account in accounts:
-                    results.append({
-                        "account_name": account.get("bank_account_name"),
-                        "status": "failed",
-                        "error": str(e)
-                    })
+                    results.append(
+                        {"account_name": account.get("bank_account_name"), "status": "failed", "error": str(e)}
+                    )
 
         return {
             "synced_accounts": len([r for r in results if r["status"] == "success"]),
             "total_accounts": len(accounts),
-            "details": results
+            "details": results,
         }
 
     except httpx.TimeoutException:
-        raise HTTPException(
-            status_code=504,
-            detail="Таймаут при синхронизации счетов"
-        )
+        raise HTTPException(status_code=504, detail="Таймаут при синхронизации счетов")
     except httpx.HTTPStatusError as e:
         raise HTTPException(
-            status_code=e.response.status_code,
-            detail=f"Ошибка при получении счетов: {e.response.text}"
+            status_code=e.response.status_code, detail=f"Ошибка при получении счетов: {e.response.text}"
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Внутренняя ошибка: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка: {str(e)}")
 
 
 @router.post(
@@ -185,21 +162,17 @@ async def sync_all_user_accounts(
                     "example": {
                         "account_name": "Основная карта",
                         "new_transactions": 5,
-                        "last_sync": "2024-01-15T14:30:00"
+                        "last_sync": "2024-01-15T14:30:00",
                     }
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
         404: {"description": "Счет не найден или не принадлежит пользователю"},
-        504: {"description": "Таймаут синхронизации"}
-    }
+        504: {"description": "Таймаут синхронизации"},
+    },
 )
-async def sync_single_account(
-    bank_account_id: int,
-    request: Request,
-    current_user: dict = Depends(get_current_user)
-):
+async def sync_single_account(bank_account_id: int, request: Request, current_user: dict = Depends(get_current_user)):
     """
     Синхронизировать один конкретный банковский счет.
 
@@ -231,7 +204,7 @@ async def sync_single_account(
             accounts_response = await client.get(
                 f"{USERS_SERVICE_URL}/users/me/bank_accounts",
                 headers={"Authorization": f"Bearer {current_user.get('token')}"},
-                cookies=cookies
+                cookies=cookies,
             )
             accounts_response.raise_for_status()
             accounts = accounts_response.json()
@@ -240,39 +213,26 @@ async def sync_single_account(
         target_account = next((acc for acc in accounts if acc.get("bank_account_id") == bank_account_id), None)
 
         if not target_account:
-            raise HTTPException(
-                status_code=404,
-                detail="Счет не найден или не принадлежит вам"
-            )
+            raise HTTPException(status_code=404, detail="Счет не найден или не принадлежит вам")
 
         # 3. Синхронизируем через transactions-service
         async with httpx.AsyncClient(timeout=30.0) as client:
             sync_response = await client.post(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/sync_user_accounts",
-                json={"user_id": user_id}
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/sync_user_accounts", json={"user_id": user_id}
             )
             sync_response.raise_for_status()
 
             return {
                 "account_name": target_account.get("bank_account_name"),
                 "status": "success",
-                "message": "Синхронизация завершена"
+                "message": "Синхронизация завершена",
             }
 
     except HTTPException:
         raise
     except httpx.TimeoutException:
-        raise HTTPException(
-            status_code=504,
-            detail="Таймаут синхронизации"
-        )
+        raise HTTPException(status_code=504, detail="Таймаут синхронизации")
     except httpx.HTTPStatusError as e:
-        raise HTTPException(
-            status_code=e.response.status_code,
-            detail=f"Ошибка синхронизации: {e.response.text}"
-        )
+        raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка синхронизации: {e.response.text}")
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Внутренняя ошибка: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка: {str(e)}")

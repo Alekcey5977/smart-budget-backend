@@ -4,6 +4,7 @@ E2E tests for /notifications/* endpoints.
 Добавление банковского счёта генерирует уведомление.
 Используем polling вместо фиксированного sleep.
 """
+
 import asyncio
 
 import pytest
@@ -23,18 +24,12 @@ async def _poll_notifications(http_client, headers, min_count=1, retries=10, del
 
 
 class TestGetNotifications:
-    async def test_notifications_appear_after_bank_account_add(
-        self, http_client, auth_headers, bank_account
-    ):
+    async def test_notifications_appear_after_bank_account_add(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
         notifications = await _poll_notifications(http_client, headers)
-        assert len(notifications) > 0, (
-            "Expected at least one notification after adding a bank account"
-        )
+        assert len(notifications) > 0, "Expected at least one notification after adding a bank account"
 
-    async def test_notification_has_required_fields(
-        self, http_client, auth_headers, bank_account
-    ):
+    async def test_notification_has_required_fields(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
         notifications = await _poll_notifications(http_client, headers)
         if not notifications:
@@ -53,15 +48,11 @@ class TestGetNotifications:
 
 
 class TestUnreadCount:
-    async def test_unread_count_returns_valid_response(
-        self, http_client, auth_headers, bank_account
-    ):
+    async def test_unread_count_returns_valid_response(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
         await asyncio.sleep(1)  # ждём propagation
 
-        resp = http_client.get(
-            "/notifications/user/me/unread/count", headers=headers
-        )
+        resp = http_client.get("/notifications/user/me/unread/count", headers=headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "count" in data
@@ -74,9 +65,7 @@ class TestUnreadCount:
 
 
 class TestMarkAsRead:
-    async def test_mark_notification_as_read(
-        self, http_client, auth_headers, bank_account
-    ):
+    async def test_mark_notification_as_read(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
         notifications = await _poll_notifications(http_client, headers)
 
@@ -91,34 +80,24 @@ class TestMarkAsRead:
         assert resp.status_code == 200
         assert resp.json()["status"] == "success"
 
-    async def test_mark_all_as_read_sets_count_to_zero(
-        self, http_client, auth_headers, bank_account
-    ):
+    async def test_mark_all_as_read_sets_count_to_zero(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
         await asyncio.sleep(1)
 
-        resp = http_client.post(
-            "/notifications/mark-all-as-read", headers=headers
-        )
+        resp = http_client.post("/notifications/mark-all-as-read", headers=headers)
         assert resp.status_code == 200
 
-        count_resp = http_client.get(
-            "/notifications/user/me/unread/count", headers=headers
-        )
+        count_resp = http_client.get("/notifications/user/me/unread/count", headers=headers)
         assert count_resp.status_code == 200
         assert count_resp.json()["count"] == 0
 
     def test_mark_as_read_without_token_returns_401(self, http_client):
-        resp = http_client.post(
-            "/notifications/00000000-0000-0000-0000-000000000000/mark-as-read"
-        )
+        resp = http_client.post("/notifications/00000000-0000-0000-0000-000000000000/mark-as-read")
         assert resp.status_code == 401
 
 
 class TestDeleteNotification:
-    async def test_delete_own_notification(
-        self, http_client, auth_headers, bank_account
-    ):
+    async def test_delete_own_notification(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers
         notifications = await _poll_notifications(http_client, headers)
 
@@ -126,14 +105,10 @@ class TestDeleteNotification:
             pytest.skip("No notifications to delete")
 
         notif_id = notifications[0]["id"]
-        resp = http_client.delete(
-            f"/notifications/{notif_id}", headers=headers
-        )
+        resp = http_client.delete(f"/notifications/{notif_id}", headers=headers)
         assert resp.status_code == 200
         assert resp.json()["status"] == "success"
 
     def test_delete_without_token_returns_401(self, http_client):
-        resp = http_client.delete(
-            "/notifications/00000000-0000-0000-0000-000000000000"
-        )
+        resp = http_client.delete("/notifications/00000000-0000-0000-0000-000000000000")
         assert resp.status_code == 401

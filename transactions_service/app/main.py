@@ -1,7 +1,7 @@
-# Настройка логирования должна быть ПЕРЕД всеми остальными импортами
 from contextlib import asynccontextmanager
 
 import uvicorn
+from app.cache import cache_client
 from app.database import AsyncSessionLocal, create_tables
 from app.models import *  # noqa: F403
 from app.repository.sync_repository import SyncRepository
@@ -34,6 +34,7 @@ async def periodic_sync():
 async def life_span(app: FastAPI):
     print("[LIFESPAN] Starting up...")
 
+    await cache_client.connect()
     await create_tables()
 
     try:
@@ -51,6 +52,7 @@ async def life_span(app: FastAPI):
     yield
 
     print("[LIFESPAN] Shutting down...")
+    await cache_client.close()
     scheduler.shutdown(wait=False)
     print("[LIFESPAN] Scheduler stopped")
 
@@ -76,6 +78,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 @app.get("/health")
 async def health():
     return {"status": "healthy", "service": "transactions"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8002)

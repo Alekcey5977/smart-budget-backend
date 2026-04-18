@@ -3,9 +3,7 @@ from typing import Annotated
 from fastapi import Header, HTTPException
 
 
-async def get_user_id_from_header(
-    x_user_id: Annotated[str, Header(..., alias="X-User-ID")]
-) -> int:
+async def get_user_id_from_header(x_user_id: Annotated[str, Header(..., alias="X-User-ID")]) -> int:
     """Извлекает user_id из заголовка X-User-ID"""
     try:
         user_id = int(x_user_id)
@@ -14,7 +12,4 @@ async def get_user_id_from_header(
         return user_id
 
     except (ValueError, TypeError):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid user ID in headers"
-        )
+        raise HTTPException(status_code=400, detail="Invalid user ID in headers")

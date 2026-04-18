@@ -9,26 +9,24 @@ from websockets.exceptions import ConnectionClosed
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(
-    prefix="/ws",
-    tags=["websocket"]
+router = APIRouter(prefix="/ws", tags=["websocket"])
+
+NOTIFICATION_SERVICE_URL = (
+    os.getenv("NOTIFICATION_SERVICE_URL", "http://notification-service:8006")
+    .replace("http://", "ws://")
+    .replace("https://", "wss://")
 )
 
-NOTIFICATION_SERVICE_URL = os.getenv(
-    "NOTIFICATION_SERVICE_URL",
-    "http://notification-service:8006"
-).replace("http://", "ws://").replace("https://", "wss://")
-
-HISTORY_SERVICE_URL = os.getenv(
-    "HISTORY_SERVICE_URL",
-    "http://history-service:8007"
-).replace("http://", "ws://").replace("https://", "wss://")
+HISTORY_SERVICE_URL = (
+    os.getenv("HISTORY_SERVICE_URL", "http://history-service:8007")
+    .replace("http://", "ws://")
+    .replace("https://", "wss://")
+)
 
 
 @router.websocket("/notification")
 async def websocket_notification_proxy(
-    websocket: WebSocket,
-    token: str = Query(..., description="JWT токен для аутентификации")
+    websocket: WebSocket, token: str = Query(..., description="JWT токен для аутентификации")
 ):
     """
     WebSocket прокси для получения уведомлений в реальном времени.
@@ -129,11 +127,8 @@ async def websocket_notification_proxy(
         # Запускаем обе задачи параллельно
         # Когда одна завершится (соединение закрыто), отменяем другую
         _, pending = await asyncio.wait(
-            [
-                asyncio.create_task(forward_to_backend()),
-                asyncio.create_task(forward_to_client())
-            ],
-            return_when=asyncio.FIRST_COMPLETED
+            [asyncio.create_task(forward_to_backend()), asyncio.create_task(forward_to_client())],
+            return_when=asyncio.FIRST_COMPLETED,
         )
 
         # Отменяем оставшиеся задачи
@@ -163,8 +158,7 @@ async def websocket_notification_proxy(
 
 @router.websocket("/history")
 async def websocket_history_proxy(
-    websocket: WebSocket,
-    token: str = Query(..., description="JWT токен для аутентификации")
+    websocket: WebSocket, token: str = Query(..., description="JWT токен для аутентификации")
 ):
     """WebSocket прокси для получения истории действий в реальном времени."""
     user_id = verify_websocket_token(token)
@@ -203,11 +197,8 @@ async def websocket_history_proxy(
                 pass
 
         _, pending = await asyncio.wait(
-            [
-                asyncio.create_task(forward_to_backend()),
-                asyncio.create_task(forward_to_client())
-            ],
-            return_when=asyncio.FIRST_COMPLETED
+            [asyncio.create_task(forward_to_backend()), asyncio.create_task(forward_to_client())],
+            return_when=asyncio.FIRST_COMPLETED,
         )
 
         for task in pending:

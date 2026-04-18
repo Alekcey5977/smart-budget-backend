@@ -28,20 +28,22 @@ class TestSyncIntegration:
                 "bank_id": 1,
                 "currency": "RUB",
                 "balance": "100.00",
-                "created_at": "2023-01-01T00:00:00Z"
+                "created_at": "2023-01-01T00:00:00Z",
             },
             "categories": [{"id": 10, "name": "Food"}],
             "mcc_categories": [],
             "merchants": [],
-            "transactions": [{
-                "id": str(uuid.uuid4()),
-                "user_id": 999,
-                "category_id": 10,
-                "bank_account_id": 1,
-                "amount": "50.00",
-                "type": "expense",
-                "created_at": "2023-01-01T12:00:00Z"
-            }]
+            "transactions": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "user_id": 999,
+                    "category_id": 10,
+                    "bank_account_id": 1,
+                    "amount": "50.00",
+                    "type": "expense",
+                    "created_at": "2023-01-01T12:00:00Z",
+                }
+            ],
         }
 
         mock_client_instance = AsyncMock()
@@ -51,8 +53,7 @@ class TestSyncIntegration:
             mock_http.return_value.__aenter__.return_value = mock_client_instance
 
             response = await client.post(
-                "/transactions/trigger_sync",
-                json={"bank_account_hash": acc_hash, "user_id": 123}
+                "/transactions/trigger_sync", json={"bank_account_hash": acc_hash, "user_id": 123}
             )
 
         # Проверки
@@ -87,8 +88,7 @@ class TestSyncIntegration:
             mock_http.return_value.__aenter__.return_value = mock_client_instance
 
             response = await client.post(
-                "/transactions/trigger_sync",
-                json={"bank_account_hash": "missing", "user_id": 123}
+                "/transactions/trigger_sync", json={"bank_account_hash": "missing", "user_id": 123}
             )
 
         assert response.status_code == 404
@@ -107,7 +107,7 @@ class TestSyncIntegration:
             bank_id=99,
             currency="RUB",
             balance=0,
-            is_deleted=False
+            is_deleted=False,
         )
         db_session.add(existing_acc)
         await db_session.flush()
@@ -124,12 +124,12 @@ class TestSyncIntegration:
                 "bank_id": 99,
                 "currency": "RUB",
                 "balance": "500.00",
-                "created_at": "2023-01-01T00:00:00Z"
+                "created_at": "2023-01-01T00:00:00Z",
             },
             "categories": [],
             "mcc_categories": [],
             "merchants": [],
-            "transactions": []
+            "transactions": [],
         }
 
         mock_client_instance = AsyncMock()
@@ -138,10 +138,7 @@ class TestSyncIntegration:
         with patch("app.repository.sync_repository.httpx.AsyncClient") as mock_http:
             mock_http.return_value.__aenter__.return_value = mock_client_instance
 
-            response = await client.post(
-                "/transactions/sync_user_accounts",
-                json={"user_id": 123}
-            )
+            response = await client.post("/transactions/sync_user_accounts", json={"user_id": 123})
 
         # 3. Проверки
         assert response.status_code == 200
@@ -163,17 +160,22 @@ class TestSyncIntegration:
         # 1. Мок данных
         tx_time_str = "2023-05-20T15:00:00Z"
         mock_json = {
-            "bank": None, "bank_account": None, "categories": [],
-            "mcc_categories": [], "merchants": [],
-            "transactions": [{
-                "id": str(uuid.uuid4()),
-                "user_id": 1,
-                "category_id": 1,
-                "bank_account_id": 1,
-                "amount": "100.00",
-                "type": "expense",
-                "created_at": tx_time_str
-            }]
+            "bank": None,
+            "bank_account": None,
+            "categories": [],
+            "mcc_categories": [],
+            "merchants": [],
+            "transactions": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "user_id": 1,
+                    "category_id": 1,
+                    "bank_account_id": 1,
+                    "amount": "100.00",
+                    "type": "expense",
+                    "created_at": tx_time_str,
+                }
+            ],
         }
 
         # Создаем зависимости для транзакции
@@ -186,7 +188,7 @@ class TestSyncIntegration:
             bank_account_name="Test Account",
             bank_id=1,
             currency="RUB",
-            balance=0
+            balance=0,
         )
 
         bank = Bank(id=1, name="B")
@@ -208,7 +210,5 @@ class TestSyncIntegration:
         await db_session.refresh(acc)
         assert acc.last_synced_at is not None
 
-        expected_time = datetime.fromisoformat(
-            tx_time_str.replace("Z", "+00:00"))
-        assert acc.last_synced_at.replace(
-            tzinfo=None) == expected_time.replace(tzinfo=None)
+        expected_time = datetime.fromisoformat(tx_time_str.replace("Z", "+00:00"))
+        assert acc.last_synced_at.replace(tzinfo=None) == expected_time.replace(tzinfo=None)

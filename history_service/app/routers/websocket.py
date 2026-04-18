@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/ws", tags=['websocket'])
+router = APIRouter(prefix="/ws", tags=["websocket"])
 
 active_connections: Dict[int, List[WebSocket]] = {}
 

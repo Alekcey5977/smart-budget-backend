@@ -11,15 +11,9 @@ from app.schemas.transaction_schema import (
 )
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-router = APIRouter(
-    prefix="/transactions",
-    tags=["transactions"]
-)
+router = APIRouter(prefix="/transactions", tags=["transactions"])
 
-TRANSACTIONS_SERVICE_URL = os.getenv(
-    "TRANSACTIONS_SERVICE_URL",
-    "http://transactions-service:8002"
-)
+TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL", "http://transactions-service:8002")
 
 
 @router.post(
@@ -93,21 +87,18 @@ TRANSACTIONS_SERVICE_URL = os.getenv(
                             "type": "expense",
                             "description": "Покупка в супермаркете",
                             "merchant_id": 10,
-                            "merchant_name": "Пятёрочка"
+                            "merchant_name": "Пятёрочка",
                         }
                     ]
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
         503: {"description": "Сервис транзакций недоступен"},
-        504: {"description": "Таймаут сервиса транзакций"}
-    }
+        504: {"description": "Таймаут сервиса транзакций"},
+    },
 )
-async def get_transactions(
-    filters: TransactionFilterRequest,
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def get_transactions(filters: TransactionFilterRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Получить транзакции пользователя с фильтрацией.
 
@@ -116,27 +107,21 @@ async def get_transactions(
     """
     user_id = current_user["user_id"]
 
-    request_data = filters.model_dump(exclude_none=True, mode='json')
+    request_data = filters.model_dump(exclude_none=True, mode="json")
 
     async with httpx.AsyncClient() as client:
         try:
             headers = {"X-User-ID": str(user_id)}
 
             response = await client.post(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/",
-                headers=headers,
-                json=request_data,
-                timeout=10.0
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/", headers=headers, json=request_data, timeout=10.0
             )
 
             if response.status_code == 200:
                 return response.json()
 
             error_detail = response.json().get("detail", "Failed to get transactions")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=error_detail
-            )
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Transaction service is unavailable")
@@ -171,21 +156,21 @@ async def get_transactions(
                         "type": "expense",
                         "description": "Такси",
                         "merchant_id": None,
-                        "merchant_name": None
+                        "merchant_name": None,
                     }
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
         404: {"description": "Транзакция или категория не найдена"},
         503: {"description": "Сервис транзакций недоступен"},
-        504: {"description": "Таймаут сервиса транзакций"}
-    }
+        504: {"description": "Таймаут сервиса транзакций"},
+    },
 )
 async def update_transaction_category(
     transaction_id: str,
     body: UpdateTransactionCategoryRequest,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     """
     Изменить категорию транзакции.
@@ -200,7 +185,7 @@ async def update_transaction_category(
                 f"{TRANSACTIONS_SERVICE_URL}/transactions/{transaction_id}/category",
                 headers={"X-User-ID": str(user_id)},
                 json=body.model_dump(),
-                timeout=10.0
+                timeout=10.0,
             )
 
             if response.status_code == 200:
@@ -240,21 +225,20 @@ async def update_transaction_category(
                         {"id": 1, "name": "Продукты", "type": "expense"},
                         {"id": 2, "name": "Транспорт", "type": "expense"},
                         {"id": 11, "name": "Зарплата", "type": "income"},
-                        {"id": 13, "name": "Инвестиции", "type": None}
+                        {"id": 13, "name": "Инвестиции", "type": None},
                     ]
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
-        503: {"description": "Сервис транзакций недоступен"}
-    }
+        503: {"description": "Сервис транзакций недоступен"},
+    },
 )
 async def get_categories(
     type: Optional[str] = Query(
-        None,
-        description="Фильтр по типу: 'income' или 'expense'. Универсальные категории (null) включаются всегда."
+        None, description="Фильтр по типу: 'income' или 'expense'. Универсальные категории (null) включаются всегда."
     ),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     """
     Получить категории транзакций с опциональной фильтрацией по типу.
@@ -268,19 +252,14 @@ async def get_categories(
                 params["type"] = type
 
             response = await client.get(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories",
-                params=params,
-                timeout=10.0
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories", params=params, timeout=10.0
             )
 
             if response.status_code == 200:
                 return response.json()
 
             error_detail = response.json().get("detail", "Failed to get categories")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=error_detail
-            )
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:
             raise HTTPException(503, "Transaction service is unavailable")
@@ -300,27 +279,19 @@ async def get_categories(
     responses={
         200: {
             "description": "Категория",
-            "content": {
-                "application/json": {
-                    "example": {"id": 1, "name": "Продукты", "type": "expense"}
-                }
-            }
+            "content": {"application/json": {"example": {"id": 1, "name": "Продукты", "type": "expense"}}},
         },
         401: {"description": "Не авторизован"},
         404: {"description": "Категория не найдена"},
         503: {"description": "Сервис транзакций недоступен"},
-        504: {"description": "Таймаут сервиса транзакций"}
-    }
+        504: {"description": "Таймаут сервиса транзакций"},
+    },
 )
-async def get_category_by_id(
-    category_id: int,
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def get_category_by_id(category_id: int, current_user: Dict[str, Any] = Depends(get_current_user)):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories/{category_id}",
-                timeout=10.0
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories/{category_id}", timeout=10.0
             )
 
             if response.status_code == 200:
@@ -362,21 +333,18 @@ async def get_category_by_id(
                         "type": "expense",
                         "description": "Покупка в супермаркете",
                         "merchant_id": 10,
-                        "merchant_name": "Пятёрочка"
+                        "merchant_name": "Пятёрочка",
                     }
                 }
-            }
+            },
         },
         401: {"description": "Не авторизован"},
         404: {"description": "Транзакция не найдена"},
         503: {"description": "Сервис транзакций недоступен"},
-        504: {"description": "Таймаут сервиса транзакций"}
-    }
+        504: {"description": "Таймаут сервиса транзакций"},
+    },
 )
-async def get_transaction_by_id(
-    transaction_id: str,
-    current_user: Dict[str, Any] = Depends(get_current_user)
-):
+async def get_transaction_by_id(transaction_id: str, current_user: Dict[str, Any] = Depends(get_current_user)):
     user_id = current_user["user_id"]
 
     async with httpx.AsyncClient() as client:
@@ -384,7 +352,7 @@ async def get_transaction_by_id(
             response = await client.get(
                 f"{TRANSACTIONS_SERVICE_URL}/transactions/{transaction_id}",
                 headers={"X-User-ID": str(user_id)},
-                timeout=10.0
+                timeout=10.0,
             )
 
             if response.status_code == 200:

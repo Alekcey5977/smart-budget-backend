@@ -40,7 +40,7 @@ app = FastAPI(
     title="History Service",
     description="Сервис истории действий пользователя. Записи создаются автоматически через Redis events при изменении целей, банковских счётов и профиля.",
     version="1.0.0",
-    lifespan=life_span
+    lifespan=life_span,
 )
 
 app.add_middleware(LoggingMiddleware)

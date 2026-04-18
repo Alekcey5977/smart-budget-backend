@@ -32,9 +32,7 @@ class TestTransactionRepositoryCRUD:
     @pytest.mark.asyncio
     async def test_create_bank_account_defaults(self, transaction_repository, mock_db_session):
         """Проверка, что схема корректно передается в модель"""
-        acc_data = BankAccountCreate(
-            user_id=1, bank_account_hash="h1", bank_account_name="n1", bank_id=1
-        )
+        acc_data = BankAccountCreate(user_id=1, bank_account_hash="h1", bank_account_name="n1", bank_id=1)
 
         await transaction_repository.create_bank_account(acc_data)
 
@@ -125,11 +123,11 @@ class TestTransactionRepositoryExport:
         # Настраиваем side_effect для session.execute
         mock_db_session.execute.side_effect = [
             res_account,  # 1. get account
-            res_bank,     # 2. get bank
-            res_trans,    # 3. get transactions
+            res_bank,  # 2. get bank
+            res_trans,  # 3. get transactions
             res_merch_cat,  # 4. get merchant category ids (update logic)
-            res_cats,     # 5. get categories (так как в trans их не было)
-            res_mccs      # 6. get mccs
+            res_cats,  # 5. get categories (так как в trans их не было)
+            res_mccs,  # 6. get mccs
         ]
 
         # 3. Вызов метода
@@ -153,10 +151,7 @@ class TestTransactionRepositoryBulk:
     @pytest.mark.asyncio
     async def test_bulk_create_categories(self, transaction_repository, mock_db_session):
         """Тест массовой вставки категорий с on_conflict_do_nothing"""
-        categories = [
-            CategoryCreate(id=1, name="A"),
-            CategoryCreate(id=2, name="B")
-        ]
+        categories = [CategoryCreate(id=1, name="A"), CategoryCreate(id=2, name="B")]
 
         result = await transaction_repository.bulk_create_categories(categories)
 
@@ -166,17 +161,14 @@ class TestTransactionRepositoryBulk:
         mock_db_session.commit.assert_awaited_once()
 
         stmt = mock_db_session.execute.call_args[0][0]
-        assert "INSERT" in str(
-            stmt.compile()) or "insert" in str(type(stmt)).lower()
+        assert "INSERT" in str(stmt.compile()) or "insert" in str(type(stmt)).lower()
 
     @pytest.mark.asyncio
     async def test_bulk_create_transactions(self, transaction_repository, mock_db_session):
         """Тест массовой вставки транзакций (через цикл add)"""
         transactions = [
-            TransactionCreate(user_id=1, category_id=1,
-                              bank_account_id=1, amount=10, type="exp"),
-            TransactionCreate(user_id=1, category_id=1,
-                              bank_account_id=1, amount=20, type="exp"),
+            TransactionCreate(user_id=1, category_id=1, bank_account_id=1, amount=10, type="exp"),
+            TransactionCreate(user_id=1, category_id=1, bank_account_id=1, amount=20, type="exp"),
         ]
 
         result = await transaction_repository.bulk_create_transactions(transactions)

@@ -1,6 +1,7 @@
 """
 Скрипт для загрузки тестовых данных в псевдо банк через API.
 """
+
 import json
 import sys
 import time
@@ -45,12 +46,7 @@ def load_test_data(base_url: str):
             continue
 
         try:
-            response = requests.post(
-                endpoint,
-                json=items,
-                headers={"Content-Type": "application/json"},
-                timeout=30
-            )
+            response = requests.post(endpoint, json=items, headers={"Content-Type": "application/json"}, timeout=30)
 
             if response.status_code in [200, 201]:
                 result = response.json()

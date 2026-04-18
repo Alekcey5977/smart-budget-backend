@@ -28,6 +28,17 @@ def mock_event_publisher():
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def mock_cache_client():
+    """Мокируем cache_client для всех тестов"""
+    with patch("app.routers.transactions.cache_client") as mock:
+        mock.get = AsyncMock(return_value=None)
+        mock.set = AsyncMock()
+        mock.delete = AsyncMock()
+        mock.delete_pattern = AsyncMock()
+        yield mock
+
+
 @pytest.fixture
 def mock_db_session():
     """
@@ -44,6 +55,7 @@ def transaction_repository(mock_db_session):
     Фикстура для создания экземпляра репозитория с замоканной сессией.
     """
     from app.repository.transactions_repository import TransactionRepository
+
     return TransactionRepository(db=mock_db_session)
 
 
@@ -57,8 +69,7 @@ def sample_category():
 @pytest.fixture
 def sample_merchant():
     """Создание примера мерчанта для тестов."""
-    merch = Merchant(id=10, name="Supermarket",
-                     inn="1234567890", category_id=1)
+    merch = Merchant(id=10, name="Supermarket", inn="1234567890", category_id=1)
     return merch
 
 
@@ -74,7 +85,7 @@ def sample_transaction(sample_category, sample_merchant):
         type="expense",
         description="Groceries",
         created_at=datetime.now(),
-        merchant_id=10
+        merchant_id=10,
     )
     tx.category = sample_category
     tx.merchant = sample_merchant
@@ -87,4 +98,5 @@ def sync_repository(mock_db_session):
     Фикстура для создания экземпляра SyncRepository с замоканной сессией.
     """
     from app.repository.sync_repository import SyncRepository
+
     return SyncRepository(db=mock_db_session)

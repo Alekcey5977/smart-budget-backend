@@ -4,6 +4,7 @@
 Все эндпоинты требуют JWT — get_current_user переопределяется через фикстуру `client`.
 Downstream history-service мокается через patch("app.routers.history.httpx.AsyncClient").
 """
+
 from unittest.mock import AsyncMock, patch
 
 from tests.conftest import USER_ID, make_mock_http_response
@@ -83,9 +84,7 @@ class TestGetHistoryEntry:
         with patch("app.routers.history.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(
-                404, json_data={"detail": "Not found"}
-            )
+            mock_http.get.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
 
             response = await client.get(f"/history/{ENTRY_ID}")
 
@@ -140,9 +139,7 @@ class TestDeleteHistoryEntry:
         with patch("app.routers.history.httpx.AsyncClient") as MockClient:
             mock_http = AsyncMock()
             MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.delete.return_value = make_mock_http_response(
-                404, json_data={"detail": "Not found"}
-            )
+            mock_http.delete.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
 
             response = await client.delete(f"/history/{ENTRY_ID}")
 

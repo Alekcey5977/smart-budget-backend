@@ -105,11 +105,7 @@ class TestBankAccountSchemas:
 
     def test_custom_balance_and_currency(self, bank_account_data):
         """Проверка явной передачи баланса и валюты"""
-        data = {
-            **bank_account_data,
-            "currency": "USD",
-            "balance": Decimal("999.99")
-        }
+        data = {**bank_account_data, "currency": "USD", "balance": Decimal("999.99")}
         account = BankAccountCreate(**data)
         assert account.currency == "USD"
         assert account.balance == Decimal("999.99")
@@ -129,13 +125,7 @@ class TestTransactionSchemas:
 
     def test_optional_fields_none(self, transaction_data):
         """Опциональные поля могут быть None"""
-        data = {
-            "user_id": 1,
-            "category_id": 1,
-            "bank_account_id": 1,
-            "amount": 10,
-            "type": "income"
-        }
+        data = {"user_id": 1, "category_id": 1, "bank_account_id": 1, "amount": 10, "type": "income"}
         tx = TransactionCreate(**data)
 
         assert tx.description is None

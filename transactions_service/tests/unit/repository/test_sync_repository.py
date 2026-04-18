@@ -64,7 +64,7 @@ class TestSyncRepository:
                 "bank_account_hash": acc_hash,
                 "user_id": 999,
                 "created_at": "2023-01-01T00:00:00Z",
-                "updated_at": "2023-01-01T00:00:00Z"
+                "updated_at": "2023-01-01T00:00:00Z",
             },
             "categories": [{"id": 1, "name": "Food"}],
             "mcc_categories": [{"mcc": 1, "name": "Test"}],
@@ -77,9 +77,9 @@ class TestSyncRepository:
                     "category_id": 1,
                     "bank_account_id": 1,
                     "amount": 100.0,
-                    "type": "expense"
+                    "type": "expense",
                 }
-            ]
+            ],
         }
 
         mock_client_instance = AsyncMock()
@@ -122,9 +122,10 @@ class TestSyncRepository:
         """Тест периодической синхронизации всех счетов"""
         accounts = [("hash1", 1), ("hash2", 2)]
 
-        with patch.object(sync_repository, "get_all_active_account_hashes", new_callable=AsyncMock) as mock_get_hashes, \
-                patch.object(sync_repository, "sync_by_account", new_callable=AsyncMock) as mock_sync_account:
-
+        with (
+            patch.object(sync_repository, "get_all_active_account_hashes", new_callable=AsyncMock) as mock_get_hashes,
+            patch.object(sync_repository, "sync_by_account", new_callable=AsyncMock) as mock_sync_account,
+        ):
             mock_get_hashes.return_value = accounts
             mock_sync_account.return_value = {"transactions": 1}
 
@@ -156,11 +157,7 @@ class TestSyncRepository:
         # 1. Select
         # 2. Insert Transaction (остальные upsert вернут 0, так как списки пусты)
         # 3. Update last_synced
-        mock_db_session.execute.side_effect = [
-            mock_select_result,
-            mock_insert_result,
-            mock_update_result
-        ]
+        mock_db_session.execute.side_effect = [mock_select_result, mock_insert_result, mock_update_result]
 
         tx_time = "2023-05-20T15:00:00Z"
         mock_response = MagicMock()
@@ -172,10 +169,17 @@ class TestSyncRepository:
             "categories": [],
             "mcc_categories": [],
             "merchants": [],
-            "transactions": [{
-                "id": "uuid", "user_id": 1, "created_at": tx_time,
-                "category_id": 1, "bank_account_id": 1, "amount": 10, "type": "exp"
-            }]
+            "transactions": [
+                {
+                    "id": "uuid",
+                    "user_id": 1,
+                    "created_at": tx_time,
+                    "category_id": 1,
+                    "bank_account_id": 1,
+                    "amount": 10,
+                    "type": "exp",
+                }
+            ],
         }
 
         mock_client_instance = AsyncMock()

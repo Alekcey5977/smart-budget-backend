@@ -19,11 +19,7 @@ class TransactionRepository:
 
     async def get_account_bank(self, bank_account_hash: str):
         """Получение счёта"""
-        result = await self.db.execute(
-            select(Bank_Account).where(
-                Bank_Account.bank_account_hash == bank_account_hash
-            )
-        )
+        result = await self.db.execute(select(Bank_Account).where(Bank_Account.bank_account_hash == bank_account_hash))
         return result.scalar_one_or_none()
 
     async def export_account_data(self, account_hash: str):
@@ -33,9 +29,7 @@ class TransactionRepository:
             return None
 
         # Получаем банк
-        bank_result = await self.db.execute(
-            select(Bank).where(Bank.id == account.bank_id)
-        )
+        bank_result = await self.db.execute(select(Bank).where(Bank.id == account.bank_id))
         bank = bank_result.scalar_one()
 
         # Получаем транзакции с мерчантами и категориями
@@ -43,9 +37,7 @@ class TransactionRepository:
             select(Transaction)
             .where(Transaction.bank_account_id == account.id)
             .options(
-                selectinload(Transaction.merchant).selectinload(
-                    Merchant.category),
-                selectinload(Transaction.category)
+                selectinload(Transaction.merchant).selectinload(Merchant.category), selectinload(Transaction.category)
             )
         )
         transactions = transactions_result.scalars().all()
@@ -55,11 +47,9 @@ class TransactionRepository:
         category_ids = {t.category_id for t in transactions}
         if merchant_ids:
             merchant_categories = await self.db.execute(
-                select(Merchant.category_id)
-                .where(Merchant.id.in_(merchant_ids))
+                select(Merchant.category_id).where(Merchant.id.in_(merchant_ids))
             )
-            category_ids.update(
-                m_id for m_id, in merchant_categories.fetchall() if m_id)
+            category_ids.update(m_id for (m_id,) in merchant_categories.fetchall() if m_id)
 
         # Получаем все категории (не только те что встречаются в транзакциях счёта)
         categories_result = await self.db.execute(select(Category).order_by(Category.id))
@@ -68,10 +58,7 @@ class TransactionRepository:
         # Получаем MCC
         mccs = []
         if category_ids:
-            mcc_result = await self.db.execute(
-                select(MCC_Category).where(
-                    MCC_Category.category_id.in_(category_ids))
-            )
+            mcc_result = await self.db.execute(select(MCC_Category).where(MCC_Category.category_id.in_(category_ids)))
             mccs = mcc_result.scalars().all()
 
         # Получаем мерчантов (уже загружены через selectinload, но можно уточнить)
@@ -83,13 +70,13 @@ class TransactionRepository:
             "transactions": transactions,
             "merchants": merchants,
             "categories": categories,
-            "mccs": mccs
+            "mccs": mccs,
         }
 
     @staticmethod
     def to_dict(obj):
         """Утилита для сериализации SQLAlchemy-объектов"""
-        if hasattr(obj, '__table__'):
+        if hasattr(obj, "__table__"):
             return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
         return obj
 
@@ -144,7 +131,7 @@ class TransactionRepository:
     async def bulk_create_categories(self, categories: list[CategoryCreate]):
         """Массовое создание категорий"""
         stmt = insert(Category).values([cat.model_dump() for cat in categories])
-        stmt = stmt.on_conflict_do_nothing(index_elements=['id'])
+        stmt = stmt.on_conflict_do_nothing(index_elements=["id"])
         await self.db.execute(stmt)
         await self.db.commit()
         return {"created": len(categories)}
@@ -152,7 +139,7 @@ class TransactionRepository:
     async def bulk_create_mcc_categories(self, mcc_list: list[MCCCategoryCreate]):
         """Массовое создание MCC категорий"""
         stmt = insert(MCC_Category).values([mcc.model_dump() for mcc in mcc_list])
-        stmt = stmt.on_conflict_do_nothing(index_elements=['mcc'])
+        stmt = stmt.on_conflict_do_nothing(index_elements=["mcc"])
         await self.db.execute(stmt)
         await self.db.commit()
         return {"created": len(mcc_list)}
@@ -160,7 +147,7 @@ class TransactionRepository:
     async def bulk_create_merchants(self, merchants: list[MerchantCreate]):
         """Массовое создание мерчантов"""
         stmt = insert(Merchant).values([m.model_dump() for m in merchants])
-        stmt = stmt.on_conflict_do_nothing(index_elements=['id'])
+        stmt = stmt.on_conflict_do_nothing(index_elements=["id"])
         await self.db.execute(stmt)
         await self.db.commit()
         return {"created": len(merchants)}
@@ -168,7 +155,7 @@ class TransactionRepository:
     async def bulk_create_banks(self, banks: list[BankCreate]):
         """Массовое создание банков"""
         stmt = insert(Bank).values([b.model_dump() for b in banks])
-        stmt = stmt.on_conflict_do_nothing(index_elements=['id'])
+        stmt = stmt.on_conflict_do_nothing(index_elements=["id"])
         await self.db.execute(stmt)
         await self.db.commit()
         return {"created": len(banks)}
@@ -176,7 +163,7 @@ class TransactionRepository:
     async def bulk_create_bank_accounts(self, accounts: list[BankAccountCreate]):
         """Массовое создание банковских счетов"""
         stmt = insert(Bank_Account).values([acc.model_dump() for acc in accounts])
-        stmt = stmt.on_conflict_do_nothing(index_elements=['bank_account_hash'])
+        stmt = stmt.on_conflict_do_nothing(index_elements=["bank_account_hash"])
         await self.db.execute(stmt)
         await self.db.commit()
         return {"created": len(accounts)}

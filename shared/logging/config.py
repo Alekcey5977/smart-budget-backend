@@ -14,12 +14,8 @@ class ServiceFilter(logging.Filter):
         return True
 
 
-def setup_logging(
-    service_name: str,
-    level: int = logging.INFO,
-    log_format: str = "text"
-) -> None:
-    """ Настройка логирования для микросервиса"""
+def setup_logging(service_name: str, level: int = logging.INFO, log_format: str = "text") -> None:
+    """Настройка логирования для микросервиса"""
 
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
@@ -33,13 +29,11 @@ def setup_logging(
 
     if log_format == "json":
         from pythonjsonlogger import jsonlogger
-        formatter = jsonlogger.JsonFormatter(
-            fmt="%(asctime)s %(levelname)s %(name)s %(message)s %(service_name)s"
-        )
+
+        formatter = jsonlogger.JsonFormatter(fmt="%(asctime)s %(levelname)s %(name)s %(message)s %(service_name)s")
     else:
         formatter = logging.Formatter(
-            fmt="%(asctime)s [%(levelname)s] %(service_name)s - %(name)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
+            fmt="%(asctime)s [%(levelname)s] %(service_name)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
 
     console_handler.setFormatter(formatter)

@@ -12,11 +12,7 @@ class HistoryRepository:
 
     async def create_entry(self, entry_data: HistoryEntryCreate):
         """Создание записи истории"""
-        entry = HistoryEntry(
-            user_id=entry_data.user_id,
-            title=entry_data.title,
-            body=entry_data.body
-        )
+        entry = HistoryEntry(user_id=entry_data.user_id, title=entry_data.title, body=entry_data.body)
         self.db.add(entry)
         await self.db.commit()
         await self.db.refresh(entry)
@@ -35,18 +31,12 @@ class HistoryRepository:
 
     async def get_entry_by_id(self, entry_id: UUID):
         """Получение записи по ID"""
-        result = await self.db.execute(
-            select(HistoryEntry)
-            .where(HistoryEntry.id == entry_id)
-        )
+        result = await self.db.execute(select(HistoryEntry).where(HistoryEntry.id == entry_id))
         return result.scalar_one_or_none()
 
     async def delete_entry(self, entry_id: UUID, user_id: int):
         """Удаление записи истории"""
-        stmt = (
-            delete(HistoryEntry)
-            .where((HistoryEntry.id == entry_id) & (HistoryEntry.user_id == user_id))
-        )
+        stmt = delete(HistoryEntry).where((HistoryEntry.id == entry_id) & (HistoryEntry.user_id == user_id))
         result = await self.db.execute(stmt)
         await self.db.commit()
         return result.rowcount

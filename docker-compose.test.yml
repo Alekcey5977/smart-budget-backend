@@ -1,0 +1,381 @@
+services:
+  # --- Users Microservice ---
+  users-db:
+    image: postgres:13
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${USERS_DB_USER}
+      POSTGRES_PASSWORD: ${USERS_DB_PASSWORD}
+      POSTGRES_DB: ${USERS_DB_NAME}
+    ports:
+      - "${USERS_DB_HOST_PORT:-15433}:5432"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U $${USERS_DB_USER} -d $${USERS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - test-network
+
+  users-service:
+    build:
+      context: .
+      dockerfile: users_service/Dockerfile
+    env_file:
+      - .env.test
+    ports:
+      - "${USERS_SERVICE_HOST_PORT:-28001}:${USERS_SERVICE_PORT}"
+    depends_on:
+      users-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${USERS_DATABASE_URL}
+      SERVICE_PORT: ${USERS_SERVICE_PORT}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
+    restart: on-failure
+    networks:
+      - test-network
+
+  # --- Transactions Microservice ---
+  transactions-db:
+    image: postgres:13
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${TRANSACTIONS_DB_USER}
+      POSTGRES_PASSWORD: ${TRANSACTIONS_DB_PASSWORD}
+      POSTGRES_DB: ${TRANSACTIONS_DB_NAME}
+    ports:
+      - "${TRANSACTIONS_DB_HOST_PORT:-15434}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${TRANSACTIONS_DB_USER} -d $${TRANSACTIONS_DB_NAME}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - test-network
+
+  transactions-service:
+    build:
+      context: .
+      dockerfile: transactions_service/Dockerfile
+    env_file:
+      - .env.test
+    ports:
+      - "${TRANSACTIONS_SERVICE_HOST_PORT:-28002}:${TRANSACTIONS_SERVICE_PORT}"
+    depends_on:
+      transactions-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${TRANSACTIONS_DATABASE_URL}
+      SERVICE_PORT: ${TRANSACTIONS_SERVICE_PORT}
+    restart: on-failure
+    networks:
+      - test-network
+
+  # --- Images Microservice ---
+  images-db:
+    image: postgres:13
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${IMAGES_DB_USER}
+      POSTGRES_PASSWORD: ${IMAGES_DB_PASSWORD}
+      POSTGRES_DB: ${IMAGES_DB_NAME}
+    ports:
+      - "${IMAGES_DB_HOST_PORT:-15435}:5432"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U $${IMAGES_DB_USER} -d $${IMAGES_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - test-network
+
+  images-service:
+    build:
+      context: .
+      dockerfile: images_service/Dockerfile
+    env_file:
+      - .env.test
+    ports:
+      - "${IMAGES_SERVICE_HOST_PORT:-28003}:${IMAGES_SERVICE_PORT}"
+    depends_on:
+      images-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${IMAGES_DATABASE_URL}
+      SERVICE_PORT: ${IMAGES_SERVICE_PORT}
+    volumes:
+      - ./testData:/testData
+    restart: on-failure
+    networks:
+      - test-network
+
+  # --- Pseudo Bank Microservice ---
+  pseudo-bank-db:
+    image: postgres:13
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${PSEUDO_BANK_DB_USER}
+      POSTGRES_PASSWORD: ${PSEUDO_BANK_DB_PASSWORD}
+      POSTGRES_DB: ${PSEUDO_BANK_DB_NAME}
+    ports:
+      - "${PSEUDO_BANK_DB_HOST_PORT:-15436}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${PSEUDO_BANK_DB_USER} -d $${PSEUDO_BANK_DB_NAME}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - test-network
+
+  pseudo-bank-service:
+    build:
+      context: .
+      dockerfile: pseudo_bank_service/Dockerfile
+    env_file:
+      - .env.test
+    ports:
+      - "${PSEUDO_BANK_SERVICE_HOST_PORT:-28004}:${PSEUDO_BANK_SERVICE_PORT}"
+    depends_on:
+      pseudo-bank-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${PSEUDO_BANK_DATABASE_URL}
+      SERVICE_PORT: ${PSEUDO_BANK_SERVICE_PORT}
+      REDIS_URL: ${REDIS_URL}
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - test-network
+
+  # --- Purposes Microservice ---
+  purposes-db:
+    image: postgres:13
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${PURPOSES_DB_USER}
+      POSTGRES_PASSWORD: ${PURPOSES_DB_PASSWORD}
+      POSTGRES_DB: ${PURPOSES_DB_NAME}
+    ports:
+      - "${PURPOSES_DB_HOST_PORT:-15437}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${PURPOSES_DB_USER} -d $${PURPOSES_DB_NAME}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - test-network
+
+  purposes-service:
+    build:
+      context: .
+      dockerfile: purposes_service/Dockerfile
+    env_file:
+      - .env.test
+    ports:
+      - "${PURPOSES_SERVICE_HOST_PORT:-28005}:${PURPOSES_SERVICE_PORT}"
+    depends_on:
+      purposes-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${PURPOSES_DATABASE_URL}
+      SERVICE_PORT: ${PURPOSES_SERVICE_PORT}
+      REDIS_URL: ${REDIS_URL}
+    restart: on-failure
+    networks:
+      - test-network
+
+  # --- Notification Microservice ---
+  notification-db:
+    image: postgres:13
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${NOTIFICATION_DB_USER}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      POSTGRES_DB: ${NOTIFICATION_DB_NAME}
+    ports:
+      - "${NOTIFICATION_DB_HOST_PORT:-15438}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${NOTIFICATION_DB_USER} -d $${NOTIFICATION_DB_NAME}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - test-network
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification_service/Dockerfile
+    env_file:
+      - .env.test
+    ports:
+      - "${NOTIFICATION_SERVICE_HOST_PORT:-28006}:${NOTIFICATION_SERVICE_PORT}"
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${NOTIFICATION_DATABASE_URL}
+      SERVICE_PORT: ${NOTIFICATION_SERVICE_PORT}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
+    restart: on-failure
+    networks:
+      - test-network
+
+  # --- History Microservice ---
+  history-db:
+    image: postgres:13
+    env_file:
+      - .env.test
+    environment:
+      POSTGRES_USER: ${HISTORY_DB_USER}
+      POSTGRES_PASSWORD: ${HISTORY_DB_PASSWORD}
+      POSTGRES_DB: ${HISTORY_DB_NAME}
+    ports:
+      - "${HISTORY_DB_HOST_PORT:-15439}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${HISTORY_DB_USER} -d $${HISTORY_DB_NAME}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - test-network
+
+  history-service:
+    build:
+      context: .
+      dockerfile: history_service/Dockerfile
+    env_file:
+      - .env.test
+    ports:
+      - "${HISTORY_SERVICE_HOST_PORT:-28007}:${HISTORY_SERVICE_PORT}"
+    depends_on:
+      history-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${HISTORY_DATABASE_URL}
+      SERVICE_PORT: ${HISTORY_SERVICE_PORT}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
+    restart: on-failure
+    networks:
+      - test-network
+
+  # --- API Gateway ---
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    env_file:
+      - .env.test
+    ports:
+      - "${GATEWAY_HOST_PORT:-28000}:${GATEWAY_PORT}"
+    depends_on:
+      - users-service
+      - transactions-service
+      - images-service
+      - purposes-service
+      - notification-service
+      - history-service
+      - pseudo-bank-service
+    environment:
+      GATEWAY_PORT: ${GATEWAY_PORT}
+      USERS_SERVICE_URL: ${USERS_SERVICE_URL}
+      TRANSACTIONS_SERVICE_URL: ${TRANSACTIONS_SERVICE_URL}
+      IMAGES_SERVICE_URL: ${IMAGES_SERVICE_URL}
+      PSEUDO_BANK_SERVICE_URL: ${PSEUDO_BANK_SERVICE_URL}
+      PURPOSES_SERVICE_URL: ${PURPOSES_SERVICE_URL}
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL}
+      HISTORY_SERVICE_URL: ${HISTORY_SERVICE_URL}
+      ACCESS_SECRET_KEY: ${ACCESS_SECRET_KEY}
+      REFRESH_SECRET_KEY: ${REFRESH_SECRET_KEY}
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - test-network
+    volumes:
+      - ./e2e_tests:/app/e2e_tests
+      - ./shared:/app/shared
+
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_HOST_PORT:-17379}:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - redis_data:/data
+    networks:
+      - test-network
+
+volumes:
+  users-db-data:
+  transactions-db-data:
+  images-db-data:
+  pseudo-bank-db-data:
+  purposes-db-data:
+  notification-db-data:
+  history-db-data:
+  redis_data:
+
+networks:
+  test-network:
+    driver: bridge

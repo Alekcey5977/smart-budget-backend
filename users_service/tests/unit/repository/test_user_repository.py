@@ -9,9 +9,9 @@ from users_service.app.schemas import UserCreate, UserUpdate
 
 @pytest.mark.asyncio
 async def test_create_user_success(
-        user_repo: UserRepository,
-        mock_db_session,
-        mock_event_publisher,
+    user_repo: UserRepository,
+    mock_db_session,
+    mock_event_publisher,
 ):
     """Тест создания пользователя"""
     # Arrange
@@ -20,7 +20,7 @@ async def test_create_user_success(
         first_name="Ivan",
         last_name="Ivanov",
         middle_name="Ivanovich",
-        password="SecurePassword123!"
+        password="SecurePassword123!",
     )
 
     fake_saved_user = MagicMock()
@@ -114,13 +114,7 @@ async def test_get_by_email_success(user_repo: UserRepository, mock_db_session):
 async def test_update_user_success(user_repo: UserRepository, mock_db_session, mock_event_publisher):
     """Тест успешного обновления пользователя"""
     # Arrange
-    mock_existing_user = MagicMock(
-        id=1,
-        first_name="Old",
-        last_name="Old",
-        middle_name="Old",
-        email="old@test.com"
-    )
+    mock_existing_user = MagicMock(id=1, first_name="Old", last_name="Old", middle_name="Old", email="old@test.com")
 
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = mock_existing_user
@@ -138,7 +132,6 @@ async def test_update_user_success(user_repo: UserRepository, mock_db_session, m
     assert result is not None
     assert result.first_name == "New"
 
-    
     mock_db_session.commit.assert_called_once()
     mock_db_session.refresh.assert_called_once()
 
@@ -174,8 +167,7 @@ async def test_update_user_not_found(user_repo: UserRepository, mock_db_session,
 async def test_update_middle_name_empty_to_null(user_repo: UserRepository, mock_db_session):
     """Тест: middle_name="" преобразуется в None"""
     # Arrange
-    mock_existing_user = MagicMock(
-        middle_name="Old", id=1, first_name="Test", last_name="Test", email="t@t.com")
+    mock_existing_user = MagicMock(middle_name="Old", id=1, first_name="Test", last_name="Test", email="t@t.com")
 
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = mock_existing_user
@@ -199,7 +191,7 @@ async def test_exists_with_email_true(user_repo: UserRepository, mock_db_session
     """Тест: пользователь с email существует"""
     # Arrange
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = MagicMock() 
+    mock_result.scalar_one_or_none.return_value = MagicMock()
     mock_db_session.execute.return_value = mock_result
 
     # Act

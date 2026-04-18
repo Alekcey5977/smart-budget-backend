@@ -4,6 +4,7 @@ Unit-тесты для Pydantic-схем purposes_service.
 Эти тесты НЕ зависят от БД, Redis, HTTP — только чистая валидация.
 Паттерн: для каждого поля проверяем валидный ввод + каждое правило валидации.
 """
+
 import sys
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from app.schemas import PurposeCreate, PurposeResponse, PurposeUpdate  # noqa: E
 from pydantic import ValidationError  # noqa: E402
 
 # ==================== PurposeCreate ====================
+
 
 class TestPurposeCreate:
     """Тесты схемы создания цели."""
@@ -74,6 +76,7 @@ class TestPurposeCreate:
 
 # ==================== PurposeUpdate ====================
 
+
 class TestPurposeUpdate:
     """Тесты схемы обновления цели."""
 
@@ -125,6 +128,7 @@ class TestPurposeUpdate:
 
 
 # ==================== PurposeResponse ====================
+
 
 class TestPurposeResponse:
     """Тесты схемы ответа."""

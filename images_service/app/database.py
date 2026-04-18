@@ -1,46 +1,72 @@
+import asyncio
+import logging
 import os
 
+from app.models import Base
+from dotenv import load_dotenv
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@images-db:5432/images_db"
-)
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Создание async engine
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=True,  # Логирование SQL запросов (отключить в production)
-    poolclass=NullPool,  # Отключение пула соединений для асинхронных операций
-    future=True
-)
+# Загружаем переменные из .env файла
+load_dotenv()
 
-# Создание фабрики сессий
-async_session_maker = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Создание асинхронного соединения для БД
+engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+
+# Создание асинхронных сессий для БД
+AsyncSessionLocal = async_sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False, autoflush=False, autocommit=False
 )
 
 
-async def get_db() -> AsyncSession:
-    """
-    Dependency для получения сессии базы данных.
-
-    Usage:
-        @router.get("/")
-        async def endpoint(db: AsyncSession = Depends(get_db)):
-            # работа с БД
-    """
-    async with async_session_maker() as session:
+# Асинхронное открытие сессии для эндпоинтов при взаимодействии с БД
+async def get_db():
+    async with AsyncSessionLocal() as session:
         try:
             yield session
             await session.commit()
+
         except Exception:
             await session.rollback()
             raise
+
         finally:
             await session.close()
+
+
+# Ожидание готовности базы данных
+async def await_db_ready(retries=30, delay=2):
+    """
+    Пытается подключиться к БД, повторяя попытки при отказе.
+    """
+    for i in range(retries):
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text("SELECT 1"))
+            logger.info("✅ Подключение к базе данных установлено")
+            return
+        except Exception as e:
+            logger.warning(
+                f"❌ Не удалось подключиться к БД, попытка {i+1}/{retries}: {e}")
+            await asyncio.sleep(delay)
+    raise Exception(
+        "❌ Не удалось подключиться к базе данных после всех попыток")
+
+
+# Асинхронное создание таблиц в БД
+async def create_tables():
+    await await_db_ready()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("✅ Таблицы созданы")
+
+
+# Асинхронное закрытие соединений при остановке
+async def shutdown():
+    await engine.dispose()

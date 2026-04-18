@@ -45,7 +45,7 @@ class EventListener:
                             consumername="history-service-consumer",
                             streams={"domain-events": ">"},
                             count=10,
-                            block=5000
+                            block=5000,
                         )
 
                         if messages:
@@ -56,12 +56,14 @@ class EventListener:
 
                                         if payload_json:
                                             if isinstance(payload_json, bytes):
-                                                payload_json = payload_json.decode('utf-8')
+                                                payload_json = payload_json.decode("utf-8")
 
                                             event_dict = json.loads(payload_json)
                                             event = DomainEvent(**event_dict)
 
-                                            logger.info(f"📥 Получено событие: {event.event_type} (ID: {event.event_id})")
+                                            logger.info(
+                                                f"📥 Получено событие: {event.event_type} (ID: {event.event_id})"
+                                            )
 
                                             await self.handle_event(event)
 
@@ -120,11 +122,7 @@ class EventListener:
         """Создаёт запись истории в БД и рассылает по WebSocket"""
         async with get_db_session() as db:
             repo = HistoryRepository(db)
-            entry_data = HistoryEntryCreate(
-                user_id=user_id,
-                title=title,
-                body=body
-            )
+            entry_data = HistoryEntryCreate(user_id=user_id, title=title, body=body)
             saved = await repo.create_entry(entry_data)
 
         ws_payload = self.build_entry_payload(saved)

@@ -56,8 +56,7 @@ class Bank_Account(Transaction_Base):
 
     id = Column(Integer, nullable=False, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, index=True)
-    bank_account_hash = Column(String(64), nullable=False,
-                            unique=True, index=True)
+    bank_account_hash = Column(String(64), nullable=False, unique=True, index=True)
     bank_account_name = Column(String(100), nullable=False)
     bank_id = Column(Integer, ForeignKey("banks.id"), nullable=False)
     currency = Column(String(3), nullable=False)
@@ -72,15 +71,12 @@ class Bank_Account(Transaction_Base):
 class Transaction(Transaction_Base):
     __tablename__ = "transactions"
 
-    id = Column(UUID(as_uuid=True), default=uuid.uuid4,
-                nullable=False, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
-    bank_account_id = Column(Integer, ForeignKey(
-        "bank_accounts.id"), nullable=False)
+    bank_account_id = Column(Integer, ForeignKey("bank_accounts.id"), nullable=False)
     amount = Column(DECIMAL(12, 2), nullable=False)
-    created_at = Column(DateTime(timezone=True),
-                        server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     type = Column(String(30), nullable=False)
     description = Column(String(200), nullable=True)
     merchant_id = Column(Integer, ForeignKey("merchants.id"), nullable=True)
