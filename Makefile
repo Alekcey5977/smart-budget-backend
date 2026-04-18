@@ -64,6 +64,7 @@ start:
 	@echo "Monitoring:"
 	@echo "  Grafana:               http://localhost:3000"
 	@echo "  Prometheus:            http://localhost:9090"
+	@echo "  Redis Commander:       http://localhost:8081"
 	@echo ""
 
 stop:
