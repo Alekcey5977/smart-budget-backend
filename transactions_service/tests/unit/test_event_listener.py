@@ -1,3 +1,4 @@
+import os
 import pathlib
 import sys
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -9,8 +10,6 @@ PROJECT_ROOT = SERVICE_ROOT.parent
 for p in (str(SERVICE_ROOT), str(PROJECT_ROOT)):
     if p not in sys.path:
         sys.path.insert(0, p)
-
-import os
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/test")
 os.environ.setdefault("PSEUDO_BANK_SERVICE_URL", "http://fake-bank-service")
