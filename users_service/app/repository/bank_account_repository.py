@@ -18,7 +18,6 @@ from shared.event_schema import DomainEvent
 logger = logging.getLogger(__name__)
 
 
-TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL")
 PSEUDO_BANK_SERVICE_URL = os.getenv("PSEUDO_BANK_SERVICE_URL")
 
 
@@ -50,17 +49,6 @@ class Bank_AccountRepository:
         )
 
         return existing.scalars().first()
-
-    async def trigger_transaction_sync(self, bank_account_hash: str, user_id: int):
-        """Вызов синхронизации данных в transaction_service"""
-        try:
-            async with httpx.AsyncClient(timeout=3.0) as client:
-                await client.post(
-                    f"{TRANSACTIONS_SERVICE_URL}/transactions/trigger_sync",
-                    json={"bank_account_hash": bank_account_hash, "user_id": user_id},
-                )
-        except Exception as e:
-            logger.error(f"[SYNC ERROR] {e}")
 
     async def calling_validate_account(self, bank_account_hash: str):
         """Вызов валидации счёта в pseudo_bank_service"""
@@ -128,6 +116,7 @@ class Bank_AccountRepository:
             "user_id": user_id,
             "bank_account_id": new_account.bank_account_id,
             "bank_name": bank_account.bank,
+            "bank_account_hash": account_hash,
         }
         publisher = EventPublisher()
         event = DomainEvent(

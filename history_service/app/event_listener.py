@@ -99,6 +99,7 @@ class EventListener:
         "bank_account.added": "_handle_bank_account_added",
         "bank_account.deleted": "_handle_bank_account_deleted",
         "transaction.category.updated": "_handle_transaction_category_updated",
+        "sync.completed": "_handle_sync_completed",
     }
 
     async def _send_history_websocket(self, user_id: int, entry_data: dict):
@@ -267,6 +268,22 @@ class EventListener:
 
         title = "Категория транзакции изменена"
         body = f"Категория изменена: «{old_category}» → «{new_category}»"
+        logger.info(f"📝 История для пользователя {user_id}: {title}")
+
+        await self._create_and_broadcast_entry(user_id, title, body)
+
+    async def _handle_sync_completed(self, event: DomainEvent):
+        """Обработка события завершения синхронизации"""
+        payload = event.payload
+        user_id = self._extract_user_id(payload)
+        if user_id is None:
+            return
+
+        count = payload.get("new_transactions_count", 0)
+        synced_at = payload.get("synced_at", "")
+
+        title = "Синхронизация завершена"
+        body = f"Загружено транзакций: {count}. Время: {synced_at[:19].replace('T', ' ') if synced_at else '—'}"
         logger.info(f"📝 История для пользователя {user_id}: {title}")
 
         await self._create_and_broadcast_entry(user_id, title, body)

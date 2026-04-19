@@ -2,11 +2,16 @@ import logging
 import os
 from datetime import datetime
 from typing import Dict
+from uuid import uuid4
 
 import httpx
+from app.cache import cache_client
 from app.models import Bank, Bank_Account, Category, MCC_Category, Merchant, Transaction
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
+
+from shared.event_publisher import EventPublisher
+from shared.event_schema import DomainEvent
 
 logger = logging.getLogger(__name__)
 PSEUDO_BANK_SERVICE_URL = os.getenv("PSEUDO_BANK_SERVICE_URL")
@@ -110,6 +115,25 @@ class SyncRepository:
         Pseudo bank хранит все данные с user_id=999 (тестовые данные).
         Мы заменяем 999 на реальный user_id при сохранении в нашу БД.
         """
+        lock_key = f"sync:lock:{bank_account_hash}"
+        try:
+            acquired = await cache_client.redis.set(lock_key, 1, nx=True, ex=60)
+        except Exception:
+            acquired = True  # при недоступности Redis не блокируем sync
+
+        if not acquired:
+            logger.info(f"[SYNC] Lock занят для {bank_account_hash}, пропускаем дублирующий запрос")
+            return {"categories": 0, "mcc": 0, "merchants": 0, "banks": 0, "bank_accounts": 0, "transactions": 0}
+
+        try:
+            return await self._do_sync(bank_account_hash, user_id)
+        finally:
+            try:
+                await cache_client.redis.delete(lock_key)
+            except Exception:
+                pass
+
+    async def _do_sync(self, bank_account_hash: str, user_id: int) -> Dict[str, int]:
         logger.info(f"[SYNC] Starting sync for account {bank_account_hash}, user_id={user_id}")
 
         result = await self.db.execute(
@@ -182,6 +206,25 @@ class SyncRepository:
                 )
 
         await self.db.commit()
+
+        try:
+            publisher = EventPublisher()
+            event = DomainEvent(
+                event_id=str(uuid4()),
+                event_type="sync.completed",
+                source="transactions-service",
+                timestamp=datetime.now(),
+                payload={
+                    "user_id": user_id,
+                    "bank_account_hash": bank_account_hash,
+                    "new_transactions_count": stats["transactions"],
+                    "synced_at": datetime.now().isoformat(),
+                },
+            )
+            await publisher.publish(event)
+        except Exception as e:
+            logger.warning(f"[SYNC] Не удалось опубликовать sync.completed: {e}")
+
         return stats
 
     async def get_all_active_account_hashes(self) -> list[tuple[str, int]]:

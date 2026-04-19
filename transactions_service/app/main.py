@@ -1,8 +1,10 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 import uvicorn
 from app.cache import cache_client
 from app.database import AsyncSessionLocal, create_tables
+from app.event_listener import EventListener
 from app.models import *  # noqa: F403
 from app.repository.sync_repository import SyncRepository
 from app.routers import sync, transactions
@@ -51,9 +53,19 @@ async def life_span(app: FastAPI):
     scheduler.start()
     print("[LIFESPAN] Scheduler started (sync every 10 minutes)")
 
+    event_listener = EventListener()
+    listener_task = asyncio.create_task(event_listener.listen())
+    app.state.listener_task = listener_task
+
     yield
 
     print("[LIFESPAN] Shutting down...")
+    if not listener_task.done():
+        listener_task.cancel()
+        try:
+            await listener_task
+        except asyncio.CancelledError:
+            pass
     await cache_client.close()
     await EventPublisher.close()
     scheduler.shutdown(wait=False)
