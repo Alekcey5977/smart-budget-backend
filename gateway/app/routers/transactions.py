@@ -5,6 +5,8 @@ import httpx
 from app.dependencies import get_current_user
 from app.schemas.transaction_schema import (
     CategoryResponse,
+    CategorySummaryRequest,
+    CategorySummaryResponse,
     TransactionFilterRequest,
     TransactionResponse,
     UpdateTransactionCategoryRequest,
@@ -192,6 +194,83 @@ async def update_transaction_category(
                 return response.json()
 
             error_detail = response.json().get("detail", "Failed to update transaction category")
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
+
+        except httpx.ConnectError:
+            raise HTTPException(503, "Transaction service is unavailable")
+        except httpx.TimeoutException:
+            raise HTTPException(504, "Transactions service timeout")
+
+
+@router.post(
+    "/categories/summary",
+    response_model=List[CategorySummaryResponse],
+    summary="Суммы транзакций по категориям",
+    description="""
+Возвращает агрегированные суммы и количество операций по каждой категории пользователя.
+
+**Требует авторизации:** JWT токен в заголовке Authorization.
+
+Категории с нулевой суммой за указанный период не включаются.
+Результат отсортирован по убыванию суммы.
+
+## Примеры запросов
+
+### Расходы за январь
+```json
+{
+    "transaction_type": "expense",
+    "start_date": "2026-01-01T00:00:00",
+    "end_date": "2026-01-31T23:59:59"
+}
+```
+
+### Все доходы за всё время
+```json
+{ "transaction_type": "income" }
+```
+
+### Все операции без фильтров
+```json
+{}
+```
+""",
+    responses={
+        200: {
+            "description": "Список категорий с суммами",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {"category_id": 1, "category_name": "Продукты", "total_amount": 15420.50, "transaction_count": 42},
+                        {"category_id": 2, "category_name": "Транспорт", "total_amount": 3200.00, "transaction_count": 18},
+                    ]
+                }
+            },
+        },
+        401: {"description": "Не авторизован"},
+        503: {"description": "Сервис транзакций недоступен"},
+        504: {"description": "Таймаут сервиса транзакций"},
+    },
+)
+async def get_category_summary(
+    filters: CategorySummaryRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    user_id = current_user["user_id"]
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories/summary",
+                headers={"X-User-ID": str(user_id)},
+                json=filters.model_dump(exclude_none=True, mode="json"),
+                timeout=10.0,
+            )
+
+            if response.status_code == 200:
+                return response.json()
+
+            error_detail = response.json().get("detail", "Failed to get category summary")
             raise HTTPException(status_code=response.status_code, detail=error_detail)
 
         except httpx.ConnectError:

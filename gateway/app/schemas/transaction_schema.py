@@ -48,3 +48,24 @@ class UpdateTransactionCategoryRequest(BaseModel):
     """Схема запроса изменения категории транзакции"""
 
     category_id: int = Field(..., gt=0, description="ID новой категории")
+
+
+class CategorySummaryRequest(BaseModel):
+    """Схема запроса сумм по категориям"""
+
+    transaction_type: Optional[str] = Field(
+        None,
+        description="Тип: 'income' или 'expense'. Без параметра — все типы",
+        pattern="^(income|expense)$",
+    )
+    start_date: Optional[datetime] = Field(None, description="Начало периода (ISO 8601)")
+    end_date: Optional[datetime] = Field(None, description="Конец периода (ISO 8601)")
+
+
+class CategorySummaryResponse(BaseModel):
+    """Сумма транзакций по одной категории"""
+
+    category_id: int
+    category_name: str
+    total_amount: float
+    transaction_count: int

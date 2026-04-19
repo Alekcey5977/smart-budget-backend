@@ -90,6 +90,32 @@ class UpdateTransactionCategoryRequest(BaseModel):
     category_id: int = Field(..., gt=0, description="ID новой категории")
 
 
+class CategorySummaryRequest(BaseModel):
+    """Схема запроса сумм по категориям"""
+
+    transaction_type: Optional[str] = Field(None, description="Тип: 'income' или 'expense'. Без параметра — всё")
+    start_date: Optional[datetime] = Field(None, description="Начало периода")
+    end_date: Optional[datetime] = Field(None, description="Конец периода")
+
+    @field_validator("transaction_type")
+    @classmethod
+    def validate_type(cls, v):
+        if v is not None and v not in ["income", "expense"]:
+            raise ValueError('Type must be "income" or "expense"')
+        return v
+
+
+class CategorySummaryResponse(BaseModel):
+    """Сумма транзакций по одной категории"""
+
+    category_id: int
+    category_name: str
+    total_amount: float
+    transaction_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class SyncTriggerRequest(BaseModel):
     bank_account_hash: str
     user_id: int
