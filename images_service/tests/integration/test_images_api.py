@@ -236,7 +236,7 @@ class TestUpdateMyAvatar:
         mock_event_publisher.publish.assert_called_once()
 
 
-# ==================== GET /images/images/{image_id} ====================
+# ==================== GET /images/{image_id} ====================
 
 
 class TestGetImageById:
@@ -244,7 +244,7 @@ class TestGetImageById:
         """Существующее изображение → 200, бинарные данные совпадают."""
         avatar = await create_default_avatar(db_session)
 
-        response = await client.get(f"/images/images/{avatar.id}")
+        response = await client.get(f"/images/{avatar.id}")
         assert response.status_code == 200
         assert response.content == FAKE_SVG
 
@@ -252,7 +252,7 @@ class TestGetImageById:
         """Content-Type соответствует mime_type изображения."""
         avatar = await create_default_avatar(db_session)
 
-        response = await client.get(f"/images/images/{avatar.id}")
+        response = await client.get(f"/images/{avatar.id}")
         assert response.status_code == 200
         assert FAKE_MIME in response.headers["content-type"]
 
@@ -260,7 +260,7 @@ class TestGetImageById:
         """Cache-Control заголовок присутствует (кэш на год)."""
         avatar = await create_default_avatar(db_session)
 
-        response = await client.get(f"/images/images/{avatar.id}")
+        response = await client.get(f"/images/{avatar.id}")
         assert response.status_code == 200
         assert "cache-control" in response.headers
         assert "max-age" in response.headers["cache-control"]
@@ -268,13 +268,13 @@ class TestGetImageById:
     async def test_nonexistent_image_returns_404(self, client: AsyncClient):
         """Несуществующий ID → 404."""
         fake_id = "00000000-0000-0000-0000-000000000000"
-        response = await client.get(f"/images/images/{fake_id}")
+        response = await client.get(f"/images/{fake_id}")
         assert response.status_code == 404
 
     async def test_no_auth_required(self, client: AsyncClient, db_session: AsyncSession):
         """Публичный эндпоинт — не требует X-User-ID."""
         avatar = await create_default_avatar(db_session)
-        response = await client.get(f"/images/images/{avatar.id}")
+        response = await client.get(f"/images/{avatar.id}")
         assert response.status_code == 200
 
 

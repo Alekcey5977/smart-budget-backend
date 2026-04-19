@@ -13,10 +13,10 @@ import sys
 # Внутри контейнера модули находятся в /app
 sys.path.insert(0, "/app")
 
+import redis.asyncio as aioredis
 from app.models import Base, EntityType, Image
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-import redis.asyncio as aioredis
 
 
 async def load_test_data(database_url: str, json_path: str):
