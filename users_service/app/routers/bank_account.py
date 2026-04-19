@@ -10,7 +10,7 @@ from app.repository.bank_account_repository import Bank_AccountRepository
 from app.repository.user_repository import UserRepository
 from app.routers.users import get_bank_account_repository, get_user_repository
 from app.schemas import Bank_AccountCreate, Bank_accountResponse, oauth2_scheme
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 router = APIRouter(prefix="/me", tags=["bank_account"])
 
@@ -43,8 +43,7 @@ async def get_current_user(
 async def add_bank_account(
     request: Request,
     bank_account: Bank_AccountCreate,
-    background_tasks: BackgroundTasks,
-    user=Depends(get_current_user),  # Используем зависимость
+    user=Depends(get_current_user),
     bank_account_repo: Bank_AccountRepository = Depends(
         get_bank_account_repository),
 ):
@@ -56,10 +55,7 @@ async def add_bank_account(
         raise HTTPException(
             status_code=400, detail="Bank account number must be at least 16 digits")
 
-    new_account, account_hash = await bank_account_repo.create(user_id, bank_account)
-
-    background_tasks.add_task(
-        bank_account_repo.trigger_transaction_sync, account_hash, user_id)
+    new_account, _ = await bank_account_repo.create(user_id, bank_account)
 
     # Инвалидация кэша банковских счетов
     await cache_client.delete(bank_accounts_key(user_id))
