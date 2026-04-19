@@ -54,6 +54,14 @@ export default function (data) {
   const catRes = http.get(`${BASE}/transactions/categories`, { headers: hdrs });
   checkStatus(catRes, 200, 'GET /transactions/categories');
 
+  // 3b. POST /transactions/categories/summary — агрегация по категориям
+  const sumRes = http.post(
+    `${BASE}/transactions/categories/summary`,
+    JSON.stringify({ transaction_type: 'expense' }),
+    { headers: hdrs },
+  );
+  checkStatus(sumRes, 200, 'POST /transactions/categories/summary');
+
   // 4. POST /transactions/ — основной список транзакций
   const txRes = http.post(
     `${BASE}/transactions/`,

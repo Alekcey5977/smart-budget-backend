@@ -40,11 +40,10 @@ class TestPublicEndpoints:
         if not image_id:
             pytest.skip("Avatar has no image_id field")
 
-        # Endpoint: /images/images/{id} (не /images/{id})
-        resp = http_client.get(f"/images/images/{image_id}")
-        
+        resp = http_client.get(f"/images/{image_id}")
+
         if resp.status_code == 404:
-            pytest.skip(f"Image endpoint /images/images/{image_id} returned 404")
+            pytest.skip(f"Image {image_id} not found — run: make load-test-images")
         
         assert resp.status_code == 200
         assert len(resp.content) > 0

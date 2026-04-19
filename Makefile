@@ -1,7 +1,13 @@
-.PHONY: help start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop k6-smoke k6-load k6-stress k6-spike k6-max k6
+.PHONY: help install clean-venvs start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop k6-smoke k6-load k6-stress k6-spike k6-max k6
 
 TEST_PROJECT = smartbudget-test
 TEST_COMPOSE = docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) --env-file .env.test
+
+PYTHON := $(shell python3 --version > /dev/null 2>&1 && echo python3 || echo python)
+# For local venvs: use Python 3.11-3.13 (pydantic-core/asyncpg don't support 3.14 yet)
+PYTHON_VENV := $(shell for v in python3.11 python3.12 python3.13 python3; do \
+	$$v -c "import sys; exit(0 if sys.version_info < (3,14) else 1)" 2>/dev/null && echo $$v && break; \
+done)
 
 help:
 	@echo "Smart Budget Backend - Make Commands"
@@ -20,6 +26,9 @@ help:
 	@echo "  make generate-test-data  - Generate test data files"
 	@echo "  make load-test-data      - Load data into pseudo bank"
 	@echo "  make load-test-images    - Load images (avatars, icons)"
+	@echo ""
+	@echo "Setup:"
+	@echo "  make install           - Create venvs and install deps for all services"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test              - Run unit + integration tests for all services"
@@ -145,13 +154,36 @@ clean:
 		echo "Cleanup cancelled"; \
 	fi
 
+clean-venvs:
+	@echo "Removing all service virtual environments..."
+	@for service in gateway users_service transactions_service purposes_service notification_service history_service images_service pseudo_bank_service; do \
+		rm -rf $$service/.venv; \
+	done
+	@echo "Done! Run 'make install' or 'make test' to recreate them."
+
+install:
+	@echo "Creating virtual environments and installing dependencies..."
+	@if [ -z "$(PYTHON_VENV)" ]; then echo "ERROR: Python 3.11-3.13 required. Install with: brew install python@3.11"; exit 1; fi
+	@for service in gateway users_service transactions_service purposes_service notification_service history_service images_service pseudo_bank_service; do \
+		echo "  $$service..."; \
+		if [ ! -d "$$service/.venv" ]; then \
+			$(PYTHON_VENV) -m venv $$service/.venv; \
+		fi; \
+		$$service/.venv/bin/pip install -q -r $$service/requirements.txt; \
+	done
+	@echo "All dependencies installed!"
+
 test:
 	@echo "Running unit + integration tests for all services..."
 	@echo ""
 	@failed=0; \
 	for service in gateway users_service transactions_service purposes_service notification_service history_service images_service pseudo_bank_service; do \
 		echo "--- $$service ---"; \
-		cd $$service && python -m pytest tests/ -q --tb=short 2>&1; \
+		if [ ! -d "$$service/.venv" ]; then \
+			echo "  Installing deps for $$service..."; \
+			$(PYTHON_VENV) -m venv $$service/.venv && $$service/.venv/bin/pip install -q -r $$service/requirements.txt; \
+		fi; \
+		cd $$service && .venv/bin/python -m pytest tests/ -q --tb=short 2>&1; \
 		if [ $$? -ne 0 ]; then failed=1; fi; \
 		cd ..; \
 	done; \
@@ -169,12 +201,20 @@ test-unit:
 	@failed=0; \
 	for service in gateway users_service transactions_service purposes_service notification_service history_service images_service; do \
 		echo "--- $$service ---"; \
-		cd $$service && python -m pytest tests/unit/ -q --tb=short 2>&1; \
+		if [ ! -d "$$service/.venv" ]; then \
+			echo "  Installing deps for $$service..."; \
+			$(PYTHON_VENV) -m venv $$service/.venv && $$service/.venv/bin/pip install -q -r $$service/requirements.txt; \
+		fi; \
+		cd $$service && .venv/bin/python -m pytest tests/unit/ -q --tb=short 2>&1 || true; \
 		if [ $$? -ne 0 ]; then failed=1; fi; \
 		cd ..; \
 	done; \
 	echo "--- pseudo_bank_service ---"; \
-	cd pseudo_bank_service && python -m pytest tests/ -q --tb=short 2>&1; \
+	if [ ! -d "pseudo_bank_service/.venv" ]; then \
+		echo "  Installing deps for pseudo_bank_service..."; \
+		$(PYTHON_VENV) -m venv pseudo_bank_service/.venv && pseudo_bank_service/.venv/bin/pip install -q -r pseudo_bank_service/requirements.txt; \
+	fi; \
+	cd pseudo_bank_service && .venv/bin/python -m pytest tests/ -q --tb=short 2>&1; \
 	if [ $$? -ne 0 ]; then failed=1; fi; \
 	cd ..; \
 	echo ""; \
@@ -187,24 +227,23 @@ test-unit:
 
 test-e2e-start:
 	@echo "Starting isolated E2E test stack..."
-	@echo "  Gateway:      http://localhost:28000"
-	@echo "  Pseudo Bank:  http://localhost:28004"
+	@echo "  Gateway:      http://localhost:18000"
+	@echo "  Pseudo Bank:  http://localhost:18004"
 	@echo ""
-	$(TEST_COMPOSE) up -d
+	$(TEST_COMPOSE) up -d --build
 	@echo ""
-	@echo "Waiting for services to be ready..."
-	@echo "Polling gateway at http://localhost:28000 ..."
-	@for i in $$(seq 1 60); do \
-		if $(TEST_COMPOSE) exec -T gateway curl -sf http://localhost:8000/health > /dev/null 2>&1; then \
+	@echo "Waiting for gateway to be ready..."
+	@for i in $$(seq 1 40); do \
+		if curl -sf http://localhost:18000/health > /dev/null 2>&1; then \
 			echo "Gateway is ready!"; \
 			break; \
 		fi; \
-		if [ $$i -eq 60 ]; then \
-			echo "ERROR: Gateway failed to start after 60 attempts"; \
+		if [ $$i -eq 40 ]; then \
+			echo "ERROR: Gateway did not respond after 40 attempts (2 min)"; \
 			$(TEST_COMPOSE) logs gateway; \
 			exit 1; \
 		fi; \
-		echo "  waiting... ($$i/60)"; \
+		echo "  waiting... ($$i/40)"; \
 		sleep 3; \
 	done
 	@echo ""
@@ -228,10 +267,10 @@ test-e2e-start:
 	@sleep 6
 	@echo ""
 	@echo "Loading test data into pseudo bank..."
-	$(TEST_COMPOSE) exec -T pseudo-bank-service /app/scripts/load_test_data.sh
+	cd testData && $(PYTHON) load_pseudo_bank_data.py http://localhost:18004
 	@echo ""
 	@echo "Loading test images..."
-	$(TEST_COMPOSE) exec -w /app images-service python /testData/load_test_images.py
+	$(TEST_COMPOSE) exec -w /app images-service python3 /testData/load_test_images.py
 	@echo ""
 	@echo "Test stack ready! Run: make test-e2e"
 	@echo "  Gateway:    http://localhost:18000"
@@ -249,7 +288,7 @@ test-e2e:
 	@echo "Running E2E tests against isolated test stack..."
 	@echo "Requires: make test-e2e-start"
 	@echo ""
-	docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) exec -e GATEWAY_URL=http://localhost:8000 -T gateway pytest e2e_tests/ -v --tb=short
+	docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) exec -e GATEWAY_URL=http://localhost:8000 -T gateway python3 -m pytest e2e_tests/ -v --tb=short
 	@echo ""
 
 K6_BASE_URL ?= http://localhost:18000

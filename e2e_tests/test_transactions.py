@@ -190,6 +190,39 @@ class TestGetTransactions:
         assert resp.status_code == 401
 
 
+class TestCategorySummary:
+    def test_summary_returns_list(self, http_client, auth_headers, bank_account):
+        _, headers = auth_headers
+        http_client.post("/sync/", headers=headers)
+        resp = http_client.post(
+            "/transactions/categories/summary",
+            json={},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_summary_filter_by_type(self, http_client, auth_headers, bank_account):
+        _, headers = auth_headers
+        http_client.post("/sync/", headers=headers)
+        resp = http_client.post(
+            "/transactions/categories/summary",
+            json={"transaction_type": "expense"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        for item in resp.json():
+            assert "category_id" in item
+            assert "category_name" in item
+            assert "total_amount" in item
+            assert "transaction_count" in item
+            assert item["total_amount"] > 0
+
+    def test_summary_without_token_returns_401(self, http_client):
+        resp = http_client.post("/transactions/categories/summary", json={})
+        assert resp.status_code == 401
+
+
 class TestUpdateTransactionCategory:
     async def _get_transaction_id(self, http_client, headers):
         """Синхронизируем и возвращаем первую транзакцию (с polling)."""

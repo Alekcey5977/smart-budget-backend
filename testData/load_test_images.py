@@ -16,6 +16,7 @@ sys.path.insert(0, "/app")
 from app.models import Base, EntityType, Image
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+import redis.asyncio as aioredis
 
 
 async def load_test_data(database_url: str, json_path: str):
@@ -93,6 +94,19 @@ async def load_test_data(database_url: str, json_path: str):
     await engine.dispose()
 
 
+async def flush_image_cache():
+    """Сбросить кэш изображений в Redis после перезагрузки данных."""
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+    try:
+        r = aioredis.from_url(redis_url, decode_responses=True)
+        keys = ["images:default_avatars", "images:mapping:categories", "images:mapping:merchants"]
+        deleted = await r.delete(*keys)
+        await r.aclose()
+        print(f"Cache flushed: {deleted} key(s) removed")
+    except Exception as e:
+        print(f"Warning: could not flush Redis cache: {e}")
+
+
 async def main():
     """Главная функция"""
     # URL базы данных внутри Docker сети
@@ -107,6 +121,7 @@ async def main():
 
     try:
         await load_test_data(database_url, json_path)
+        await flush_image_cache()
         print("\n" + "=" * 60)
         print("[DONE] Test data loaded successfully!")
         print("=" * 60)

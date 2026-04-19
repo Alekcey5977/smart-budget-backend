@@ -84,6 +84,14 @@ export default function (users) {
   const catRes = http.get(`${BASE}/transactions/categories`, { headers: hdrs });
   checkStatus(catRes, 200, 'GET /transactions/categories');
 
+  // Суммы по категориям — GROUP BY запрос, не кэшируется
+  const sumRes = http.post(
+    `${BASE}/transactions/categories/summary`,
+    JSON.stringify({}),
+    { headers: hdrs },
+  );
+  checkStatus(sumRes, 200, 'POST /transactions/categories/summary');
+
   const txRes = http.post(
     `${BASE}/transactions/`,
     JSON.stringify({ limit: 50 }),
