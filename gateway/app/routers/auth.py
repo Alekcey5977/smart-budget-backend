@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict
 
 import httpx
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_current_user_with_profile, get_http_client
 from app.schemas.authorization_schemas import RegisterRequest, UserLogin, UserUpdateRequest
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
@@ -94,19 +94,19 @@ async def register(user_data: RegisterRequest):
     - `503 Service Unavailable` - Сервис пользователей временно недоступен
     """
 
-    async with httpx.AsyncClient() as client:
-        try:
-            request_data = user_data.model_dump()
+    client = get_http_client()
+    try:
+        request_data = user_data.model_dump()
 
-            response = await client.post(f"{USERS_SERVICE_URL}/users/register", json=request_data, timeout=30.0)
+        response = await client.post(f"{USERS_SERVICE_URL}/users/register", json=request_data, timeout=30.0)
 
-            if response.status_code >= 400:
-                error_detail = response.json().get("detail", "Registration failed")
-                raise HTTPException(status_code=response.status_code, detail=error_detail)
-            return response.json()
+        if response.status_code >= 400:
+            error_detail = response.json().get("detail", "Registration failed")
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        return response.json()
 
-        except httpx.ConnectError:
-            raise HTTPException(status_code=503, detail="Users service unavailable")
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="Users service unavailable")
 
 
 # ----------------------------
@@ -159,28 +159,28 @@ async def login(response: Response, user_data: UserLogin):
     - `503 Service Unavailable` - Сервис пользователей временно недоступен
     """
 
-    async with httpx.AsyncClient() as client:
-        try:
-            request_data = user_data.model_dump()
+    client = get_http_client()
+    try:
+        request_data = user_data.model_dump()
 
-            response_internal = await client.post(f"{USERS_SERVICE_URL}/users/login", json=request_data, timeout=15.0)
+        response_internal = await client.post(f"{USERS_SERVICE_URL}/users/login", json=request_data, timeout=15.0)
 
-            if response_internal.status_code >= 400:
-                raise HTTPException(
-                    status_code=response_internal.status_code,
-                    detail=response_internal.json().get("detail", "Login failed"),
-                )
+        if response_internal.status_code >= 400:
+            raise HTTPException(
+                status_code=response_internal.status_code,
+                detail=response_internal.json().get("detail", "Login failed"),
+            )
 
-            result = response_internal.json()
+        result = response_internal.json()
 
-            if "set-cookie" in response_internal.headers:
-                refresh_cookie = response_internal.headers["set-cookie"]
-                response.headers["set-cookie"] = refresh_cookie
+        if "set-cookie" in response_internal.headers:
+            refresh_cookie = response_internal.headers["set-cookie"]
+            response.headers["set-cookie"] = refresh_cookie
 
-            return result
+        return result
 
-        except httpx.ConnectError:
-            raise HTTPException(status_code=503, detail="Users service unavailable")
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="Users service unavailable")
 
 
 # ----------------------------
@@ -220,28 +220,28 @@ async def refresh_token(response: Response, request: Request):
     - `503 Service Unavailable` - Сервис пользователей временно недоступен
     """
 
-    async with httpx.AsyncClient() as client:
-        try:
-            cookies = {"refresh_token": request.cookies.get("refresh_token", "")}
+    client = get_http_client()
+    try:
+        cookies = {"refresh_token": request.cookies.get("refresh_token", "")}
 
-            response_internal = await client.post(f"{USERS_SERVICE_URL}/users/refresh", cookies=cookies, timeout=15.0)
+        response_internal = await client.post(f"{USERS_SERVICE_URL}/users/refresh", cookies=cookies, timeout=15.0)
 
-            if response_internal.status_code >= 400:
-                raise HTTPException(
-                    status_code=response_internal.status_code,
-                    detail=response_internal.json().get("detail", "Token refresh failed"),
-                )
+        if response_internal.status_code >= 400:
+            raise HTTPException(
+                status_code=response_internal.status_code,
+                detail=response_internal.json().get("detail", "Token refresh failed"),
+            )
 
-            result = response_internal.json()
+        result = response_internal.json()
 
-            if "set-cookie" in response_internal.headers:
-                refresh_cookie = response_internal.headers["set-cookie"]
-                response.headers["set-cookie"] = refresh_cookie
+        if "set-cookie" in response_internal.headers:
+            refresh_cookie = response_internal.headers["set-cookie"]
+            response.headers["set-cookie"] = refresh_cookie
 
-            return result
+        return result
 
-        except httpx.ConnectError:
-            raise HTTPException(status_code=503, detail="Users service unavailable")
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="Users service unavailable")
 
 
 # ----------------------------
@@ -274,30 +274,30 @@ async def logout(response: Response):
     💡 **Примечание:** Cookie удаляется даже при недоступности сервиса пользователей
     """
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response_internal = await client.post(f"{USERS_SERVICE_URL}/users/logout", timeout=10.0)
+    client = get_http_client()
+    try:
+        response_internal = await client.post(f"{USERS_SERVICE_URL}/users/logout", timeout=10.0)
 
-            response.delete_cookie(key="refresh_token", secure=False, samesite="strict")
+        response.delete_cookie(key="refresh_token", secure=False, samesite="strict")
 
-            if response_internal.status_code >= 400:
-                raise HTTPException(
-                    status_code=response_internal.status_code,
-                    detail=response_internal.json().get("detail", "Logout failed"),
-                )
+        if response_internal.status_code >= 400:
+            raise HTTPException(
+                status_code=response_internal.status_code,
+                detail=response_internal.json().get("detail", "Logout failed"),
+            )
 
-            return {"msg": "Logged out"}
+        return {"msg": "Logged out"}
 
-        except httpx.ConnectError:
-            response.delete_cookie(key="refresh_token", secure=False, samesite="strict")
-            raise HTTPException(status_code=503, detail="Users service unavailable")
+    except httpx.ConnectError:
+        response.delete_cookie(key="refresh_token", secure=False, samesite="strict")
+        raise HTTPException(status_code=503, detail="Users service unavailable")
 
 
 # ----------------------------
 # Получение текущего пользователя
 # ----------------------------
 @router.get("/me")
-async def get_me(current_user: Dict[Any, Any] = Depends(get_current_user)):
+async def get_me(current_user: Dict[Any, Any] = Depends(get_current_user_with_profile)):
     """
     Получение данных текущего аутентифицированного пользователя.
 
@@ -361,7 +361,7 @@ async def get_me(current_user: Dict[Any, Any] = Depends(get_current_user)):
 # ----------------------------
 @router.put("/me")
 async def update_me(
-    update_data: UserUpdateRequest, current_user: Dict[str, Any] = Depends(get_current_user), request: Request = None
+    update_data: UserUpdateRequest, current_user: Dict[str, Any] = Depends(get_current_user_with_profile), request: Request = None
 ):
     """
     Обновление данных профиля текущего пользователя.
@@ -435,23 +435,23 @@ async def update_me(
 
     """
 
-    async with httpx.AsyncClient() as client:
-        try:
-            request_data = update_data.model_dump(exclude_unset=True)
+    client = get_http_client()
+    try:
+        request_data = update_data.model_dump(exclude_unset=True)
 
-            refresh_token = request.cookies.get("refresh_token") if request else None
+        refresh_token = request.cookies.get("refresh_token") if request else None
 
-            headers = {"Authorization": f"Bearer {current_user['token']}", "Content-Type": "application/json"}
-            cookies = {"refresh_token": refresh_token} if refresh_token else {}
+        headers = {"Authorization": f"Bearer {current_user['token']}", "Content-Type": "application/json"}
+        cookies = {"refresh_token": refresh_token} if refresh_token else {}
 
-            response = await client.put(
-                f"{USERS_SERVICE_URL}/users/me", json=request_data, headers=headers, cookies=cookies, timeout=15.0
-            )
+        response = await client.put(
+            f"{USERS_SERVICE_URL}/users/me", json=request_data, headers=headers, cookies=cookies, timeout=15.0
+        )
 
-            if response.status_code >= 400:
-                error_detail = response.json().get("detail", "Update failed")
-                raise HTTPException(status_code=response.status_code, detail=error_detail)
-            return response.json()
+        if response.status_code >= 400:
+            error_detail = response.json().get("detail", "Update failed")
+            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        return response.json()
 
-        except httpx.ConnectError:
-            raise HTTPException(status_code=503, detail="Users service unavailable")
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="Users service unavailable")
