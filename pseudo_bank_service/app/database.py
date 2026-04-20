@@ -19,7 +19,9 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Создание асинхронного соединения для БД
-engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_size=20, max_overflow=40, pool_pre_ping=True)
+# pool_size/max_overflow not supported by SQLite (used in tests)
+_pool_kwargs = {} if (DATABASE_URL or "").startswith("sqlite") else {"pool_size": 20, "max_overflow": 40, "pool_pre_ping": True}
+engine = create_async_engine(DATABASE_URL, echo=False, future=True, **_pool_kwargs)
 
 # Создание асинхронных сессий дл БД
 AsyncSessionLocal = async_sessionmaker(
