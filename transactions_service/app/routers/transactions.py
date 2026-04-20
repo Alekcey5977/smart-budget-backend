@@ -15,6 +15,8 @@ from app.dependencies import get_user_id_from_header
 from app.repository.transactions_repository import TransactionRepository
 from app.schemas import (
     CategoryResponse,
+    CategorySummaryRequest,
+    CategorySummaryResponse,
     TransactionFilterRequest,
     TransactionResponse,
     UpdateTransactionCategoryRequest,
@@ -207,6 +209,38 @@ async def get_categories(
 
         return result
 
+    except Exception as e:
+        raise HTTPException(500, f"Internal server error: {str(e)}")
+
+
+@router.post(
+    "/categories/summary",
+    response_model=List[CategorySummaryResponse],
+    summary="Суммы транзакций по категориям",
+    description="Возвращает агрегированные суммы и количество операций по каждой категории. Категории с нулевой суммой не включаются. Результат отсортирован по убыванию суммы.",
+)
+async def get_category_summary(
+    filters: CategorySummaryRequest,
+    user_id: int = Depends(get_user_id_from_header),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        repo = TransactionRepository(db)
+        rows = await repo.get_category_summary(
+            user_id=user_id,
+            transaction_type=filters.transaction_type,
+            start_date=filters.start_date,
+            end_date=filters.end_date,
+        )
+        return [
+            {
+                "category_id": row.category_id,
+                "category_name": row.category_name,
+                "total_amount": float(row.total_amount),
+                "transaction_count": row.transaction_count,
+            }
+            for row in rows
+        ]
     except Exception as e:
         raise HTTPException(500, f"Internal server error: {str(e)}")
 

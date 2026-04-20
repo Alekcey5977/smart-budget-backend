@@ -24,20 +24,9 @@ scrape_configs:
         target_label: "log_stream"
       - source_labels: ["__meta_docker_container_label_compose_service"]
         target_label: "compose_service"
-      - source_labels: ["__meta_docker_container_label_loki_job"]
-        target_label: "job"
     pipeline_stages:
       - regex:
           expression: '^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+\[(?P<level>[A-Z]+)\]'
       - labels:
           level:
 
-  # Сбор логов с хоста
-  - job_name: host-logs
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: host-logs
-          host: ${HOSTNAME}
-          __path__: /var/log/*.log

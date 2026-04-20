@@ -17,7 +17,7 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "links": [],
   "panels": [
     {
@@ -764,12 +764,12 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{compose_service=~\"$service\"} | level = \"WARNING\"",
+          "expr": "{compose_service=~\"$service\"} | level =~ \"WARNING|ERROR|CRITICAL\"",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "⚠️ Логи с ошибками",
+      "title": "⚠️ Логи WARNING / ERROR / CRITICAL",
       "type": "logs"
     }
   ],
@@ -828,7 +828,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Application Logs + Errors by Method Copy",
+  "title": "📋 Application Logs",
   "uid": "adds4kq",
   "version": 1,
   "weekStart": ""

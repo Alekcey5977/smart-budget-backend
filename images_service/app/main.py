@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from shared.event_publisher import EventPublisher
 from shared.logging import LoggingMiddleware, setup_logging
 
 setup_logging(service_name="images-service")
@@ -23,10 +24,12 @@ async def lifespan(_app: FastAPI):
     """
     # Startup: Создание таблиц
     await cache_client.connect()
+    await EventPublisher.connect()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
     await cache_client.close()
+    await EventPublisher.close()
 
     # Shutdown: Закрытие соединений
     await engine.dispose()

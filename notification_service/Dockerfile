@@ -5,4 +5,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY .env .env
 COPY ./shared ./shared
 COPY notification_service/app ./app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8006"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8006", "--workers", "4", "--backlog", "4096"]

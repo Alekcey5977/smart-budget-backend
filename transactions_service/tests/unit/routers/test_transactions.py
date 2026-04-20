@@ -421,3 +421,79 @@ class TestGetCategoryById:
             response = client.get("/transactions/categories/9999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestCategorySummary:
+    """Тесты для агрегации транзакций по категориям"""
+
+    @pytest.fixture
+    def mock_db_session(self):
+        return AsyncMock()
+
+    @pytest.fixture
+    def client(self, mock_db_session):
+        test_app = FastAPI()
+        test_app.include_router(transactions.router)
+        test_app.dependency_overrides[get_db] = lambda: mock_db_session
+        test_app.dependency_overrides[get_user_id_from_header] = lambda: 123
+        return TestClient(test_app)
+
+    @pytest.fixture
+    def sample_rows(self):
+        row1 = MagicMock()
+        row1.category_id = 1
+        row1.category_name = "Продукты"
+        row1.total_amount = 1500.0
+        row1.transaction_count = 10
+        row2 = MagicMock()
+        row2.category_id = 2
+        row2.category_name = "Транспорт"
+        row2.total_amount = 500.0
+        row2.transaction_count = 5
+        return [row1, row2]
+
+    @pytest.mark.asyncio
+    async def test_summary_success(self, client, mock_db_session, sample_rows):
+        mock_repo = MagicMock()
+        mock_repo.get_category_summary = AsyncMock(return_value=sample_rows)
+
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo):
+            response = client.post("/transactions/categories/summary", json={})
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data) == 2
+        assert data[0]["category_id"] == 1
+        assert data[0]["category_name"] == "Продукты"
+        assert data[0]["total_amount"] == 1500.0
+        assert data[0]["transaction_count"] == 10
+
+    @pytest.mark.asyncio
+    async def test_summary_empty(self, client, mock_db_session):
+        mock_repo = MagicMock()
+        mock_repo.get_category_summary = AsyncMock(return_value=[])
+
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo):
+            response = client.post("/transactions/categories/summary", json={})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+    @pytest.mark.asyncio
+    async def test_summary_filter_passed_to_repo(self, client, mock_db_session):
+        mock_repo = MagicMock()
+        mock_repo.get_category_summary = AsyncMock(return_value=[])
+
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo):
+            response = client.post(
+                "/transactions/categories/summary",
+                json={"transaction_type": "expense"},
+            )
+
+        assert response.status_code == status.HTTP_200_OK
+        mock_repo.get_category_summary.assert_called_once_with(
+            user_id=123,
+            transaction_type="expense",
+            start_date=None,
+            end_date=None,
+        )

@@ -6,6 +6,14 @@ import pytest
 PSEUDO_URL = os.getenv("PSEUDO_BANK_SERVICE_URL")
 
 
+def _make_redis_mock(lock_acquired=True):
+    """Возвращает мок Redis с настроенным SET NX и DELETE"""
+    mock_redis = AsyncMock()
+    mock_redis.set = AsyncMock(return_value=lock_acquired)
+    mock_redis.delete = AsyncMock()
+    return mock_redis
+
+
 class TestSyncRepository:
     """Тесты для SyncRepository"""
 
@@ -98,13 +106,22 @@ class TestSyncRepository:
         mock_client_instance = AsyncMock()
         mock_client_instance.get.return_value = mock_response
 
-        with patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client:
-            # Настраиваем вход в контекстный менеджер: __aenter__ возвращает наш мок клиента
+        mock_redis = _make_redis_mock(lock_acquired=True)
+
+        with (
+            patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client,
+            patch("app.repository.sync_repository.cache_client") as mock_cache,
+            patch("app.repository.sync_repository.EventPublisher") as mock_publisher_cls,
+        ):
             mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+            mock_cache.redis = mock_redis
+            mock_publisher = AsyncMock()
+            mock_publisher.publish = AsyncMock()
+            mock_publisher_cls.return_value = mock_publisher
 
             stats = await sync_repository.sync_by_account(acc_hash, user_id)
 
-        # Проверки
+        # Проверки результата
         assert stats["transactions"] == 1
         assert stats["categories"] == 1
         mock_db_session.commit.assert_awaited_once()
@@ -112,6 +129,30 @@ class TestSyncRepository:
         # Проверяем URL
         expected_url = f"{PSEUDO_URL}/pseudo_bank/account/{acc_hash}/export"
         mock_client_instance.get.assert_awaited_once_with(expected_url)
+
+        # Проверяем Redis lock: SET NX → DELETE
+        mock_redis.set.assert_awaited_once_with(f"sync:lock:{acc_hash}", 1, nx=True, ex=60)
+        mock_redis.delete.assert_awaited_once_with(f"sync:lock:{acc_hash}")
+
+        # Проверяем публикацию sync.completed
+        mock_publisher.publish.assert_awaited_once()
+        published_event = mock_publisher.publish.await_args.args[0]
+        assert published_event.event_type == "sync.completed"
+        assert published_event.payload["user_id"] == user_id
+        assert published_event.payload["new_transactions_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_sync_by_account_skips_when_lock_taken(self, sync_repository, mock_db_session):
+        """Если Redis lock занят — sync не выполняется, возвращается пустой результат"""
+        mock_redis = _make_redis_mock(lock_acquired=False)
+
+        with patch("app.repository.sync_repository.cache_client") as mock_cache:
+            mock_cache.redis = mock_redis
+            stats = await sync_repository.sync_by_account("locked_hash", 123)
+
+        assert stats["transactions"] == 0
+        assert stats["categories"] == 0
+        mock_db_session.execute.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_sync_by_account_not_found(self, sync_repository, mock_db_session):
@@ -126,11 +167,19 @@ class TestSyncRepository:
         mock_client_instance = AsyncMock()
         mock_client_instance.get.return_value = mock_response
 
-        with patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client:
+        mock_redis = _make_redis_mock(lock_acquired=True)
+
+        with (
+            patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client,
+            patch("app.repository.sync_repository.cache_client") as mock_cache,
+        ):
             mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+            mock_cache.redis = mock_redis
 
             with pytest.raises(ValueError, match="not found in pseudo_bank"):
                 await sync_repository.sync_by_account("missing_hash", 123)
+
+        mock_redis.delete.assert_awaited_once_with("sync:lock:missing_hash")
 
     @pytest.mark.asyncio
     async def test_sync_by_account_updates_last_synced(self, sync_repository, mock_db_session):
@@ -179,8 +228,16 @@ class TestSyncRepository:
         mock_client_instance = AsyncMock()
         mock_client_instance.get.return_value = mock_response
 
-        with patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client:
+        mock_redis = _make_redis_mock(lock_acquired=True)
+
+        with (
+            patch("app.repository.sync_repository.httpx.AsyncClient") as mock_async_client,
+            patch("app.repository.sync_repository.cache_client") as mock_cache,
+            patch("app.repository.sync_repository.EventPublisher") as mock_publisher_cls,
+        ):
             mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+            mock_cache.redis = mock_redis
+            mock_publisher_cls.return_value.publish = AsyncMock()
 
             await sync_repository.sync_by_account("h1", 1)
 

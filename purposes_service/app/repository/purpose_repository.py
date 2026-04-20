@@ -81,7 +81,6 @@ class PurposeRepository:
     async def get_purposes_by_user(self, user_id: int):
         """Получение целей пользователя"""
         result = await self.db.execute(select(Purpose).where(Purpose.user_id == user_id))
-
         return list(result.scalars().all())
 
     async def update_purpose(self, user_id: int, purpose_id: UUID, update_data: dict):

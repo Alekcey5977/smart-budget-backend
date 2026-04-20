@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 import httpx
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_http_client
 from app.schemas.purpose_schema import PurposeCreate, PurposeResponse, PurposeUpdate
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -49,27 +49,27 @@ async def create_purpose(purpose: PurposeCreate, current_user: Dict[str, Any] = 
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.post(
-                f"{PURPOSES_SERVICE_URL}/purpose/create",
-                headers=headers,
-                json=purpose.model_dump(mode="json"),
-                timeout=10.0,
-            )
+        response = await client.post(
+            f"{PURPOSES_SERVICE_URL}/purpose/create",
+            headers=headers,
+            json=purpose.model_dump(mode="json"),
+            timeout=10.0,
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to create purpose")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to create purpose")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Purposes service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Purposes service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Purposes service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Purposes service timeout")
 
 
 @router.get(
@@ -115,22 +115,22 @@ async def get_purposes_by_user(current_user: Dict[str, Any] = Depends(get_curren
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.get(f"{PURPOSES_SERVICE_URL}/purpose/my", headers=headers, timeout=10.0)
+        response = await client.get(f"{PURPOSES_SERVICE_URL}/purpose/my", headers=headers, timeout=10.0)
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get purposes")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get purposes")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Purposes service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Purposes service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Purposes service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Purposes service timeout")
 
 
 @router.put(
@@ -171,27 +171,27 @@ async def update_purpose(
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.put(
-                f"{PURPOSES_SERVICE_URL}/purpose/update/{purpose_id}",
-                headers=headers,
-                json=purpose_update.model_dump(exclude_none=True, mode="json"),
-                timeout=10.0,
-            )
+        response = await client.put(
+            f"{PURPOSES_SERVICE_URL}/purpose/update/{purpose_id}",
+            headers=headers,
+            json=purpose_update.model_dump(exclude_none=True, mode="json"),
+            timeout=10.0,
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to update purpose")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to update purpose")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Purposes service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Purposes service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Purposes service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Purposes service timeout")
 
 
 @router.delete(
@@ -219,21 +219,21 @@ async def delete_purpose(purpose_id: UUID, current_user: Dict[str, Any] = Depend
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.delete(
-                f"{PURPOSES_SERVICE_URL}/purpose/delete/{purpose_id}", headers=headers, timeout=10.0
-            )
+        response = await client.delete(
+            f"{PURPOSES_SERVICE_URL}/purpose/delete/{purpose_id}", headers=headers, timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to delete purpose")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to delete purpose")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Purposes service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Purposes service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Purposes service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Purposes service timeout")

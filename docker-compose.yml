@@ -368,7 +368,7 @@ services:
 
   # --- Redis Commander (веб-интерфейс для Redis) ---
   redis-commander:
-    image: rediscommander/redis-commander:latest
+    image: ghcr.io/joeferner/redis-commander:latest
     container_name: smartbudget-redis-commander
     ports:
       - "8081:8081"
@@ -383,14 +383,15 @@ services:
   # --- Prometheus ---
   prometheus:
     image: prom/prometheus
-    container_name: smartbudget-prometheus
+    container_name: prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command:
-      - "--config.file=/etc/prometheus/pr`ometheus.yml"
+      - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-remote-write-receiver"
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_HOST_PORT:-9090}:9090"
     depends_on:
       - users-service
       - transactions-service
@@ -405,9 +406,9 @@ services:
   # --- Loki (для сбора и хранения логов) ---
   loki:
     image: grafana/loki:latest
-    container_name: smartbudget-loki
+    container_name: loki
     ports:
-      - "3100:3100"
+      - "${LOKI_HOST_PORT:-3100}:3100"
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - monitoring-net
@@ -415,7 +416,7 @@ services:
   # --- Promtail (для сбора логов с контейнеров и отправки в Loki) ---
   promtail:
     image: grafana/promtail:latest
-    container_name: smartbudget-promtail
+    container_name: promtail
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./promtail-config.yml:/etc/promtail/config.yml:ro
@@ -428,9 +429,9 @@ services:
   # --- Grafana ---
   grafana:
     image: grafana/grafana
-    container_name: smartbudget-grafana
+    container_name: grafana
     ports:
-      - "3000:3000"
+      - "${GRAFANA_HOST_PORT:-3000}:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:

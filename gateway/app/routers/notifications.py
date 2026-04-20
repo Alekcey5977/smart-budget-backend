@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 import httpx
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_http_client
 from app.schemas.notification_schema import MarkAsReadResponse, NotificationResponse, UnreadCountResponse
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -77,27 +77,27 @@ async def get_user_notifications(
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.get(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/user/me",
-                headers=headers,
-                params={"skip": skip, "limit": limit},
-                timeout=10.0,
-            )
+        response = await client.get(
+            f"{NOTIFICATION_SERVICE_URL}/notifications/user/me",
+            headers=headers,
+            params={"skip": skip, "limit": limit},
+            timeout=10.0,
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get notifications")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get notifications")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Notification service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Notification service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Notification service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Notification service timeout")
 
 
 @router.get(
@@ -129,24 +129,24 @@ async def get_unread_count(current_user: Dict[str, Any] = Depends(get_current_us
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.get(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/user/me/unread/count", headers=headers, timeout=10.0
-            )
+        response = await client.get(
+            f"{NOTIFICATION_SERVICE_URL}/notifications/user/me/unread/count", headers=headers, timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get unread count")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get unread count")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Notification service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Notification service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Notification service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Notification service timeout")
 
 
 @router.get(
@@ -174,23 +174,23 @@ async def get_notification_by_id(notification_id: UUID, current_user: Dict[str, 
 
     Возвращает полную информацию об уведомлении.
     """
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}", timeout=10.0)
+    client = get_http_client()
+    try:
+        response = await client.get(f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}", timeout=10.0)
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            if response.status_code == 404:
-                raise HTTPException(404, "Notification not found")
+        if response.status_code == 404:
+            raise HTTPException(404, "Notification not found")
 
-            error_detail = response.json().get("detail", "Failed to get notification")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get notification")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Notification service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Notification service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Notification service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Notification service timeout")
 
 
 @router.post(
@@ -228,29 +228,29 @@ async def mark_as_read(notification_id: UUID, current_user: Dict[str, Any] = Dep
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.post(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}/mark-as-read",
-                headers=headers,
-                timeout=10.0,
-            )
+        response = await client.post(
+            f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}/mark-as-read",
+            headers=headers,
+            timeout=10.0,
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            if response.status_code == 404:
-                raise HTTPException(404, "Notification not found or access denied")
+        if response.status_code == 404:
+            raise HTTPException(404, "Notification not found or access denied")
 
-            error_detail = response.json().get("detail", "Failed to mark notification as read")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to mark notification as read")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Notification service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Notification service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Notification service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Notification service timeout")
 
 
 @router.post(
@@ -289,24 +289,24 @@ async def mark_all_as_read(current_user: Dict[str, Any] = Depends(get_current_us
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.post(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/mark-all-as-read", headers=headers, timeout=10.0
-            )
+        response = await client.post(
+            f"{NOTIFICATION_SERVICE_URL}/notifications/mark-all-as-read", headers=headers, timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to mark all notifications as read")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to mark all notifications as read")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Notification service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Notification service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Notification service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Notification service timeout")
 
 
 @router.delete(
@@ -342,24 +342,24 @@ async def delete_notification(notification_id: UUID, current_user: Dict[str, Any
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.delete(
-                f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}", headers=headers, timeout=10.0
-            )
+        response = await client.delete(
+            f"{NOTIFICATION_SERVICE_URL}/notifications/{notification_id}", headers=headers, timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            if response.status_code == 404:
-                raise HTTPException(404, "Notification not found or access denied")
+        if response.status_code == 404:
+            raise HTTPException(404, "Notification not found or access denied")
 
-            error_detail = response.json().get("detail", "Failed to delete notification")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to delete notification")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Notification service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Notification service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Notification service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Notification service timeout")

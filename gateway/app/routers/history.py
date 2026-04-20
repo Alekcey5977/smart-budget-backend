@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 import httpx
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_http_client
 from app.schemas.history_schema import DeleteResponse, HistoryEntryResponse
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -76,25 +76,25 @@ async def get_user_history(
     """Проксирует запрос на получение истории к history-service."""
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(
-                f"{HISTORY_SERVICE_URL}/history/user/me",
-                headers={"X-User-ID": str(user_id)},
-                params={"skip": skip, "limit": limit},
-                timeout=10.0,
-            )
+    client = get_http_client()
+    try:
+        response = await client.get(
+            f"{HISTORY_SERVICE_URL}/history/user/me",
+            headers={"X-User-ID": str(user_id)},
+            params={"skip": skip, "limit": limit},
+            timeout=10.0,
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get history")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get history")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "History service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "History service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "History service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "History service timeout")
 
 
 @router.get(
@@ -131,23 +131,23 @@ async def get_user_history(
 )
 async def get_history_entry(entry_id: UUID, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Проксирует запрос на получение записи истории к history-service."""
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{HISTORY_SERVICE_URL}/history/{entry_id}", timeout=10.0)
+    client = get_http_client()
+    try:
+        response = await client.get(f"{HISTORY_SERVICE_URL}/history/{entry_id}", timeout=10.0)
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            if response.status_code == 404:
-                raise HTTPException(404, "History entry not found")
+        if response.status_code == 404:
+            raise HTTPException(404, "History entry not found")
 
-            error_detail = response.json().get("detail", "Failed to get history entry")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get history entry")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "History service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "History service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "History service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "History service timeout")
 
 
 @router.delete(
@@ -179,22 +179,22 @@ async def delete_history_entry(entry_id: UUID, current_user: Dict[str, Any] = De
     """Проксирует запрос на удаление записи истории к history-service."""
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.delete(
-                f"{HISTORY_SERVICE_URL}/history/{entry_id}", headers={"X-User-ID": str(user_id)}, timeout=10.0
-            )
+    client = get_http_client()
+    try:
+        response = await client.delete(
+            f"{HISTORY_SERVICE_URL}/history/{entry_id}", headers={"X-User-ID": str(user_id)}, timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            if response.status_code == 404:
-                raise HTTPException(404, "History entry not found or access denied")
+        if response.status_code == 404:
+            raise HTTPException(404, "History entry not found or access denied")
 
-            error_detail = response.json().get("detail", "Failed to delete history entry")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to delete history entry")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "History service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "History service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "History service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "History service timeout")

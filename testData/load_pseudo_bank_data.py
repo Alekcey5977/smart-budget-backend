@@ -5,11 +5,27 @@
 import json
 import sys
 import time
-
-import requests
+import urllib.error
+import urllib.request
 
 # URL псевдо банка (можно переопределить через аргумент командной строки)
 PSEUDO_BANK_URL = "http://localhost:8004"
+
+
+def _post(url: str, payload: list, timeout: int = 30):
+    """POST JSON payload, returns (status_code, response_text)."""
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status, resp.read().decode("utf-8")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8")
 
 
 def load_test_data(base_url: str):
@@ -46,24 +62,25 @@ def load_test_data(base_url: str):
             continue
 
         try:
-            response = requests.post(endpoint, json=items, headers={"Content-Type": "application/json"}, timeout=30)
+            status_code, response_text = _post(endpoint, items)
 
-            if response.status_code in [200, 201]:
-                result = response.json()
+            if status_code in [200, 201]:
+                result = json.loads(response_text)
                 print(f"  [OK] Loaded {len(items)} {name}")
                 if "created" in result:
                     print(f"       Created: {result['created']}")
             else:
                 print(f"  [ERROR] Failed to load {name}")
-                print(f"          Status: {response.status_code}")
-                print(f"          Response: {response.text}")
+                print(f"          Status: {status_code}")
+                print(f"          Response: {response_text}")
                 return False
 
-        except requests.exceptions.ConnectionError:
+        except urllib.error.URLError as e:
             print(f"  [ERROR] Cannot connect to {base_url}")
             print("          Make sure the pseudo-bank service is running")
+            print(f"          Reason: {e.reason}")
             return False
-        except requests.exceptions.Timeout:
+        except TimeoutError:
             print(f"  [ERROR] Request timeout for {name}")
             return False
         except Exception as e:

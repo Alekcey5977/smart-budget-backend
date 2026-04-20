@@ -437,3 +437,70 @@ async def test_get_categories_filter_income(client: AsyncClient, db_session: Asy
     assert "Salary" in names
     assert "Investments" in names
     assert "Food" not in names
+
+
+@pytest.mark.asyncio
+async def test_category_summary_empty(client: AsyncClient):
+    """Тест: нет транзакций → пустой список"""
+    response = await client.post("/transactions/categories/summary", json={})
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_category_summary_returns_aggregated_data(client: AsyncClient, db_session: AsyncSession):
+    """Тест: агрегация сумм по категориям"""
+    cat = Category(id=10, name="Еда", type="expense")
+    bank = Bank(id=1, name="TestBank")
+    account = Bank_Account(id=1, user_id=1, bank_id=1, bank_account_hash="hash_001", bank_account_name="Test", currency="RUB", balance=10000)
+    db_session.add_all([cat, bank, account])
+    await db_session.flush()
+
+    db_session.add_all([
+        Transaction(id=uuid.uuid4(), user_id=123, category_id=10, bank_account_id=1,
+                    amount=300.0, type="expense", created_at=datetime(2026, 1, 1)),
+        Transaction(id=uuid.uuid4(), user_id=123, category_id=10, bank_account_id=1,
+                    amount=200.0, type="expense", created_at=datetime(2026, 1, 2)),
+    ])
+    await db_session.flush()
+
+    response = await client.post(
+        "/transactions/categories/summary",
+        json={"transaction_type": "expense"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["category_id"] == 10
+    assert data[0]["category_name"] == "Еда"
+    assert data[0]["total_amount"] == 500.0
+    assert data[0]["transaction_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_category_summary_excludes_other_users(client: AsyncClient, db_session: AsyncSession):
+    """Тест: возвращает только транзакции текущего пользователя"""
+    cat = Category(id=20, name="Транспорт", type="expense")
+    bank = Bank(id=2, name="OtherBank")
+    account = Bank_Account(id=2, user_id=1, bank_id=2, bank_account_hash="hash_002", bank_account_name="Other", currency="RUB", balance=5000)
+    db_session.add_all([cat, bank, account])
+    await db_session.flush()
+
+    db_session.add_all([
+        Transaction(id=uuid.uuid4(), user_id=123, category_id=20, bank_account_id=2,
+                    amount=100.0, type="expense", created_at=datetime(2026, 1, 1)),
+        Transaction(id=uuid.uuid4(), user_id=999, category_id=20, bank_account_id=2,
+                    amount=999.0, type="expense", created_at=datetime(2026, 1, 1)),
+    ])
+    await db_session.flush()
+
+    response = await client.post(
+        "/transactions/categories/summary",
+        json={},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["total_amount"] == 100.0

@@ -10,7 +10,6 @@ os.environ["ACCESS_SECRET_KEY"] = "test_access_secret_key_integ"
 os.environ["REFRESH_SECRET_KEY"] = "test_refresh_secret_key_integ"
 os.environ["BANK_SECRET_KEY"] = "test_bank_secret_key_integ"
 os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-service"
-os.environ["TRANSACTIONS_SERVICE_URL"] = "http://fake-transactions-service"
 os.environ["REDIS_URL"] = "redis://localhost:6379"
 
 import pytest  # noqa: E402

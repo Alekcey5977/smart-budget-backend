@@ -14,7 +14,6 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["JWT_SECRET_KEY"] = "test_secret_key_for_testing_only"
 os.environ["JWT_REFRESH_SECRET_KEY"] = "test_refresh_secret_key_for_testing"
 os.environ["PSEUDO_BANK_SERVICE_URL"] = "http://fake-bank-url"
-os.environ["TRANSACTIONS_SERVICE_URL"] = "http://fake-transactions-url"
 os.environ["REDIS_URL"] = "redis://localhost:6379"
 
 

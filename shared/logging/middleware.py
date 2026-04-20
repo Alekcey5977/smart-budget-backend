@@ -65,7 +65,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         if response.status_code >= 500:
             log_level = logging.ERROR
         elif response.status_code >= 400:
-            log_level = logging.INFO
+            log_level = logging.WARNING
         else:
             log_level = logging.INFO
 

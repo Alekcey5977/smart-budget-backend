@@ -1,11 +1,12 @@
 """
 Интеграционные тесты для эндпоинтов /transactions/*.
 
-Downstream (transactions-service) мокается через httpx.AsyncClient.
-Зависимость get_current_user переопределяется через dependency_overrides.
+Downstream (transactions-service) мокается через patch("app.routers.transactions.get_http_client").
 """
 
 from unittest.mock import AsyncMock, patch
+
+import httpx as httpx_module
 
 from tests.conftest import make_mock_http_response
 
@@ -37,11 +38,9 @@ CATEGORY_LIST = [
 # ──────────────────────────────────────────────────────────────
 class TestGetTransactions:
     async def test_success_returns_list(self, client):
-        with patch("app.routers.transactions.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(200, json_data=TRANSACTION_LIST)
-
+        mock_http = AsyncMock()
+        mock_http.post.return_value = make_mock_http_response(200, json_data=TRANSACTION_LIST)
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
             response = await client.post("/transactions/", json={"limit": 50})
 
         assert response.status_code == 200
@@ -50,24 +49,18 @@ class TestGetTransactions:
         assert data[0]["type"] == "expense"
 
     async def test_x_user_id_header_passed_to_downstream(self, client):
-        """Проверяем что X-User-ID передаётся в downstream-запрос."""
-        with patch("app.routers.transactions.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(200, json_data=TRANSACTION_LIST)
-
+        mock_http = AsyncMock()
+        mock_http.post.return_value = make_mock_http_response(200, json_data=TRANSACTION_LIST)
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
             await client.post("/transactions/", json={"limit": 10})
 
         call_kwargs = mock_http.post.call_args.kwargs
         assert call_kwargs["headers"]["X-User-ID"] == "1"
 
     async def test_with_filters(self, client):
-        """Фильтрация по типу и периоду."""
-        with patch("app.routers.transactions.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.return_value = make_mock_http_response(200, json_data=[])
-
+        mock_http = AsyncMock()
+        mock_http.post.return_value = make_mock_http_response(200, json_data=[])
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
             response = await client.post(
                 "/transactions/",
                 json={
@@ -80,7 +73,6 @@ class TestGetTransactions:
         assert response.status_code == 200
 
     async def test_invalid_transaction_type_rejected_at_gateway(self, client):
-        """Невалидный transaction_type проходит валидацию Pydantic."""
         response = await client.post(
             "/transactions/",
             json={"transaction_type": "unknown", "limit": 10},
@@ -88,30 +80,21 @@ class TestGetTransactions:
         assert response.status_code == 422
 
     async def test_missing_limit_returns_422(self, client):
-        """Обязательное поле limit отсутствует → 422."""
         response = await client.post("/transactions/", json={})
         assert response.status_code == 422
 
     async def test_connect_error_returns_503(self, client):
-        import httpx as httpx_module
-
-        with patch("app.routers.transactions.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.side_effect = httpx_module.ConnectError("Connection refused")
-
+        mock_http = AsyncMock()
+        mock_http.post.side_effect = httpx_module.ConnectError("Connection refused")
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
             response = await client.post("/transactions/", json={"limit": 10})
 
         assert response.status_code == 503
 
     async def test_timeout_returns_504(self, client):
-        import httpx as httpx_module
-
-        with patch("app.routers.transactions.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.post.side_effect = httpx_module.TimeoutException("Timeout")
-
+        mock_http = AsyncMock()
+        mock_http.post.side_effect = httpx_module.TimeoutException("Timeout")
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
             response = await client.post("/transactions/", json={"limit": 10})
 
         assert response.status_code == 504
@@ -126,11 +109,9 @@ class TestGetTransactions:
 # ──────────────────────────────────────────────────────────────
 class TestGetCategories:
     async def test_success_returns_list(self, client):
-        with patch("app.routers.transactions.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=CATEGORY_LIST)
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=CATEGORY_LIST)
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
             response = await client.get("/transactions/categories")
 
         assert response.status_code == 200
@@ -139,25 +120,17 @@ class TestGetCategories:
         assert data[0]["name"] == "Продукты"
 
     async def test_connect_error_returns_503(self, client):
-        import httpx as httpx_module
-
-        with patch("app.routers.transactions.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
-
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
             response = await client.get("/transactions/categories")
 
         assert response.status_code == 503
 
     async def test_timeout_returns_504(self, client):
-        import httpx as httpx_module
-
-        with patch("app.routers.transactions.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.side_effect = httpx_module.TimeoutException("Timeout")
-
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_module.TimeoutException("Timeout")
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
             response = await client.get("/transactions/categories")
 
         assert response.status_code == 504

@@ -1,7 +1,7 @@
 import os
 
 import httpx
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_http_client
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 router = APIRouter(prefix="/users/me", tags=["bank_accounts"])
@@ -133,31 +133,31 @@ USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL")
 )
 async def add_bank_account(request: Request, bank_account: dict, current_user: dict = Depends(get_current_user)):
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            # Передаем cookies из оригинального запроса (refresh_token)
-            cookies = dict(request.cookies)
+    client = get_http_client()
+    try:
+        # Передаем cookies из оригинального запроса (refresh_token)
+        cookies = dict(request.cookies)
 
-            response = await client.post(
-                f"{USERS_SERVICE_URL}/users/me/bank_account",
-                json=bank_account,
-                headers={"Authorization": f"Bearer {current_user.get('token')}"},
-                cookies=cookies,
-            )
+        response = await client.post(
+            f"{USERS_SERVICE_URL}/users/me/bank_account",
+            json=bank_account,
+            headers={"Authorization": f"Bearer {current_user.get('token')}"},
+            cookies=cookies,
+        )
 
-            if response.status_code == 400:
-                error_detail = response.json().get("detail", "Bad request")
-                raise HTTPException(status_code=400, detail=error_detail)
-            elif response.status_code == 404:
-                raise HTTPException(status_code=404, detail="Счет не найден в банковской системе")
+        if response.status_code == 400:
+            error_detail = response.json().get("detail", "Bad request")
+            raise HTTPException(status_code=400, detail=error_detail)
+        elif response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Счет не найден в банковской системе")
 
-            response.raise_for_status()
-            return response.json()
+        response.raise_for_status()
+        return response.json()
 
-        except httpx.TimeoutException:
-            raise HTTPException(status_code=504, detail="Таймаут при добавлении счета")
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка: {e.response.text}")
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Таймаут при добавлении счета")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка: {e.response.text}")
 
 
 @router.get(
@@ -246,23 +246,23 @@ async def get_bank_accounts(request: Request, current_user: dict = Depends(get_c
     - **401 Unauthorized:** Невалидный или отсутствующий токен
     - **504 Gateway Timeout:** Сервис пользователей не отвечает
     """
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            cookies = dict(request.cookies)
+    client = get_http_client()
+    try:
+        cookies = dict(request.cookies)
 
-            response = await client.get(
-                f"{USERS_SERVICE_URL}/users/me/bank_accounts",
-                headers={"Authorization": f"Bearer {current_user.get('token')}"},
-                cookies=cookies,
-            )
+        response = await client.get(
+            f"{USERS_SERVICE_URL}/users/me/bank_accounts",
+            headers={"Authorization": f"Bearer {current_user.get('token')}"},
+            cookies=cookies,
+        )
 
-            response.raise_for_status()
-            return response.json()
+        response.raise_for_status()
+        return response.json()
 
-        except httpx.TimeoutException:
-            raise HTTPException(status_code=504, detail="Таймаут при получении счетов")
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка: {e.response.text}")
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Таймаут при получении счетов")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка: {e.response.text}")
 
 
 @router.delete(
@@ -326,23 +326,23 @@ async def delete_bank_account(bank_account_id: int, request: Request, current_us
     2. Выберите `bank_account_id` счета для удаления
     3. Вызовите `DELETE /users/me/bank_account/{bank_account_id}`
     """
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            cookies = dict(request.cookies)
+    client = get_http_client()
+    try:
+        cookies = dict(request.cookies)
 
-            response = await client.delete(
-                f"{USERS_SERVICE_URL}/users/me/bank_account/{bank_account_id}",
-                headers={"Authorization": f"Bearer {current_user.get('token')}"},
-                cookies=cookies,
-            )
+        response = await client.delete(
+            f"{USERS_SERVICE_URL}/users/me/bank_account/{bank_account_id}",
+            headers={"Authorization": f"Bearer {current_user.get('token')}"},
+            cookies=cookies,
+        )
 
-            if response.status_code == 404:
-                raise HTTPException(status_code=404, detail="Банковский счет не найден")
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Банковский счет не найден")
 
-            response.raise_for_status()
-            return None
+        response.raise_for_status()
+        return None
 
-        except httpx.TimeoutException:
-            raise HTTPException(status_code=504, detail="Таймаут при удалении счета")
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка: {e.response.text}")
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Таймаут при удалении счета")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка: {e.response.text}")

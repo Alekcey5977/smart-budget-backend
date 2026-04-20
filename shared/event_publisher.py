@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import ClassVar
 
 import redis.asyncio as redis
 from redis.exceptions import ConnectionError, ResponseError, TimeoutError
@@ -11,37 +12,54 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 
 
 class EventPublisher:
-    def __init__(self):
-        self.redis_url = REDIS_URL
-        self.redis = None
+    """
+    Публикатор событий в Redis Streams.
 
-    async def __aenter__(self):
-        """Асинхронный контекстный менеджер - вход"""
-        self.redis = redis.from_url(self.redis_url, decode_responses=False)
-        return self
+    Использует общий пул соединений на уровне класса — одно соединение
+    на весь сервис вместо создания нового при каждом publish().
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Асинхронный контекстный менеджер - выход"""
-        if self.redis:
-            await self.redis.close()
+    Использование в lifespan сервиса:
+        await EventPublisher.connect()
+        ...
+        await EventPublisher.close()
+    """
 
-    async def publish(self, event: DomainEvent):
-        """Публикация события в Redis Stream"""
-        redis_client = None
+    _redis: ClassVar[redis.Redis | None] = None
+
+    @classmethod
+    async def connect(cls) -> None:
+        """Инициализировать общий пул соединений. Вызывать один раз при старте."""
+        cls._redis = redis.from_url(REDIS_URL, decode_responses=False)
+        logger.info("EventPublisher: подключение к Redis установлено")
+
+    @classmethod
+    async def close(cls) -> None:
+        """Закрыть соединение при остановке сервиса."""
+        if cls._redis is not None:
+            await cls._redis.aclose()
+            cls._redis = None
+            logger.info("EventPublisher: соединение с Redis закрыто")
+
+    async def publish(self, event: DomainEvent) -> None:
+        """Опубликовать событие в Redis Stream domain-events."""
+        client = self.__class__._redis
+        owns_client = False
+
+        if client is None:
+            # Fallback для тестов / сервисов без lifespan-инициализации
+            client = redis.from_url(REDIS_URL, decode_responses=False)
+            owns_client = True
+
         try:
-            redis_client = redis.from_url(
-                self.redis_url, decode_responses=False)
             payload = {"payload": event.model_dump_json()}
-            await redis_client.xadd("domain-events", payload)
-            logger.info(
-                f"📤 Событие опубликовано: {event.event_type} (ID: {event.event_id})")
+            await client.xadd("domain-events", payload)
+            logger.info(f"📤 Событие опубликовано: {event.event_type} (ID: {event.event_id})")
         except (ConnectionError, TimeoutError) as e:
             logger.error(f"❌ Не удалось подключиться к Redis: {e}")
         except ResponseError as e:
             logger.error(f"❌ Ошибка Redis при публикации: {e}")
         except Exception as e:
-            logger.error(
-                f"❌ Неизвестная ошибка при публикации события: {e}", exc_info=True)
+            logger.error(f"❌ Неизвестная ошибка при публикации события: {e}", exc_info=True)
         finally:
-            if redis_client:
-                await redis_client.close()
+            if owns_client:
+                await client.aclose()
