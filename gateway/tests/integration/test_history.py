@@ -1,11 +1,12 @@
 """
 Интеграционные тесты для эндпоинтов /history/*.
 
-Все эндпоинты требуют JWT — get_current_user переопределяется через фикстуру `client`.
-Downstream history-service мокается через patch("app.routers.history.httpx.AsyncClient").
+Downstream history-service мокается через patch("app.routers.history.get_http_client").
 """
 
 from unittest.mock import AsyncMock, patch
+
+import httpx as httpx_module
 
 from tests.conftest import USER_ID, make_mock_http_response
 
@@ -25,11 +26,9 @@ MOCK_ENTRY = {
 # ──────────────────────────────────────────────────────────────
 class TestGetUserHistory:
     async def test_get_history_success(self, client):
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=[MOCK_ENTRY])
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=[MOCK_ENTRY])
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             response = await client.get("/history/user/me")
 
         assert response.status_code == 200
@@ -38,24 +37,18 @@ class TestGetUserHistory:
         assert data[0]["id"] == ENTRY_ID
 
     async def test_get_history_passes_user_id(self, client):
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=[])
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=[])
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             await client.get("/history/user/me")
 
         call_kwargs = mock_http.get.call_args.kwargs
         assert call_kwargs["headers"]["X-User-ID"] == str(USER_ID)
 
     async def test_get_history_service_unavailable(self, client):
-        import httpx as httpx_module
-
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
-
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             response = await client.get("/history/user/me")
 
         assert response.status_code == 503
@@ -70,34 +63,26 @@ class TestGetUserHistory:
 # ──────────────────────────────────────────────────────────────
 class TestGetHistoryEntry:
     async def test_get_entry_success(self, client):
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=MOCK_ENTRY)
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=MOCK_ENTRY)
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             response = await client.get(f"/history/{ENTRY_ID}")
 
         assert response.status_code == 200
         assert response.json()["id"] == ENTRY_ID
 
     async def test_get_entry_not_found(self, client):
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             response = await client.get(f"/history/{ENTRY_ID}")
 
         assert response.status_code == 404
 
     async def test_get_entry_service_unavailable(self, client):
-        import httpx as httpx_module
-
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
-
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             response = await client.get(f"/history/{ENTRY_ID}")
 
         assert response.status_code == 503
@@ -113,11 +98,9 @@ class TestGetHistoryEntry:
 class TestDeleteHistoryEntry:
     async def test_delete_success(self, client):
         upstream_data = {"status": "success", "message": "History entry deleted"}
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.delete.return_value = make_mock_http_response(200, json_data=upstream_data)
-
+        mock_http = AsyncMock()
+        mock_http.delete.return_value = make_mock_http_response(200, json_data=upstream_data)
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             response = await client.delete(f"/history/{ENTRY_ID}")
 
         assert response.status_code == 200
@@ -125,22 +108,18 @@ class TestDeleteHistoryEntry:
 
     async def test_delete_passes_user_id(self, client):
         upstream_data = {"status": "success", "message": "History entry deleted"}
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.delete.return_value = make_mock_http_response(200, json_data=upstream_data)
-
+        mock_http = AsyncMock()
+        mock_http.delete.return_value = make_mock_http_response(200, json_data=upstream_data)
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             await client.delete(f"/history/{ENTRY_ID}")
 
         call_kwargs = mock_http.delete.call_args.kwargs
         assert call_kwargs["headers"]["X-User-ID"] == str(USER_ID)
 
     async def test_delete_not_found(self, client):
-        with patch("app.routers.history.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.delete.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
-
+        mock_http = AsyncMock()
+        mock_http.delete.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
+        with patch("app.routers.history.get_http_client", return_value=mock_http):
             response = await client.delete(f"/history/{ENTRY_ID}")
 
         assert response.status_code == 404

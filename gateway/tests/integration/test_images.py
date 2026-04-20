@@ -1,13 +1,12 @@
 """
 Интеграционные тесты для эндпоинтов /images/*.
 
-Публичные эндпоинты (без авторизации): avatars/default, images/{id}, mappings/*
-Защищённые эндпоинты: avatars/me (GET и PUT)
-
-Downstream images-service мокается через patch("app.routers.images.httpx.AsyncClient").
+Downstream images-service мокается через patch("app.routers.images.get_http_client").
 """
 
 from unittest.mock import AsyncMock, patch
+
+import httpx as httpx_module
 
 from tests.conftest import USER_ID, make_mock_http_response
 
@@ -30,11 +29,9 @@ MOCK_AVATAR_METADATA = {
 # ──────────────────────────────────────────────────────────────
 class TestGetDefaultAvatars:
     async def test_get_default_avatars_success(self, client_no_auth):
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=[MOCK_AVATAR_METADATA])
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=[MOCK_AVATAR_METADATA])
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get("/images/avatars/default")
 
         assert response.status_code == 200
@@ -43,23 +40,17 @@ class TestGetDefaultAvatars:
         assert data[0]["is_default"] is True
 
     async def test_get_default_avatars_service_unavailable(self, client_no_auth):
-        import httpx as httpx_module
-
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
-
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get("/images/avatars/default")
 
         assert response.status_code == 503
 
     async def test_get_default_avatars_no_auth_required(self, client_no_auth):
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=[])
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=[])
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get("/images/avatars/default")
 
         assert response.status_code == 200
@@ -71,11 +62,9 @@ class TestGetDefaultAvatars:
 class TestGetMyAvatar:
     async def test_get_my_avatar_success(self, client):
         user_avatar = {**MOCK_AVATAR_METADATA, "entity_id": "1", "is_default": False}
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=user_avatar)
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=user_avatar)
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client.get("/images/avatars/me")
 
         assert response.status_code == 200
@@ -83,22 +72,18 @@ class TestGetMyAvatar:
 
     async def test_get_my_avatar_passes_user_id(self, client):
         user_avatar = {**MOCK_AVATAR_METADATA, "entity_id": "1", "is_default": False}
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=user_avatar)
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=user_avatar)
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             await client.get("/images/avatars/me")
 
         call_kwargs = mock_http.get.call_args.kwargs
         assert call_kwargs["headers"]["X-User-ID"] == str(USER_ID)
 
     async def test_get_my_avatar_not_found(self, client):
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(404, json_data={"detail": "Avatar not found"})
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(404, json_data={"detail": "Avatar not found"})
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client.get("/images/avatars/me")
 
         assert response.status_code == 404
@@ -114,11 +99,9 @@ class TestGetMyAvatar:
 class TestUpdateMyAvatar:
     async def test_update_avatar_success(self, client):
         updated_avatar = {**MOCK_AVATAR_METADATA, "entity_id": "1", "is_default": False}
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.put.return_value = make_mock_http_response(200, json_data=updated_avatar)
-
+        mock_http = AsyncMock()
+        mock_http.put.return_value = make_mock_http_response(200, json_data=updated_avatar)
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client.put("/images/avatars/me", json={"image_id": IMAGE_ID})
 
         assert response.status_code == 200
@@ -128,11 +111,9 @@ class TestUpdateMyAvatar:
         assert response.status_code == 401
 
     async def test_update_avatar_upstream_error(self, client):
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.put.return_value = make_mock_http_response(400, json_data={"detail": "Invalid avatar ID"})
-
+        mock_http = AsyncMock()
+        mock_http.put.return_value = make_mock_http_response(400, json_data={"detail": "Invalid avatar ID"})
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client.put("/images/avatars/me", json={"image_id": IMAGE_ID})
 
         assert response.status_code == 400
@@ -143,20 +124,18 @@ class TestUpdateMyAvatar:
 # ──────────────────────────────────────────────────────────────
 class TestGetImageBinary:
     async def test_get_image_success(self, client_no_auth):
-        image_bytes = b"\xff\xd8\xff"  # Fake JPEG header
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(
-                200,
-                content=image_bytes,
-                headers={
-                    "content-type": "image/jpeg",
-                    "cache-control": "public, max-age=31536000",
-                    "content-length": str(len(image_bytes)),
-                },
-            )
-
+        image_bytes = b"\xff\xd8\xff"
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(
+            200,
+            content=image_bytes,
+            headers={
+                "content-type": "image/jpeg",
+                "cache-control": "public, max-age=31536000",
+                "content-length": str(len(image_bytes)),
+            },
+        )
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get(f"/images/{IMAGE_ID}")
 
         assert response.status_code == 200
@@ -164,26 +143,22 @@ class TestGetImageBinary:
         assert "image/jpeg" in response.headers.get("content-type", "")
 
     async def test_get_image_not_found(self, client_no_auth):
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(404, json_data={"detail": "Image not found"})
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(404, json_data={"detail": "Image not found"})
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get(f"/images/{IMAGE_ID}")
 
         assert response.status_code == 404
 
     async def test_get_image_no_auth_required(self, client_no_auth):
         image_bytes = b"\x89PNG"
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(
-                200,
-                content=image_bytes,
-                headers={"content-type": "image/png", "content-length": str(len(image_bytes))},
-            )
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(
+            200,
+            content=image_bytes,
+            headers={"content-type": "image/png", "content-length": str(len(image_bytes))},
+        )
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get(f"/images/{IMAGE_ID}")
 
         assert response.status_code == 200
@@ -198,24 +173,20 @@ class TestGetCategoriesMapping:
             "entity_type": "category",
             "mappings": [{"entity_id": "cat-1", "image_id": IMAGE_ID, "mime_type": "image/jpeg"}],
         }
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=upstream_data)
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=upstream_data)
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get("/images/mappings/categories")
 
         assert response.status_code == 200
         assert response.json()["entity_type"] == "category"
 
     async def test_get_categories_mapping_no_auth_required(self, client_no_auth):
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(
-                200, json_data={"entity_type": "category", "mappings": []}
-            )
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(
+            200, json_data={"entity_type": "category", "mappings": []}
+        )
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get("/images/mappings/categories")
 
         assert response.status_code == 200
@@ -230,24 +201,18 @@ class TestGetMerchantsMapping:
             "entity_type": "merchant",
             "mappings": [{"entity_id": "merch-1", "image_id": IMAGE_ID, "mime_type": "image/jpeg"}],
         }
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.return_value = make_mock_http_response(200, json_data=upstream_data)
-
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=upstream_data)
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get("/images/mappings/merchants")
 
         assert response.status_code == 200
         assert response.json()["entity_type"] == "merchant"
 
     async def test_get_merchants_mapping_service_unavailable(self, client_no_auth):
-        import httpx as httpx_module
-
-        with patch("app.routers.images.httpx.AsyncClient") as MockClient:
-            mock_http = AsyncMock()
-            MockClient.return_value.__aenter__.return_value = mock_http
-            mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
-
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx_module.ConnectError("Connection refused")
+        with patch("app.routers.images.get_http_client", return_value=mock_http):
             response = await client_no_auth.get("/images/mappings/merchants")
 
         assert response.status_code == 503
