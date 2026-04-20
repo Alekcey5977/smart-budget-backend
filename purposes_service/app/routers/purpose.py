@@ -6,13 +6,17 @@ from app.dependencies import get_user_id_from_header
 from app.repository.purpose_repository import PurposeRepository
 from app.schemas import PurposeCreate, PurposeResponse, PurposeUpdate
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from shared.cache import cache_client
 
 router = APIRouter(prefix="/purpose", tags=["purposes"])
 
+_PURPOSES_TTL = 30
+
 
 async def get_purpose_repository(db: AsyncSession = Depends(get_db)):
-    """Dependency для получения репозитория"""
     return PurposeRepository(db)
 
 
@@ -24,7 +28,10 @@ async def create_purpose(
 ):
     """Создание цели"""
     purpose = await repo.create_purpose(user_id, purpose)
-
+    try:
+        await cache_client.delete(f"purposes:{user_id}")
+    except Exception:
+        pass
     return purpose
 
 
@@ -34,9 +41,23 @@ async def get_purposes_by_user(
     repo: PurposeRepository = Depends(get_purpose_repository),
 ):
     """Получение целей пользователя"""
-    purposes = await repo.get_purposes_by_user(user_id)
+    cache_key = f"purposes:{user_id}"
+    try:
+        cached = await cache_client.get(cache_key)
+        if cached is not None:
+            return cached
+    except Exception:
+        pass
 
-    return purposes
+    purposes = await repo.get_purposes_by_user(user_id)
+    result = jsonable_encoder(purposes)
+
+    try:
+        await cache_client.set(cache_key, result, ttl=_PURPOSES_TTL)
+    except Exception:
+        pass
+
+    return result
 
 
 @router.put("/update/{purpose_id}", response_model=PurposeResponse)
@@ -56,6 +77,11 @@ async def update_purpose(
     if not purpose:
         raise HTTPException(status_code=404, detail="Purpose not found")
 
+    try:
+        await cache_client.delete(f"purposes:{user_id}")
+    except Exception:
+        pass
+
     return purpose
 
 
@@ -69,5 +95,10 @@ async def delete_purpose(
     deleted_purpose = await repo.delete_purpose(user_id, purpose_id)
     if deleted_purpose is None:
         raise HTTPException(status_code=404, detail="Purpose not found or access denied")
+
+    try:
+        await cache_client.delete(f"purposes:{user_id}")
+    except Exception:
+        pass
 
     return deleted_purpose

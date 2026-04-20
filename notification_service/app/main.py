@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from shared.cache import cache_client
 from shared.logging import LoggingMiddleware, setup_logging
 
 setup_logging(service_name="notification-service")
@@ -17,6 +18,7 @@ setup_logging(service_name="notification-service")
 
 @asynccontextmanager
 async def life_span(app: FastAPI):
+    await cache_client.connect()
     await create_tables()
 
     # Запускаем прослушиватель событий в фоновом режиме
@@ -36,6 +38,7 @@ async def life_span(app: FastAPI):
         except asyncio.CancelledError:
             pass
 
+    await cache_client.close()
     await shutdown()
 
 
