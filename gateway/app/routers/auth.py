@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict
 
 import httpx
-from app.dependencies import get_current_user, get_current_user_with_profile, get_http_client
+from app.dependencies import get_current_user_with_profile, get_http_client
 from app.schemas.authorization_schemas import RegisterRequest, UserLogin, UserUpdateRequest
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
