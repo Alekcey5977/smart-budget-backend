@@ -19,7 +19,7 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Создание асинхронного соединения для БД
-engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+engine = create_async_engine(DATABASE_URL, echo=False, future=True, pool_size=20, max_overflow=40, pool_pre_ping=True)
 
 # Создание асинхронных сессий дл БД
 AsyncSessionLocal = async_sessionmaker(
