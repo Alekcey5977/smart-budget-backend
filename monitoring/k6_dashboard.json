@@ -1,0 +1,116 @@
+{
+  "title": "k6 Load Tests",
+  "uid": "k6-load-tests",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Virtual Users",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "k6_vus",
+          "legendFormat": "Active VUs"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "HTTP Requests / sec",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "rate(k6_http_reqs_total[30s])",
+          "legendFormat": "RPS"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "HTTP Error Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "rate(k6_http_reqs_total{expected_response=\"false\"}[30s]) / rate(k6_http_reqs_total[30s])",
+          "legendFormat": "Error Rate"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Request Duration (p50 / p90 / p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "histogram_quantile(0.50, rate(k6_http_req_duration_seconds_bucket[30s]))",
+          "legendFormat": "p50"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "histogram_quantile(0.90, rate(k6_http_req_duration_seconds_bucket[30s]))",
+          "legendFormat": "p90"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "histogram_quantile(0.99, rate(k6_http_req_duration_seconds_bucket[30s]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Iterations / sec",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "rate(k6_iterations_total[30s])",
+          "legendFormat": "iter/s"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Data Sent / Received (bytes/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "rate(k6_data_sent_bytes_total[30s])",
+          "legendFormat": "sent"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "rate(k6_data_received_bytes_total[30s])",
+          "legendFormat": "received"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Checks Pass Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "rate(k6_checks_total{result=\"pass\"}[30s]) / rate(k6_checks_total[30s])",
+          "legendFormat": "Pass Rate"
+        }
+      ]
+    }
+  ]
+}

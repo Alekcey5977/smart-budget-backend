@@ -1,4 +1,4 @@
-.PHONY: help install clean-venvs start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop k6-smoke k6-load k6-stress k6-spike k6-max k6
+.PHONY: help install clean-venvs start stop restart logs clean load-test-data load-test-images generate-test-data status down build reset-db test test-unit test-e2e test-e2e-start test-e2e-stop k6-smoke k6-load k6-stress k6-spike k6-max k6-high k6-extreme k6
 
 TEST_PROJECT = smartbudget-test
 TEST_COMPOSE = docker compose -f docker-compose.test.yml -p $(TEST_PROJECT) --env-file .env.test
@@ -43,6 +43,8 @@ help:
 	@echo "  make k6-stress         - Stress test: up to 150 VUs, ~5 min — find limits"
 	@echo "  make k6-spike          - Spike test: burst to 1000 VUs, ~1 min"
 	@echo "  make k6-max            - Max test: up to 3000 VUs, ~1 min — absolute breaking point"
+	@echo "  make k6-high           - High test: up to 5000 VUs, ~75s"
+	@echo "  make k6-extreme        - Extreme test: up to 10000 VUs, ~90s — beyond the limit"
 	@echo "  make k6                - Run smoke → load → stress in sequence"
 	@echo ""
 	@echo "Cleanup:"
@@ -292,40 +294,51 @@ test-e2e:
 	@echo ""
 
 K6_BASE_URL ?= http://localhost:18000
+K6_PROMETHEUS_RW ?= http://localhost:9090/api/v1/write
+K6_OUT ?= --out experimental-prometheus-rw=$(K6_PROMETHEUS_RW)
 
 k6-smoke:
 	@echo "Running smoke test (1 VU, 30s) against $(K6_BASE_URL)..."
-	k6 run --env BASE_URL=$(K6_BASE_URL) k6/smoke.js
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/smoke.js
 
 k6-load:
 	@echo "Running load test (50 VUs, ~4 min) against $(K6_BASE_URL)..."
-	k6 run --env BASE_URL=$(K6_BASE_URL) k6/load.js
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/load.js
 
 k6-stress:
 	@echo "Running stress test (up to 150 VUs, ~5 min) against $(K6_BASE_URL)..."
-	k6 run --env BASE_URL=$(K6_BASE_URL) k6/stress.js
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/stress.js
 
 k6-spike:
 	@echo "Running spike test (burst to 1000 VUs, ~1 min) against $(K6_BASE_URL)..."
-	k6 run --env BASE_URL=$(K6_BASE_URL) k6/spike.js
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/spike.js
 
 k6-max:
 	@echo "Running max test (up to 3000 VUs, ~1 min) against $(K6_BASE_URL)..."
 	@echo "WARNING: This test is designed to break the system. For observation only."
-	k6 run --env BASE_URL=$(K6_BASE_URL) k6/max.js
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/max.js
+
+k6-high:
+	@echo "Running high test (up to 5000 VUs, ~75s) against $(K6_BASE_URL)..."
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/high.js
+
+k6-extreme:
+	@echo "Running extreme test (up to 10000 VUs, ~90s) against $(K6_BASE_URL)..."
+	@echo "WARNING: Extreme load — system will likely saturate. Observation only."
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/extreme.js
 
 k6:
 	@echo "Running smoke → load → stress sequence against $(K6_BASE_URL)..."
 	@echo "Requires: make test-e2e-start"
 	@echo ""
 	@echo "=== [1/3] Smoke ==="
-	k6 run --env BASE_URL=$(K6_BASE_URL) k6/smoke.js
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/smoke.js
 	@echo ""
 	@echo "=== [2/3] Load ==="
-	k6 run --env BASE_URL=$(K6_BASE_URL) k6/load.js
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/load.js
 	@echo ""
 	@echo "=== [3/3] Stress ==="
-	k6 run --env BASE_URL=$(K6_BASE_URL) k6/stress.js
+	k6 run --env BASE_URL=$(K6_BASE_URL) $(K6_OUT) k6/stress.js
 	@echo ""
 	@echo "All load tests complete! Check Grafana: http://localhost:3000"
 
