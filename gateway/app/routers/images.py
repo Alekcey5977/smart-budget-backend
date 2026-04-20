@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict
 
 import httpx
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_http_client
 from fastapi import APIRouter, Depends, HTTPException, Response
 
 router = APIRouter(prefix="/images", tags=["images"])
@@ -29,20 +29,20 @@ async def get_default_avatars():
 
     Проксирует запрос к images-service.
     """
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{IMAGES_SERVICE_URL}/images/avatars/default", timeout=10.0)
+    client = get_http_client()
+    try:
+        response = await client.get(f"{IMAGES_SERVICE_URL}/images/avatars/default", timeout=10.0)
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get default avatars")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get default avatars")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Images service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Images service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Images service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Images service timeout")
 
 
 @router.get(
@@ -68,22 +68,22 @@ async def get_my_avatar(current_user: Dict[str, Any] = Depends(get_current_user)
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.get(f"{IMAGES_SERVICE_URL}/images/avatars/me", headers=headers, timeout=10.0)
+        response = await client.get(f"{IMAGES_SERVICE_URL}/images/avatars/me", headers=headers, timeout=10.0)
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get user avatar")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get user avatar")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Images service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Images service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Images service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Images service timeout")
 
 
 @router.put(
@@ -117,24 +117,24 @@ async def update_my_avatar(request: Dict[str, Any], current_user: Dict[str, Any]
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.put(
-                f"{IMAGES_SERVICE_URL}/images/avatars/me", headers=headers, json=request, timeout=10.0
-            )
+        response = await client.put(
+            f"{IMAGES_SERVICE_URL}/images/avatars/me", headers=headers, json=request, timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to update user avatar")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to update user avatar")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Images service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Images service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Images service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Images service timeout")
 
 
 @router.get(
@@ -159,31 +159,31 @@ async def get_image(image_id: str):
 
     Проксирует запрос к images-service.
     """
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(
-                f"{IMAGES_SERVICE_URL}/images/{image_id}",
-                timeout=30.0,  # Больше таймаут для загрузки изображений
+    client = get_http_client()
+    try:
+        response = await client.get(
+            f"{IMAGES_SERVICE_URL}/images/{image_id}",
+            timeout=30.0,  # Больше таймаут для загрузки изображений
+        )
+
+        if response.status_code == 200:
+            # Возвращаем изображение с правильными заголовками
+            return Response(
+                content=response.content,
+                media_type=response.headers.get("content-type", "image/jpeg"),
+                headers={
+                    "Cache-Control": response.headers.get("cache-control", "public, max-age=31536000"),
+                    "Content-Length": response.headers.get("content-length", str(len(response.content))),
+                },
             )
 
-            if response.status_code == 200:
-                # Возвращаем изображение с правильными заголовками
-                return Response(
-                    content=response.content,
-                    media_type=response.headers.get("content-type", "image/jpeg"),
-                    headers={
-                        "Cache-Control": response.headers.get("cache-control", "public, max-age=31536000"),
-                        "Content-Length": response.headers.get("content-length", str(len(response.content))),
-                    },
-                )
+        error_detail = response.json().get("detail", "Image not found")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-            error_detail = response.json().get("detail", "Image not found")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
-
-        except httpx.ConnectError:
-            raise HTTPException(503, "Images service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Images service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Images service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Images service timeout")
 
 
 @router.get(
@@ -205,20 +205,20 @@ async def get_categories_mapping():
 
     Проксирует запрос к images-service.
     """
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{IMAGES_SERVICE_URL}/images/mappings/categories", timeout=10.0)
+    client = get_http_client()
+    try:
+        response = await client.get(f"{IMAGES_SERVICE_URL}/images/mappings/categories", timeout=10.0)
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get categories mapping")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get categories mapping")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Images service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Images service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Images service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Images service timeout")
 
 
 @router.get(
@@ -240,17 +240,17 @@ async def get_merchants_mapping():
 
     Проксирует запрос к images-service.
     """
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{IMAGES_SERVICE_URL}/images/mappings/merchants", timeout=10.0)
+    client = get_http_client()
+    try:
+        response = await client.get(f"{IMAGES_SERVICE_URL}/images/mappings/merchants", timeout=10.0)
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get merchants mapping")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get merchants mapping")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Images service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Images service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Images service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Images service timeout")

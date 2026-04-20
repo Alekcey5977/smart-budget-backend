@@ -1,7 +1,7 @@
 import os
 
 import httpx
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_http_client
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 router = APIRouter(prefix="/sync", tags=["sync"])
@@ -80,14 +80,14 @@ async def sync_all_user_accounts(request: Request, current_user: dict = Depends(
     try:
         # 1. Получаем все счета пользователя
         cookies = dict(request.cookies)
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            accounts_response = await client.get(
-                f"{USERS_SERVICE_URL}/users/me/bank_accounts",
-                headers={"Authorization": f"Bearer {current_user.get('token')}"},
-                cookies=cookies,
-            )
-            accounts_response.raise_for_status()
-            accounts = accounts_response.json()
+        client = get_http_client()
+        accounts_response = await client.get(
+            f"{USERS_SERVICE_URL}/users/me/bank_accounts",
+            headers={"Authorization": f"Bearer {current_user.get('token')}"},
+            cookies=cookies,
+        )
+        accounts_response.raise_for_status()
+        accounts = accounts_response.json()
 
         if not accounts:
             return {
@@ -100,33 +100,33 @@ async def sync_all_user_accounts(request: Request, current_user: dict = Depends(
         # 2. Синхронизируем все счета пользователя одним запросом
         results = []
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            try:
-                sync_response = await client.post(
-                    f"{TRANSACTIONS_SERVICE_URL}/transactions/sync_user_accounts", json={"user_id": user_id}
-                )
+        client = get_http_client()
+        try:
+            sync_response = await client.post(
+                f"{TRANSACTIONS_SERVICE_URL}/transactions/sync_user_accounts", json={"user_id": user_id}
+            )
 
-                if sync_response.status_code == 200:
-                    # Синхронизация прошла успешно для всех счетов
-                    for account in accounts:
-                        results.append({"account_name": account.get("bank_account_name"), "status": "success"})
-                else:
-                    # Ошибка синхронизации
-                    for account in accounts:
-                        results.append(
-                            {
-                                "account_name": account.get("bank_account_name"),
-                                "status": "failed",
-                                "error": f"HTTP {sync_response.status_code}",
-                            }
-                        )
-
-            except Exception as e:
-                # Если произошла ошибка, отмечаем все счета как failed
+            if sync_response.status_code == 200:
+                # Синхронизация прошла успешно для всех счетов
+                for account in accounts:
+                    results.append({"account_name": account.get("bank_account_name"), "status": "success"})
+            else:
+                # Ошибка синхронизации
                 for account in accounts:
                     results.append(
-                        {"account_name": account.get("bank_account_name"), "status": "failed", "error": str(e)}
+                        {
+                            "account_name": account.get("bank_account_name"),
+                            "status": "failed",
+                            "error": f"HTTP {sync_response.status_code}",
+                        }
                     )
+
+        except Exception as e:
+            # Если произошла ошибка, отмечаем все счета как failed
+            for account in accounts:
+                results.append(
+                    {"account_name": account.get("bank_account_name"), "status": "failed", "error": str(e)}
+                )
 
         return {
             "synced_accounts": len([r for r in results if r["status"] == "success"]),
@@ -200,14 +200,14 @@ async def sync_single_account(bank_account_id: int, request: Request, current_us
     try:
         # 1. Получаем информацию о счете
         cookies = dict(request.cookies)
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            accounts_response = await client.get(
-                f"{USERS_SERVICE_URL}/users/me/bank_accounts",
-                headers={"Authorization": f"Bearer {current_user.get('token')}"},
-                cookies=cookies,
-            )
-            accounts_response.raise_for_status()
-            accounts = accounts_response.json()
+        client = get_http_client()
+        accounts_response = await client.get(
+            f"{USERS_SERVICE_URL}/users/me/bank_accounts",
+            headers={"Authorization": f"Bearer {current_user.get('token')}"},
+            cookies=cookies,
+        )
+        accounts_response.raise_for_status()
+        accounts = accounts_response.json()
 
         # 2. Ищем нужный счет
         target_account = next((acc for acc in accounts if acc.get("bank_account_id") == bank_account_id), None)
@@ -216,17 +216,17 @@ async def sync_single_account(bank_account_id: int, request: Request, current_us
             raise HTTPException(status_code=404, detail="Счет не найден или не принадлежит вам")
 
         # 3. Синхронизируем через transactions-service
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            sync_response = await client.post(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/sync_user_accounts", json={"user_id": user_id}
-            )
-            sync_response.raise_for_status()
+        client = get_http_client()
+        sync_response = await client.post(
+            f"{TRANSACTIONS_SERVICE_URL}/transactions/sync_user_accounts", json={"user_id": user_id}
+        )
+        sync_response.raise_for_status()
 
-            return {
-                "account_name": target_account.get("bank_account_name"),
-                "status": "success",
-                "message": "Синхронизация завершена",
-            }
+        return {
+            "account_name": target_account.get("bank_account_name"),
+            "status": "success",
+            "message": "Синхронизация завершена",
+        }
 
     except HTTPException:
         raise

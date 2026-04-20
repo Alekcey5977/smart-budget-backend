@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 import httpx
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_http_client
 from app.schemas.transaction_schema import (
     CategoryResponse,
     CategorySummaryRequest,
@@ -111,24 +111,24 @@ async def get_transactions(filters: TransactionFilterRequest, current_user: Dict
 
     request_data = filters.model_dump(exclude_none=True, mode="json")
 
-    async with httpx.AsyncClient() as client:
-        try:
-            headers = {"X-User-ID": str(user_id)}
+    client = get_http_client()
+    try:
+        headers = {"X-User-ID": str(user_id)}
 
-            response = await client.post(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/", headers=headers, json=request_data, timeout=10.0
-            )
+        response = await client.post(
+            f"{TRANSACTIONS_SERVICE_URL}/transactions/", headers=headers, json=request_data, timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get transactions")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get transactions")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Transaction service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Transactions service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Transaction service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Transactions service timeout")
 
 
 @router.patch(
@@ -181,25 +181,25 @@ async def update_transaction_category(
     """
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.patch(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/{transaction_id}/category",
-                headers={"X-User-ID": str(user_id)},
-                json=body.model_dump(),
-                timeout=10.0,
-            )
+    client = get_http_client()
+    try:
+        response = await client.patch(
+            f"{TRANSACTIONS_SERVICE_URL}/transactions/{transaction_id}/category",
+            headers={"X-User-ID": str(user_id)},
+            json=body.model_dump(),
+            timeout=10.0,
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to update transaction category")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to update transaction category")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Transaction service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Transactions service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Transaction service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Transactions service timeout")
 
 
 @router.post(
@@ -258,25 +258,25 @@ async def get_category_summary(
 ):
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories/summary",
-                headers={"X-User-ID": str(user_id)},
-                json=filters.model_dump(exclude_none=True, mode="json"),
-                timeout=10.0,
-            )
+    client = get_http_client()
+    try:
+        response = await client.post(
+            f"{TRANSACTIONS_SERVICE_URL}/transactions/categories/summary",
+            headers={"X-User-ID": str(user_id)},
+            json=filters.model_dump(exclude_none=True, mode="json"),
+            timeout=10.0,
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get category summary")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get category summary")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Transaction service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Transactions service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Transaction service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Transactions service timeout")
 
 
 @router.get(
@@ -324,26 +324,26 @@ async def get_categories(
 
     Защищенный эндпоинт, требует JWT токен.
     """
-    async with httpx.AsyncClient() as client:
-        try:
-            params = {}
-            if type is not None:
-                params["type"] = type
+    client = get_http_client()
+    try:
+        params = {}
+        if type is not None:
+            params["type"] = type
 
-            response = await client.get(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories", params=params, timeout=10.0
-            )
+        response = await client.get(
+            f"{TRANSACTIONS_SERVICE_URL}/transactions/categories", params=params, timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get categories")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get categories")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Transaction service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Transactions service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Transaction service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Transactions service timeout")
 
 
 @router.get(
@@ -367,22 +367,22 @@ async def get_categories(
     },
 )
 async def get_category_by_id(category_id: int, current_user: Dict[str, Any] = Depends(get_current_user)):
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/categories/{category_id}", timeout=10.0
-            )
+    client = get_http_client()
+    try:
+        response = await client.get(
+            f"{TRANSACTIONS_SERVICE_URL}/transactions/categories/{category_id}", timeout=10.0
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get category")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get category")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Transaction service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Transactions service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Transaction service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Transactions service timeout")
 
 
 @router.get(
@@ -426,21 +426,21 @@ async def get_category_by_id(category_id: int, current_user: Dict[str, Any] = De
 async def get_transaction_by_id(transaction_id: str, current_user: Dict[str, Any] = Depends(get_current_user)):
     user_id = current_user["user_id"]
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(
-                f"{TRANSACTIONS_SERVICE_URL}/transactions/{transaction_id}",
-                headers={"X-User-ID": str(user_id)},
-                timeout=10.0,
-            )
+    client = get_http_client()
+    try:
+        response = await client.get(
+            f"{TRANSACTIONS_SERVICE_URL}/transactions/{transaction_id}",
+            headers={"X-User-ID": str(user_id)},
+            timeout=10.0,
+        )
 
-            if response.status_code == 200:
-                return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-            error_detail = response.json().get("detail", "Failed to get transaction")
-            raise HTTPException(status_code=response.status_code, detail=error_detail)
+        error_detail = response.json().get("detail", "Failed to get transaction")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
 
-        except httpx.ConnectError:
-            raise HTTPException(503, "Transaction service is unavailable")
-        except httpx.TimeoutException:
-            raise HTTPException(504, "Transactions service timeout")
+    except httpx.ConnectError:
+        raise HTTPException(503, "Transaction service is unavailable")
+    except httpx.TimeoutException:
+        raise HTTPException(504, "Transactions service timeout")
