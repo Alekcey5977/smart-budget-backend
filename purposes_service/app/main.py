@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from shared.cache import cache_client
 from shared.event_publisher import EventPublisher
 from shared.logging import LoggingMiddleware, setup_logging
 
@@ -15,10 +16,12 @@ setup_logging(service_name="purposes-service")
 
 @asynccontextmanager
 async def life_span(app: FastAPI):
+    await cache_client.connect()
     await EventPublisher.connect()
     await create_tables()
     yield
     await EventPublisher.close()
+    await cache_client.close()
     await shutdown()
 
 
