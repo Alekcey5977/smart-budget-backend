@@ -38,8 +38,9 @@ TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL", "http://transac
 | `min_amount` | float | Минимальная сумма |
 | `max_amount` | float | Максимальная сумма |
 | `merchant_ids` | list[int] | Список ID мерчантов |
+| `bank_account_ids` | list[int] | Список ID банковских счетов |
 | `limit` | int | Количество записей (1-100, обязательное) |
-| `offset` | int | Смещение для пагинации | 
+| `offset` | int | Смещение для пагинации |
 
 ## Примеры запросов
 
@@ -69,6 +70,14 @@ TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL", "http://transac
     "min_amount": 5000,
     "limit": 20,
     "offset": 0
+}
+```
+
+### По конкретным счетам
+```json
+{
+    "bank_account_ids": [1, 3],
+    "limit": 50
 }
 ```
 """,
