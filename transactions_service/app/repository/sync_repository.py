@@ -227,6 +227,18 @@ class SyncRepository:
 
         return stats
 
+    async def rename_bank_account(self, bank_account_hash: str, new_name: str) -> bool:
+        """Переименовать банковский счёт по хэшу. Возвращает True если счёт найден."""
+        result = await self.db.execute(
+            select(Bank_Account).where(Bank_Account.bank_account_hash == bank_account_hash)
+        )
+        account = result.scalars().first()
+        if not account:
+            return False
+        account.bank_account_name = new_name
+        await self.db.commit()
+        return True
+
     async def get_all_active_account_hashes(self) -> list[tuple[str, int]]:
         """Возвращает [(bank_account_hash, user_id)]"""
         result = await self.db.execute(
