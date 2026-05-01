@@ -9,7 +9,7 @@ from app.cache import (
 from app.repository.bank_account_repository import Bank_AccountRepository
 from app.repository.user_repository import UserRepository
 from app.routers.users import get_bank_account_repository, get_user_repository
-from app.schemas import Bank_AccountCreate, Bank_accountResponse, oauth2_scheme
+from app.schemas import Bank_AccountCreate, Bank_accountResponse, BankAccountRenameRequest, oauth2_scheme
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 router = APIRouter(prefix="/me", tags=["bank_account"])
@@ -99,6 +99,31 @@ async def get_user_bank_accounts(
     await cache_client.set(cache_key, result, ttl=BANK_ACCOUNTS_TTL)
 
     return result
+
+
+@router.patch("/bank_account/{bank_account_id}", response_model=Bank_accountResponse)
+async def rename_bank_account(
+    bank_account_id: int,
+    rename_data: BankAccountRenameRequest,
+    user=Depends(get_current_user),
+    bank_account_repo: Bank_AccountRepository = Depends(get_bank_account_repository),
+):
+    """Переименовать банковский счёт"""
+    user_id = user.id
+
+    account = await bank_account_repo.rename(bank_account_id, user_id, rename_data.bank_account_name)
+    if account is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank account not found")
+
+    await cache_client.delete(bank_accounts_key(user_id))
+
+    return {
+        "bank_account_id": account.bank_account_id,
+        "bank_account_name": account.bank_account_name,
+        "currency": account.currency,
+        "bank": account.bank.name,
+        "balance": account.balance,
+    }
 
 
 @router.delete("/bank_account/{bank_account_id}", status_code=status.HTTP_204_NO_CONTENT)
