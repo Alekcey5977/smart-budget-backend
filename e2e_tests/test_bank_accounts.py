@@ -67,6 +67,65 @@ class TestGetBankAccounts:
         assert resp.status_code == 401
 
 
+class TestRenameBankAccount:
+    def test_rename_success(self, http_client, auth_headers, bank_account):
+        _, headers = auth_headers
+        account_id = bank_account["bank_account_id"]
+
+        resp = http_client.patch(
+            f"/users/me/bank_account/{account_id}",
+            json={"bank_account_name": "Переименованный счёт"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["bank_account_name"] == "Переименованный счёт"
+        assert data["bank_account_id"] == account_id
+
+    def test_rename_reflects_in_list(self, http_client, auth_headers, bank_account):
+        _, headers = auth_headers
+        account_id = bank_account["bank_account_id"]
+
+        http_client.patch(
+            f"/users/me/bank_account/{account_id}",
+            json={"bank_account_name": "Новое имя"},
+            headers=headers,
+        )
+
+        list_resp = http_client.get("/users/me/bank_accounts", headers=headers)
+        assert list_resp.status_code == 200
+        accounts = list_resp.json()
+        account = next(a for a in accounts if a["bank_account_id"] == account_id)
+        assert account["bank_account_name"] == "Новое имя"
+
+    def test_rename_nonexistent_returns_404(self, http_client, auth_headers):
+        _, headers = auth_headers
+        resp = http_client.patch(
+            "/users/me/bank_account/999999",
+            json={"bank_account_name": "Новое имя"},
+            headers=headers,
+        )
+        assert resp.status_code == 404
+
+    def test_rename_without_token_returns_401(self, http_client, bank_account):
+        account_id = bank_account["bank_account_id"]
+        resp = http_client.patch(
+            f"/users/me/bank_account/{account_id}",
+            json={"bank_account_name": "Новое имя"},
+        )
+        assert resp.status_code == 401
+
+    def test_rename_empty_name_returns_422(self, http_client, auth_headers, bank_account):
+        _, headers = auth_headers
+        account_id = bank_account["bank_account_id"]
+        resp = http_client.patch(
+            f"/users/me/bank_account/{account_id}",
+            json={"bank_account_name": "   "},
+            headers=headers,
+        )
+        assert resp.status_code == 422
+
+
 class TestDeleteBankAccount:
     def test_delete_existing_account_returns_204(self, http_client, auth_headers, bank_account):
         _, headers = auth_headers

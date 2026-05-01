@@ -103,6 +103,74 @@ class TestEventListener:
         await listener.handle_event(event)
 
     @pytest.mark.asyncio
+    async def test_handle_bank_account_renamed_calls_rename(self):
+        """При получении bank_account.renamed вызывается rename_bank_account"""
+        from app.event_listener import EventListener
+
+        event = _make_event(
+            "bank_account.renamed",
+            {"user_id": 1, "bank_account_hash": "abc123", "new_name": "Новое имя"},
+        )
+
+        mock_repo = AsyncMock()
+        mock_repo.rename_bank_account = AsyncMock(return_value=True)
+
+        with (
+            patch("app.event_listener.AsyncSessionLocal") as mock_session_local,
+            patch("app.event_listener.SyncRepository", return_value=mock_repo),
+        ):
+            mock_session_local.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
+            mock_session_local.return_value.__aexit__ = AsyncMock(return_value=False)
+
+            listener = EventListener()
+            await listener._handle_bank_account_renamed(event)
+
+        mock_repo.rename_bank_account.assert_awaited_once_with("abc123", "Новое имя")
+
+    @pytest.mark.asyncio
+    async def test_handle_bank_account_renamed_missing_fields(self):
+        """Если отсутствует hash или new_name — rename не вызывается"""
+        from app.event_listener import EventListener
+
+        event = _make_event("bank_account.renamed", {"user_id": 1})
+
+        mock_repo = AsyncMock()
+
+        with (
+            patch("app.event_listener.AsyncSessionLocal"),
+            patch("app.event_listener.SyncRepository", return_value=mock_repo),
+        ):
+            listener = EventListener()
+            await listener._handle_bank_account_renamed(event)
+
+        mock_repo.rename_bank_account.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_handle_bank_account_renamed_account_not_found(self):
+        """Если счёт не найден в transactions DB — ошибки нет"""
+        from app.event_listener import EventListener
+
+        event = _make_event(
+            "bank_account.renamed",
+            {"user_id": 1, "bank_account_hash": "unknown_hash", "new_name": "Имя"},
+        )
+
+        mock_repo = AsyncMock()
+        mock_repo.rename_bank_account = AsyncMock(return_value=False)
+
+        with (
+            patch("app.event_listener.AsyncSessionLocal") as mock_session_local,
+            patch("app.event_listener.SyncRepository", return_value=mock_repo),
+        ):
+            mock_session_local.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
+            mock_session_local.return_value.__aexit__ = AsyncMock(return_value=False)
+
+            listener = EventListener()
+            await listener._handle_bank_account_renamed(event)
+
+        mock_repo.rename_bank_account.assert_awaited_once()
+
+    @pytest.mark.asyncio
     async def test_handle_bank_account_added_sync_error_is_caught(self):
         """Ошибка sync_by_account не пробрасывается наружу"""
         from app.event_listener import EventListener
