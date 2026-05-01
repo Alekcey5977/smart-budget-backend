@@ -21,6 +21,7 @@ class TransactionRepository:
         min_amount: Optional[float] = None,
         max_amount: Optional[float] = None,
         merchant_ids: Optional[List[int]] = None,
+        bank_account_ids: Optional[List[int]] = None,
         limit: int = 50,
         offset: int = 0,
     ):
@@ -68,6 +69,9 @@ class TransactionRepository:
 
         if merchant_ids:
             query = query.where(Transaction.merchant_id.in_(merchant_ids))
+
+        if bank_account_ids:
+            query = query.where(Transaction.bank_account_id.in_(bank_account_ids))
 
         query = query.order_by(Transaction.created_at.desc()).limit(limit).offset(offset)
 

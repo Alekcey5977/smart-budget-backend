@@ -63,6 +63,7 @@ async def get_transactions(
             min_amount=filters.min_amount,
             max_amount=filters.max_amount,
             merchant_ids=filters.merchant_ids,
+            bank_account_ids=filters.bank_account_ids,
             limit=filters.limit,
             offset=filters.offset,
         )
