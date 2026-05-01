@@ -126,9 +126,8 @@ async def test_rename_not_my_account(
     db_session,
 ):
     """❌ Попытка переименовать чужой счёт"""
-    from passlib.context import CryptContext
-
     from app.models import Bank, Bank_Accounts, User
+    from passlib.context import CryptContext
 
     pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
     other_user = User(
