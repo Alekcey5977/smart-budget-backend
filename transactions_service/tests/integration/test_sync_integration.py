@@ -135,8 +135,14 @@ class TestSyncIntegration:
         mock_client_instance = AsyncMock()
         mock_client_instance.get.return_value = mock_response
 
-        with patch("app.repository.sync_repository.httpx.AsyncClient") as mock_http:
+        with (
+            patch("app.repository.sync_repository.httpx.AsyncClient") as mock_http,
+            patch("app.repository.sync_repository.EventPublisher") as mock_publisher_cls,
+        ):
             mock_http.return_value.__aenter__.return_value = mock_client_instance
+            mock_publisher = AsyncMock()
+            mock_publisher.publish = AsyncMock()
+            mock_publisher_cls.return_value = mock_publisher
 
             response = await client.post("/transactions/sync_user_accounts", json={"user_id": 123})
 
@@ -144,10 +150,16 @@ class TestSyncIntegration:
         assert response.status_code == 200
         assert response.json()["success"] == 1
 
-        # Проверяем, что счет обновился
+        # Проверяем что счет обновился
         await db_session.refresh(existing_acc)
         assert existing_acc.bank_account_name == "New Name"
         assert float(existing_acc.balance) == 500.00
+
+        # Проверяем ровно одно событие sync.completed на весь batch
+        mock_publisher.publish.assert_awaited_once()
+        event = mock_publisher.publish.await_args.args[0]
+        assert event.event_type == "sync.completed"
+        assert event.payload["user_id"] == 123
 
     @pytest.mark.asyncio
     async def test_sync_incremental_logic(self, client: AsyncClient, db_session):

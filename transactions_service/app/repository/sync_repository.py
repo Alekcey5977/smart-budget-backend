@@ -126,12 +126,32 @@ class SyncRepository:
             return {"categories": 0, "mcc": 0, "merchants": 0, "banks": 0, "bank_accounts": 0, "transactions": 0}
 
         try:
-            return await self._do_sync(bank_account_hash, user_id)
+            stats = await self._do_sync(bank_account_hash, user_id)
         finally:
             try:
                 await cache_client.redis.delete(lock_key)
             except Exception:
                 pass
+
+        try:
+            publisher = EventPublisher()
+            event = DomainEvent(
+                event_id=str(uuid4()),
+                event_type="sync.completed",
+                source="transactions-service",
+                timestamp=datetime.now(),
+                payload={
+                    "user_id": user_id,
+                    "bank_account_hash": bank_account_hash,
+                    "new_transactions_count": stats["transactions"],
+                    "synced_at": datetime.now().isoformat(),
+                },
+            )
+            await publisher.publish(event)
+        except Exception as e:
+            logger.warning(f"[SYNC] Не удалось опубликовать sync.completed: {e}")
+
+        return stats
 
     async def _do_sync(self, bank_account_hash: str, user_id: int) -> Dict[str, int]:
         logger.info(f"[SYNC] Starting sync for account {bank_account_hash}, user_id={user_id}")
@@ -207,24 +227,6 @@ class SyncRepository:
 
         await self.db.commit()
 
-        try:
-            publisher = EventPublisher()
-            event = DomainEvent(
-                event_id=str(uuid4()),
-                event_type="sync.completed",
-                source="transactions-service",
-                timestamp=datetime.now(),
-                payload={
-                    "user_id": user_id,
-                    "bank_account_hash": bank_account_hash,
-                    "new_transactions_count": stats["transactions"],
-                    "synced_at": datetime.now().isoformat(),
-                },
-            )
-            await publisher.publish(event)
-        except Exception as e:
-            logger.warning(f"[SYNC] Не удалось опубликовать sync.completed: {e}")
-
         return stats
 
     async def rename_bank_account(self, bank_account_hash: str, new_name: str) -> bool:
@@ -258,15 +260,34 @@ class SyncRepository:
         # Новые счета появятся после первого вызова trigger_sync.
         account_hashes = await self.get_user_account_hashes(user_id)
 
-        total = {"processed": len(account_hashes), "success": 0, "failed": 0}
+        total = {"processed": len(account_hashes), "success": 0, "failed": 0, "transactions": 0}
 
         for acc_hash in account_hashes:
             try:
-                await self.sync_by_account(acc_hash, user_id)
+                stats = await self._do_sync(acc_hash, user_id)
                 total["success"] += 1
+                total["transactions"] += stats["transactions"]
             except Exception as e:
                 print(f"Failed to sync {acc_hash} for user {user_id}: {e}")
                 total["failed"] += 1
+
+        if total["success"] > 0:
+            try:
+                publisher = EventPublisher()
+                event = DomainEvent(
+                    event_id=str(uuid4()),
+                    event_type="sync.completed",
+                    source="transactions-service",
+                    timestamp=datetime.now(),
+                    payload={
+                        "user_id": user_id,
+                        "new_transactions_count": total["transactions"],
+                        "synced_at": datetime.now().isoformat(),
+                    },
+                )
+                await publisher.publish(event)
+            except Exception as e:
+                logger.warning(f"[SYNC] Не удалось опубликовать sync.completed: {e}")
 
         return total
 
