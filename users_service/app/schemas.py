@@ -168,6 +168,20 @@ class Bank_AccountCreate(BaseModel):
     bank: str
 
 
+class BankAccountRenameRequest(BaseModel):
+    """Схема переименования банковского счета"""
+
+    bank_account_name: str = Field(..., min_length=1, max_length=100)
+
+    @field_validator("bank_account_name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Name cannot be empty")
+        return v
+
+
 class Bank_accountResponse(BaseModel):
     """Схема банковского счета"""
 

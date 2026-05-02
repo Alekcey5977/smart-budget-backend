@@ -57,14 +57,15 @@ class PurposeRepository:
         # При создании amount=0, поэтому пороги не пересекаются
         # (оставлено для совместимости, если amount будет задаваться при создании)
         crossed = get_crossed_thresholds(0, purpose.total_amount, purpose.amount, purpose.total_amount)
-        for threshold in crossed:
+        if crossed:
+            max_threshold = max(crossed)
             progress_percent = (purpose.amount / purpose.total_amount) * 100
             event_data_progress = {
                 "user_id": user_id,
                 "purpose_id": str(purpose.id),
                 "purpose_name": purpose.title,
                 "progress_percent": round(progress_percent, 2),
-                "threshold": threshold,
+                "threshold": max_threshold,
             }
             publisher = EventPublisher()
             event_progress = DomainEvent(
@@ -139,14 +140,15 @@ class PurposeRepository:
         if "amount" in update_data or "total_amount" in update_data:
             crossed = get_crossed_thresholds(old_amount, old_total_amount, new_amount, new_total_amount)
 
-            for threshold in crossed:
+            if crossed:
+                max_threshold = max(crossed)
                 progress_percent = (new_amount / new_total_amount) * 100
                 event_data = {
                     "user_id": user_id,
                     "purpose_id": str(purpose.id),
                     "purpose_name": purpose.title,
                     "progress_percent": round(progress_percent, 2),
-                    "threshold": threshold,
+                    "threshold": max_threshold,
                 }
                 publisher = EventPublisher()
                 event = DomainEvent(

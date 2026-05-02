@@ -19,6 +19,7 @@ class TransactionFilterRequest(BaseModel):
     min_amount: Optional[float] = Field(None, ge=0, description="Минимальная сумма")
     max_amount: Optional[float] = Field(None, ge=0, description="Максимальная сумма")
     merchant_ids: Optional[List[int]] = Field(None, description="Список ID мерчантов")
+    bank_account_ids: Optional[List[int]] = Field(None, description="Список ID банковских счетов")
     limit: int = Field(..., ge=1, le=1000)
     offset: int = Field(0, ge=0)
 

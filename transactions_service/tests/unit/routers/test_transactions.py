@@ -107,6 +107,35 @@ class TestGetTransactions:
         assert called_kwargs["category_ids"] == [1, 2]
 
     @pytest.mark.asyncio
+    async def test_get_transactions_filter_by_bank_account(self, client, mock_db_session):
+        """Тест: фильтр по bank_account_ids передаётся в репозиторий"""
+        mock_repo_instance = MagicMock()
+        mock_repo_instance.get_transactions_with_filters = AsyncMock(return_value=[])
+
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
+            response = client.post(
+                "/transactions/",
+                json={"limit": 10, "bank_account_ids": [1, 2]},
+            )
+
+        assert response.status_code == status.HTTP_200_OK
+        called_kwargs = mock_repo_instance.get_transactions_with_filters.call_args.kwargs
+        assert called_kwargs["bank_account_ids"] == [1, 2]
+
+    @pytest.mark.asyncio
+    async def test_get_transactions_without_bank_account_filter(self, client, mock_db_session):
+        """Тест: без bank_account_ids фильтр передаётся как None"""
+        mock_repo_instance = MagicMock()
+        mock_repo_instance.get_transactions_with_filters = AsyncMock(return_value=[])
+
+        with patch("app.routers.transactions.TransactionRepository", return_value=mock_repo_instance):
+            response = client.post("/transactions/", json={"limit": 10})
+
+        assert response.status_code == status.HTTP_200_OK
+        called_kwargs = mock_repo_instance.get_transactions_with_filters.call_args.kwargs
+        assert called_kwargs["bank_account_ids"] is None
+
+    @pytest.mark.asyncio
     async def test_get_transactions_internal_error(self, client, mock_db_session):
         """Тест: внутренняя ошибка сервера (Exception -> HTTP 500)"""
         mock_repo_instance = MagicMock()

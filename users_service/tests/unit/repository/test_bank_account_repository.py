@@ -249,6 +249,76 @@ async def test_create_bank_auto_created(
     assert any(isinstance(obj, Bank) for obj in added_objects), "Bank object should be added to session"
 
 
+async def test_rename_success(mock_db_session):
+    """Успешное переименование банковского счёта"""
+    from unittest.mock import MagicMock
+
+    from app.models import Bank_Accounts
+    from app.repository.bank_account_repository import Bank_AccountRepository
+
+    existing_account = MagicMock(spec=Bank_Accounts)
+    existing_account.bank_account_name = "Старое имя"
+
+    mock_scalar_result = MagicMock()
+    mock_scalar_result.first.return_value = existing_account
+    mock_result = MagicMock()
+    mock_result.scalars.return_value = mock_scalar_result
+    mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+    repo = Bank_AccountRepository(db=mock_db_session)
+    result = await repo.rename(bank_account_id=1, user_id=1, new_name="Новое имя")
+
+    assert result is existing_account
+    assert existing_account.bank_account_name == "Новое имя"
+    mock_db_session.commit.assert_called_once()
+    mock_db_session.refresh.assert_called_once_with(existing_account)
+
+
+@patch("app.repository.bank_account_repository.EventPublisher")
+async def test_rename_publishes_event(mock_event_publisher_class, mock_db_session):
+    """После переименования публикуется событие bank_account.renamed"""
+    from app.models import Bank_Accounts
+    from app.repository.bank_account_repository import Bank_AccountRepository
+
+    existing_account = MagicMock(spec=Bank_Accounts)
+    existing_account.bank_account_hash = "abc123"
+
+    mock_scalar_result = MagicMock()
+    mock_scalar_result.first.return_value = existing_account
+    mock_result = MagicMock()
+    mock_result.scalars.return_value = mock_scalar_result
+    mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+    mock_publisher_instance = AsyncMock()
+    mock_event_publisher_class.return_value = mock_publisher_instance
+
+    repo = Bank_AccountRepository(db=mock_db_session)
+    await repo.rename(bank_account_id=1, user_id=1, new_name="Новое имя")
+
+    mock_publisher_instance.publish.assert_awaited_once()
+    published_event = mock_publisher_instance.publish.call_args[0][0]
+    assert published_event.event_type == "bank_account.renamed"
+    assert published_event.payload["new_name"] == "Новое имя"
+    assert published_event.payload["bank_account_hash"] == "abc123"
+
+
+async def test_rename_account_not_found(mock_db_session):
+    """Счёт не найден — возвращает None"""
+    from app.repository.bank_account_repository import Bank_AccountRepository
+
+    mock_scalar_result = MagicMock()
+    mock_scalar_result.first.return_value = None
+    mock_result = MagicMock()
+    mock_result.scalars.return_value = mock_scalar_result
+    mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+    repo = Bank_AccountRepository(db=mock_db_session)
+    result = await repo.rename(bank_account_id=999, user_id=1, new_name="Новое имя")
+
+    assert result is None
+    mock_db_session.commit.assert_not_called()
+
+
 async def test_create_strips_account_number(mock_db_session, mock_hash_function, mock_httpx_async_client):
     """Проверяем, что номер счёта очищается от пробелов"""
     from app.repository.bank_account_repository import Bank_AccountRepository

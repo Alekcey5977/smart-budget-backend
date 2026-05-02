@@ -131,6 +131,39 @@ class Bank_AccountRepository:
         # Возвращаем account и hash для фоновой синхронизации
         return new_account, account_hash
 
+    async def rename(self, bank_account_id: int, user_id: int, new_name: str):
+        """Переименовать банковский счёт"""
+        from sqlalchemy.orm import selectinload
+
+        result = await self.db.execute(
+            select(Bank_Accounts)
+            .options(selectinload(Bank_Accounts.bank))
+            .where(Bank_Accounts.bank_account_id == bank_account_id, Bank_Accounts.user_id == user_id)
+        )
+        account = result.scalars().first()
+        if not account:
+            return None
+
+        account.bank_account_name = new_name
+        await self.db.commit()
+        await self.db.refresh(account)
+
+        publisher = EventPublisher()
+        event = DomainEvent(
+            event_id=str(uuid4()),
+            event_type="bank_account.renamed",
+            source="users-service",
+            timestamp=datetime.now(),
+            payload={
+                "user_id": user_id,
+                "bank_account_hash": account.bank_account_hash,
+                "new_name": new_name,
+            },
+        )
+        await publisher.publish(event)
+
+        return account
+
     async def get_all_by_user_id(self, user_id: int):
         """Получить все банковские счета пользователя с информацией о банке"""
         from sqlalchemy.orm import selectinload

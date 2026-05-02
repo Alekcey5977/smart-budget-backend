@@ -89,6 +89,7 @@ class EventListener:
 
     _event_handlers = {
         "bank_account.added": "_handle_bank_account_added",
+        "bank_account.renamed": "_handle_bank_account_renamed",
     }
 
     async def handle_event(self, event: DomainEvent):
@@ -99,6 +100,29 @@ class EventListener:
                 await handler(event)
         except Exception as e:
             logger.error(f"[EventListener] Ошибка обработки события {event.event_type}: {e}")
+
+    async def _handle_bank_account_renamed(self, event: DomainEvent):
+        """Обновить имя счёта при переименовании"""
+        payload = event.payload
+        bank_account_hash = payload.get("bank_account_hash")
+        new_name = payload.get("new_name")
+
+        if not bank_account_hash or not new_name:
+            logger.error(f"[EventListener] Отсутствует bank_account_hash или new_name: {payload}")
+            return
+
+        logger.info(f"[EventListener] Переименование счёта {bank_account_hash} → «{new_name}»")
+
+        async with AsyncSessionLocal() as db:
+            repo = SyncRepository(db)
+            try:
+                found = await repo.rename_bank_account(bank_account_hash, new_name)
+                if found:
+                    logger.info(f"[EventListener] Счёт {bank_account_hash} переименован")
+                else:
+                    logger.warning(f"[EventListener] Счёт {bank_account_hash} не найден в transactions DB")
+            except Exception as e:
+                logger.error(f"[EventListener] Ошибка переименования {bank_account_hash}: {e}")
 
     async def _handle_bank_account_added(self, event: DomainEvent):
         """Синхронизировать счёт при добавлении банковского аккаунта"""

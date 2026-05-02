@@ -103,6 +103,29 @@ class TestGetTransactions:
         response = await client_no_auth.post("/transactions/", json={"limit": 10})
         assert response.status_code == 401
 
+    async def test_bank_account_ids_filter_passed_to_downstream(self, client):
+        """bank_account_ids передаётся в downstream как часть JSON-тела"""
+        mock_http = AsyncMock()
+        mock_http.post.return_value = make_mock_http_response(200, json_data=[])
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
+            response = await client.post("/transactions/", json={"limit": 10, "bank_account_ids": [1, 2]})
+
+        assert response.status_code == 200
+        body_sent = mock_http.post.call_args.kwargs["json"]
+        assert body_sent["bank_account_ids"] == [1, 2]
+
+    async def test_bank_account_ids_filter_returns_filtered_list(self, client):
+        """Результат с bank_account_ids корректно возвращается клиенту"""
+        mock_http = AsyncMock()
+        mock_http.post.return_value = make_mock_http_response(200, json_data=TRANSACTION_LIST)
+        with patch("app.routers.transactions.get_http_client", return_value=mock_http):
+            response = await client.post("/transactions/", json={"limit": 10, "bank_account_ids": [1]})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert data[0]["bank_account_id"] == 1
+
 
 # ──────────────────────────────────────────────────────────────
 # GET /transactions/categories  — получить категории

@@ -273,19 +273,67 @@ class TestSyncRepository:
 
     @pytest.mark.asyncio
     async def test_sync_user_accounts(self, sync_repository):
-        """Тест синхронизации счетов конкретного пользователя"""
+        """sync_user_accounts вызывает _do_sync для каждого счёта"""
         user_id = 555
         hashes = ["acc1", "acc2"]
 
         with (
             patch.object(sync_repository, "get_user_account_hashes", new_callable=AsyncMock) as mock_get_hashes,
-            patch.object(sync_repository, "sync_by_account", new_callable=AsyncMock) as mock_sync,
+            patch.object(sync_repository, "_do_sync", new_callable=AsyncMock) as mock_do_sync,
+            patch("app.repository.sync_repository.EventPublisher") as mock_publisher_cls,
         ):
             mock_get_hashes.return_value = hashes
-            mock_sync.return_value = {"transactions": 0}
+            mock_do_sync.return_value = {"transactions": 3, "categories": 0, "mcc": 0, "merchants": 0, "banks": 0, "bank_accounts": 0}
+            mock_publisher_cls.return_value.publish = AsyncMock()
 
             result = await sync_repository.sync_user_accounts(user_id)
 
         assert result["success"] == 2
+        assert result["transactions"] == 6
         mock_get_hashes.assert_awaited_once_with(user_id)
-        mock_sync.assert_any_await("acc1", user_id)
+        mock_do_sync.assert_any_await("acc1", user_id)
+        mock_do_sync.assert_any_await("acc2", user_id)
+
+    async def test_sync_user_accounts_publishes_single_event(self, sync_repository):
+        """sync_user_accounts публикует ровно одно sync.completed со суммарной статистикой"""
+        user_id = 42
+        hashes = ["h1", "h2", "h3"]
+
+        with (
+            patch.object(sync_repository, "get_user_account_hashes", new_callable=AsyncMock) as mock_get_hashes,
+            patch.object(sync_repository, "_do_sync", new_callable=AsyncMock) as mock_do_sync,
+            patch("app.repository.sync_repository.EventPublisher") as mock_publisher_cls,
+        ):
+            mock_get_hashes.return_value = hashes
+            mock_do_sync.return_value = {"transactions": 5, "categories": 0, "mcc": 0, "merchants": 0, "banks": 0, "bank_accounts": 0}
+            mock_publisher = AsyncMock()
+            mock_publisher.publish = AsyncMock()
+            mock_publisher_cls.return_value = mock_publisher
+
+            await sync_repository.sync_user_accounts(user_id)
+
+        mock_publisher.publish.assert_awaited_once()
+        event = mock_publisher.publish.await_args.args[0]
+        assert event.event_type == "sync.completed"
+        assert event.payload["user_id"] == user_id
+        assert event.payload["new_transactions_count"] == 15  # 3 счёта × 5
+
+    async def test_sync_user_accounts_no_event_when_all_failed(self, sync_repository):
+        """sync.completed не публикуется если все счета упали с ошибкой"""
+        user_id = 7
+        hashes = ["bad1", "bad2"]
+
+        with (
+            patch.object(sync_repository, "get_user_account_hashes", new_callable=AsyncMock) as mock_get_hashes,
+            patch.object(sync_repository, "_do_sync", new_callable=AsyncMock) as mock_do_sync,
+            patch("app.repository.sync_repository.EventPublisher") as mock_publisher_cls,
+        ):
+            mock_get_hashes.return_value = hashes
+            mock_do_sync.side_effect = Exception("pseudo_bank down")
+            mock_publisher = AsyncMock()
+            mock_publisher_cls.return_value = mock_publisher
+
+            result = await sync_repository.sync_user_accounts(user_id)
+
+        assert result["success"] == 0
+        mock_publisher.publish.assert_not_awaited()

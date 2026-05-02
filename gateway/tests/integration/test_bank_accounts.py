@@ -150,6 +150,70 @@ class TestGetBankAccounts:
 
 
 # ──────────────────────────────────────────────────────────────
+# PATCH /users/me/bank_account/{id}  — переименовать счёт
+# ──────────────────────────────────────────────────────────────
+class TestRenameBankAccount:
+    async def test_success(self, client):
+        renamed = {**BANK_ACCOUNT_RESPONSE, "bank_account_name": "Новое имя"}
+        mock_http = AsyncMock()
+        mock_resp = make_mock_http_response(200, json_data=renamed)
+        mock_resp.raise_for_status = MagicMock()
+        mock_http.patch.return_value = mock_resp
+        with patch("app.routers.bank_accounts.get_http_client", return_value=mock_http):
+            response = await client.patch(
+                "/users/me/bank_account/1", json={"bank_account_name": "Новое имя"}
+            )
+
+        assert response.status_code == 200
+        assert response.json()["bank_account_name"] == "Новое имя"
+
+    async def test_not_found_returns_404(self, client):
+        mock_http = AsyncMock()
+        mock_http.patch.return_value = make_mock_http_response(404, json_data={"detail": "Not found"})
+        with patch("app.routers.bank_accounts.get_http_client", return_value=mock_http):
+            response = await client.patch(
+                "/users/me/bank_account/999", json={"bank_account_name": "Что-то"}
+            )
+
+        assert response.status_code == 404
+        assert "не найден" in response.json()["detail"]
+
+    async def test_timeout_returns_504(self, client):
+        mock_http = AsyncMock()
+        mock_http.patch.side_effect = httpx.TimeoutException("Timeout")
+        with patch("app.routers.bank_accounts.get_http_client", return_value=mock_http):
+            response = await client.patch(
+                "/users/me/bank_account/1", json={"bank_account_name": "Новое имя"}
+            )
+
+        assert response.status_code == 504
+
+    async def test_no_token_returns_401(self, client_no_auth):
+        response = await client_no_auth.patch(
+            "/users/me/bank_account/1", json={"bank_account_name": "Новое имя"}
+        )
+        assert response.status_code == 401
+
+    async def test_upstream_5xx_raises(self, client):
+        mock_http = AsyncMock()
+        mock_resp = make_mock_http_response(500, json_data={"detail": "Internal"})
+        mock_resp.text = "Internal Server Error"
+        err_resp = MagicMock()
+        err_resp.status_code = 500
+        err_resp.text = "Internal Server Error"
+        mock_resp.raise_for_status = MagicMock(
+            side_effect=httpx.HTTPStatusError("error", request=MagicMock(), response=err_resp)
+        )
+        mock_http.patch.return_value = mock_resp
+        with patch("app.routers.bank_accounts.get_http_client", return_value=mock_http):
+            response = await client.patch(
+                "/users/me/bank_account/1", json={"bank_account_name": "Новое имя"}
+            )
+
+        assert response.status_code == 500
+
+
+# ──────────────────────────────────────────────────────────────
 # DELETE /users/me/bank_account/{id}  — удалить банковский счёт
 # ──────────────────────────────────────────────────────────────
 class TestDeleteBankAccount:

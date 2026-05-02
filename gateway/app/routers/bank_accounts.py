@@ -265,6 +265,111 @@ async def get_bank_accounts(request: Request, current_user: dict = Depends(get_c
         raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка: {e.response.text}")
 
 
+@router.patch(
+    "/bank_account/{bank_account_id}",
+    summary="✏️ Переименовать банковский счёт",
+    description="""
+🔐 **Требует авторизации** | JWT токен в заголовке Authorization
+
+Изменяет отображаемое название банковского счёта. Номер счёта, банк и баланс остаются неизменными.
+
+---
+
+## 📝 Параметры
+
+| Параметр | Тип | Расположение | Описание |
+|----------|-----|--------------|----------|
+| `bank_account_id` | integer | Path | ID счёта (из GET /bank_accounts) |
+| `bank_account_name` | string | Body | Новое название (1–100 символов) |
+
+---
+
+## 📤 Пример запроса
+
+```json
+{
+    "bank_account_name": "Моя основная карта"
+}
+```
+
+---
+
+## ✅ Пример успешного ответа
+
+```json
+{
+    "bank_account_id": 1,
+    "bank_account_name": "Моя основная карта",
+    "currency": "RUB",
+    "bank": "Сбербанк",
+    "balance": "125450.75"
+}
+```
+
+---
+
+## ❌ Возможные ошибки
+
+| Код | Описание |
+|-----|----------|
+| **401** | Невалидный или отсутствующий токен |
+| **404** | Счёт не найден или не принадлежит вам |
+| **422** | Пустое или слишком длинное название |
+| **504** | Сервис пользователей не отвечает |
+    """,
+    responses={
+        200: {
+            "description": "Счёт успешно переименован",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "bank_account_id": 1,
+                        "bank_account_name": "Моя основная карта",
+                        "currency": "RUB",
+                        "bank": "Сбербанк",
+                        "balance": "125450.75",
+                    }
+                }
+            },
+        },
+        401: {"description": "Не авторизован"},
+        404: {
+            "description": "Счёт не найден",
+            "content": {"application/json": {"example": {"detail": "Банковский счет не найден"}}},
+        },
+        422: {
+            "description": "Некорректное название",
+            "content": {"application/json": {"example": {"detail": "Name cannot be empty"}}},
+        },
+        504: {"description": "Таймаут при переименовании счёта"},
+    },
+)
+async def rename_bank_account(
+    bank_account_id: int,
+    request: Request,
+    body: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    """Переименовать банковский счёт пользователя."""
+    client = get_http_client()
+    try:
+        cookies = dict(request.cookies)
+        response = await client.patch(
+            f"{USERS_SERVICE_URL}/users/me/bank_account/{bank_account_id}",
+            json=body,
+            headers={"Authorization": f"Bearer {current_user.get('token')}"},
+            cookies=cookies,
+        )
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Банковский счет не найден")
+        response.raise_for_status()
+        return response.json()
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Таймаут при переименовании счета")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Ошибка: {e.response.text}")
+
+
 @router.delete(
     "/bank_account/{bank_account_id}",
     status_code=204,

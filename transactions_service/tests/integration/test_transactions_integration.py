@@ -504,3 +504,67 @@ async def test_category_summary_excludes_other_users(client: AsyncClient, db_ses
     data = response.json()
     assert len(data) == 1
     assert data[0]["total_amount"] == 100.0
+
+
+@pytest.mark.asyncio
+async def test_filter_by_bank_account_ids(client: AsyncClient, db_session: AsyncSession):
+    """Тест: фильтрация транзакций по bank_account_ids"""
+    user_id = 123
+
+    bank = Bank(id=10, name="Filter Bank")
+    category = Category(id=30, name="Filter Cat")
+    account_a = Bank_Account(id=10, user_id=user_id, bank_account_hash="hash_a", bank_account_name="A", bank_id=10, currency="RUB", balance=0)
+    account_b = Bank_Account(id=11, user_id=user_id, bank_account_hash="hash_b", bank_account_name="B", bank_id=10, currency="RUB", balance=0)
+    db_session.add_all([bank, category, account_a, account_b])
+    await db_session.flush()
+
+    tx_a = Transaction(id=uuid.uuid4(), user_id=user_id, category_id=30, bank_account_id=10, amount=100.0, type="expense", created_at=datetime(2026, 1, 1))
+    tx_b = Transaction(id=uuid.uuid4(), user_id=user_id, category_id=30, bank_account_id=11, amount=200.0, type="expense", created_at=datetime(2026, 1, 2))
+    db_session.add_all([tx_a, tx_b])
+    await db_session.flush()
+
+    response = await client.post("/transactions/", json={"limit": 10, "bank_account_ids": [10]})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["bank_account_id"] == 10
+    assert data[0]["amount"] == 100.0
+
+
+@pytest.mark.asyncio
+async def test_filter_by_bank_account_ids_multiple(client: AsyncClient, db_session: AsyncSession):
+    """Тест: фильтр по нескольким счетам возвращает транзакции по каждому"""
+    user_id = 123
+
+    bank = Bank(id=20, name="Multi Bank")
+    category = Category(id=40, name="Multi Cat")
+    account_1 = Bank_Account(id=20, user_id=user_id, bank_account_hash="hash_m1", bank_account_name="M1", bank_id=20, currency="RUB", balance=0)
+    account_2 = Bank_Account(id=21, user_id=user_id, bank_account_hash="hash_m2", bank_account_name="M2", bank_id=20, currency="RUB", balance=0)
+    account_3 = Bank_Account(id=22, user_id=user_id, bank_account_hash="hash_m3", bank_account_name="M3", bank_id=20, currency="RUB", balance=0)
+    db_session.add_all([bank, category, account_1, account_2, account_3])
+    await db_session.flush()
+
+    db_session.add_all([
+        Transaction(id=uuid.uuid4(), user_id=user_id, category_id=40, bank_account_id=20, amount=10.0, type="expense", created_at=datetime(2026, 1, 1)),
+        Transaction(id=uuid.uuid4(), user_id=user_id, category_id=40, bank_account_id=21, amount=20.0, type="expense", created_at=datetime(2026, 1, 2)),
+        Transaction(id=uuid.uuid4(), user_id=user_id, category_id=40, bank_account_id=22, amount=30.0, type="expense", created_at=datetime(2026, 1, 3)),
+    ])
+    await db_session.flush()
+
+    response = await client.post("/transactions/", json={"limit": 10, "bank_account_ids": [20, 21]})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    account_ids_returned = {t["bank_account_id"] for t in data}
+    assert account_ids_returned == {20, 21}
+
+
+@pytest.mark.asyncio
+async def test_filter_by_nonexistent_bank_account_returns_empty(client: AsyncClient, db_session: AsyncSession):
+    """Тест: фильтр по несуществующему счёту возвращает пустой список"""
+    response = await client.post("/transactions/", json={"limit": 10, "bank_account_ids": [99999]})
+
+    assert response.status_code == 200
+    assert response.json() == []
