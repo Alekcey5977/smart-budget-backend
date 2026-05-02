@@ -1,0 +1,87 @@
+site_name: SmartBudget Backend
+site_description: Документация бэкенд-сервиса SmartBudget
+docs_dir: docs
+
+theme:
+  name: material
+  language: ru
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Тёмная тема
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Светлая тема
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Главная: README.md
+  - Архитектура:
+    - Обзор: architecture/overview.md
+    - Карта сервисов: architecture/services-map.md
+    - Модели данных: architecture/data-model.md
+    - Система событий: architecture/event-system.md
+  - Сервисы:
+    - Gateway: services/gateway.md
+    - Users Service: services/users-service.md
+    - Transactions Service: services/transactions-service.md
+    - Images Service: services/images-service.md
+    - Pseudo Bank Service: services/pseudo-bank-service.md
+    - Purposes Service: services/purposes-service.md
+    - Notification Service: services/notification-service.md
+    - History Service: services/history-service.md
+  - API:
+    - Обзор: api/index.md
+    - Аутентификация: api/auth.md
+    - Банковские счета: api/bank-accounts.md
+    - Транзакции: api/transactions.md
+    - Синхронизация: api/sync.md
+    - Изображения: api/images.md
+    - Финансовые цели: api/purposes.md
+    - Уведомления: api/notifications.md
+    - История: api/history.md
+    - WebSocket: api/websocket.md
+  - Деплой:
+    - Быстрый старт: deployment/quickstart.md
+    - Конфигурация: deployment/configuration.md
+    - Docker Compose: deployment/docker-compose.md
+    - Makefile: deployment/makefile-reference.md
+  - Тестирование:
+    - Стратегия: testing/overview.md
+    - Unit и интеграционные: testing/unit-integration.md
+    - E2E тесты: testing/e2e.md
+    - Нагрузочные тесты: testing/load-testing.md
+  - Мониторинг:
+    - Обзор: monitoring/overview.md
+    - Grafana: monitoring/grafana.md
+    - Логирование: monitoring/logs.md
+  - Требования (SRS): SRS-Smart-Budget.md
