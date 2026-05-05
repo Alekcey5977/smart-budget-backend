@@ -13,28 +13,37 @@
 ## Схема потока
 
 ```mermaid
-sequenceDiagram
-    participant SVC as Любой сервис<br/>(publisher)
-    participant Redis as Redis Stream<br/>domain-events
-    participant NS as notification-service<br/>(notification-group)
-    participant HS as history-service<br/>(history-group)
-    participant TS as transactions-service<br/>(transactions-group)
+flowchart LR
+    subgraph "1. Публикация"
+        A[Любой сервис] -->|XADD| B[(Redis Stream<br/>domain-events)]
+    end
 
-    SVC->>Redis: XADD domain-events {payload: DomainEvent JSON}
+    subgraph "2. Consumer Groups"
+        B -->|XREADGROUP| C[notification-group]
+        B -->|XREADGROUP| D[history-group]
+        B -->|XREADGROUP| E[transactions-group]
+    end
 
-    Redis-->>NS: XREADGROUP notification-group (block=5000ms)
-    NS->>NS: Сохранить уведомление в БД
-    NS->>NS: Разослать по WebSocket соединениям
-    NS->>Redis: XACK domain-events notification-group {msg_id}
+    subgraph "3. Обработка"
+        C -->|сохранить + WS| F[(БД)]
+        D -->|сохранить + WS| G[(БД)]
+        E -->|sync с банком| H[(БД)]
+    end
 
-    Redis-->>HS: XREADGROUP history-group (block=5000ms)
-    HS->>HS: Сохранить запись истории в БД
-    HS->>HS: Разослать по WebSocket соединениям
-    HS->>Redis: XACK domain-events history-group {msg_id}
+    subgraph "4. Подтверждение"
+        F -.->|XACK| B
+        G -.->|XACK| B
+        H -.->|XACK| B
+    end
 
-    Redis-->>TS: XREADGROUP transactions-group (block=5000ms)
-    TS->>TS: Обработать (sync при bank_account.added)
-    TS->>Redis: XACK domain-events transactions-group {msg_id}
+    style A fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    style B fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px,color:#000
+    style C fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style D fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style E fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style F fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#000
+    style G fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#000
+    style H fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#000
 ```
 
 ---
@@ -137,16 +146,29 @@ await publisher.publish(DomainEvent(
 
 ```mermaid
 sequenceDiagram
-    participant Redis
-    participant EL as EventListener
-    participant DB as notification_db
-    participant WS as active_connections<br/>(dict[user_id, list[WebSocket]])
-    participant Client
+    autonumber
+    participant Redis as 📦 Redis Stream
+    participant EL as ⚙️ EventListener
+    participant DB as 💾 notification_db
+    participant WS as 🔌 Connection Manager
+    participant Client as 🖥️ Клиент
 
-    Redis->>EL: XREADGROUP (purpose.progress)
+    Note over Redis,EL: 1. Получение
+    Redis->>EL: XREADGROUP purpose.progress
+    
+    Note over EL,DB: 2. Сохранение
     EL->>DB: INSERT INTO notifications
-    EL->>WS: Найти соединения user_id
+    DB-->>EL: notification_id
+    
+    Note over EL,WS: 3. Поиск соединений
+    EL->>WS: get_connections(user_id)
+    WS-->>EL: [websocket1, websocket2]
+    
+    Note over WS,Client: 4. Отправка
     WS->>Client: send_json({id, title, body, is_read, created_at})
+    
+    Note over EL,Redis: 5. Подтверждение
+    EL->>Redis: XACK
 ```
 
 Если пользователь не подключён по WS — уведомление сохраняется в БД и будет доступно при следующем открытии приложения через `GET /notifications/user/me`.

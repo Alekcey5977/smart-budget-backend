@@ -6,22 +6,27 @@
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant GW as Gateway :8000
+    autonumber
+    participant Client as 📱 Client
+    participant GW as 🚪 Gateway :8000
 
+    Note over Client,GW: 📝 REGISTRATION
     Client->>GW: POST /auth/register
     GW-->>Client: {user object}
 
+    Note over Client,GW: 🔐 LOGIN
     Client->>GW: POST /auth/login
     GW-->>Client: {access_token} + Set-Cookie: refresh_token
 
-    Note over Client: Через 15 минут access_token истекает
+    Note over Client: ⏰ Access token expires in 15 min
 
+    Note over Client,GW: 🔄 REFRESH
     Client->>GW: POST /auth/refresh (cookie: refresh_token)
-    GW-->>Client: {новый access_token} + новый refresh cookie
+    GW-->>Client: {new access_token} + new refresh cookie
 
+    Note over Client,GW: 🚪 LOGOUT
     Client->>GW: POST /auth/logout
-    GW-->>Client: {msg: "Logged out"} + удаление cookie
+    GW-->>Client: {msg: "Logged out"} + clear cookie
 ```
 
 ---

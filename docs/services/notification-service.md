@@ -12,21 +12,27 @@
 
 ```mermaid
 sequenceDiagram
-    participant Redis as Redis Stream<br/>domain-events
-    participant EL as EventListener<br/>(notification-group)
-    participant DB as notification_db
-    participant WS as active_connections<br/>dict[user_id → list[WebSocket]]
-    participant Client
+    autonumber
+    participant Redis as 🧠 Redis Stream<br/>domain-events
+    participant EL as 🎧 EventListener<br/>(notification-group)
+    participant DB as 🗄️ notification_db
+    participant WS as 🔌 Connection Manager<br/>{user_id → [WebSocket]}
+    participant Client as 📱 Client
+
+    Note over Redis,Client: 📨 NOTIFICATION HANDLING
 
     Redis->>EL: XREADGROUP (purpose.progress / user.registered)
     EL->>DB: INSERT INTO notifications {title, body, user_id}
-    EL->>WS: Найти соединения для user_id
-    alt Есть активное WS-соединение
+    EL->>WS: get_connections(user_id)
+    
+    alt ✅ Active WS connection exists
         WS->>Client: send_json(notification)
-    else Нет соединения
-        Note over DB: Уведомление сохранено,<br/>доступно через REST
+        Client-->>WS: ✓ delivered
+    else ❌ No connection
+        Note over DB: Notification saved,<br/>available via REST API
     end
-    EL->>Redis: XACK domain-events notification-group {msg_id}
+    
+    EL->>Redis: XACK ✅
 ```
 
 ---

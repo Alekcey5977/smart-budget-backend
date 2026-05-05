@@ -11,61 +11,6 @@ SmartBudget построен на четырёх ключевых архитек
 3. **Event-driven для побочных эффектов** — запись истории и отправка уведомлений выполняется через Redis Streams, а не синхронными вызовами.
 4. **Cache-Aside через Redis** — часто читаемые данные (профиль, категории, аватарки) кэшируются в Redis с TTL.
 
----
-
-## Компонентная диаграмма
-
-```mermaid
-graph LR
-    Client["Клиент\n(Web / Mobile)"]
-
-    subgraph Gateway["API Gateway :8000"]
-        GW["FastAPI\nJWT Auth\nHTTP Proxy\nWS Proxy"]
-    end
-
-    subgraph Services["Микросервисы"]
-        US["users-service\n:8001"]
-        TS["transactions-service\n:8002"]
-        IS["images-service\n:8003"]
-        PBS["pseudo-bank\n:8004"]
-        PS["purposes-service\n:8005"]
-        NS["notification-service\n:8006"]
-        HS["history-service\n:8007"]
-    end
-
-    subgraph Data["Данные"]
-        Redis[("Redis\n:6379")]
-        PG1[("users_db\n:5433")]
-        PG2[("transactions_db\n:5434")]
-        PG3[("images_db\n:5435")]
-        PG4[("pseudo_bank_db\n:5436")]
-        PG5[("purposes_db\n:5437")]
-        PG6[("notification_db\n:5438")]
-        PG7[("history_db\n:5439")]
-    end
-
-    Client -- "HTTP / WS" --> GW
-    GW --> US & TS & IS & PS & NS & HS
-
-    US -- "validate_account" --> PBS
-    TS -- "export transactions" --> PBS
-
-    US & TS & IS & PS -- "XADD domain-events" --> Redis
-    Redis -- "XREADGROUP notification-group" --> NS
-    Redis -- "XREADGROUP history-group" --> HS
-    Redis -- "XREADGROUP transactions-group" --> TS
-
-    US --- PG1
-    TS --- PG2
-    IS --- PG3
-    PBS --- PG4
-    PS --- PG5
-    NS --- PG6
-    HS --- PG7
-```
-
----
-
 ## Слои системы
 
 ### 1. Транспортный слой

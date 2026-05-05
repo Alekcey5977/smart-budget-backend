@@ -26,28 +26,31 @@ ws://localhost:8000/ws/notification?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant GW as Gateway :8000
-    participant NS as notification-service :8006
+    autonumber
+    participant Client as 📱 Client
+    participant GW as 🚪 Gateway :8000
+    participant NS as 📧 notification-service :8006
 
+    Note over Client,NS: 🔌 WEBSOCKET CONNECTION
     Client->>GW: WS /ws/notification?token=...
-    GW->>GW: Проверить JWT
-    alt Токен невалиден
+    GW->>GW: 🔍 Verify JWT
+    
+    alt ❌ Invalid token
         GW-->>Client: Close 4001
-    else Токен валиден
+    else ✅ Valid token
         GW->>NS: WS /ws/notification?token=...
-        NS->>NS: Добавить в active_connections[user_id]
-        GW-->>Client: Connection established
+        NS->>NS: ➕ Add to active_connections[user_id]
+        GW-->>Client: ✅ Connection established
 
-        loop Активное соединение
+        loop 📨 Active connection
             NS-->>GW: send_json(notification)
             GW-->>Client: send_json(notification)
         end
 
-        alt Клиент закрыл соединение
+        alt 🔚 Client closed
             Client->>GW: Close
             GW->>NS: Close
-        else Сервис закрыл соединение
+        else 🔚 Service closed
             NS->>GW: Close
             GW->>Client: Close
         end

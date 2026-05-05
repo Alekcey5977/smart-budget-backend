@@ -42,25 +42,25 @@
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant GW as Gateway
-    participant US as users-service
+    autonumber
+    participant C as 📱 Client
+    participant G as 🚪 Gateway
+    participant U as 👤 users-service
 
-    Client->>GW: POST /auth/login {email, password}
-    GW->>US: POST /users/login
-    US->>US: Проверить пароль (argon2.verify)
-    US->>US: Создать refresh_jti (uuid4)
-    US->>US: access_token = JWT(user_id, refresh_jti, exp=15min)
-    US->>US: refresh_token = JWT(user_id, jti=refresh_jti, exp=7d)
-    US-->>GW: {access_token} + Set-Cookie: refresh_token
-    GW-->>Client: {access_token} + Set-Cookie: refresh_token
+    Note over C,U: 🔐 LOGIN
+    C->>G: POST /auth/login (email, password)
+    G->>U: POST /users/login
+    U->>U: verify password
+    U->>U: generate tokens
+    U-->>G: access_token + refresh_token (cookie)
+    G-->>C: access_token + refresh_token (cookie)
 
-    Client->>GW: POST /auth/refresh (cookie: refresh_token)
-    GW->>US: POST /users/refresh
-    US->>US: Декодировать refresh_token
-    US->>US: Создать новые токены (rotate)
-    US-->>GW: {access_token} + новый Set-Cookie
-    GW-->>Client: {access_token} + новый Set-Cookie
+    Note over C,U: 🔄 REFRESH
+    C->>G: POST /auth/refresh (cookie)
+    G->>U: POST /users/refresh
+    U->>U: decode + rotate
+    U-->>G: new tokens
+    G-->>C: new tokens
 ```
 
 **JTI-binding:** каждый access token хранит `refresh_jti` — ID соответствующего refresh token. Это позволяет инвалидировать access token при замене refresh токена.
@@ -71,24 +71,26 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant GW as Gateway
-    participant US as users-service
-    participant PBS as pseudo-bank-service
-    participant Redis
+    autonumber
+    participant GW as 🚪 Gateway
+    participant US as 👤 users-service
+    participant PBS as 🏦 pseudo-bank-service
+    participant Redis as 🧠 Redis
 
+    Note over GW,Redis: ➕ ADD BANK ACCOUNT
     GW->>US: POST /me/bank_account {number, name, bank}
-    US->>US: HMAC-SHA256(number, BANK_SECRET_KEY) → hash
-    US->>PBS: POST /pseudo_bank/validate_account {hash}
+    US->>US: HMAC-SHA256(number) → hash
+    US->>PBS: POST /validate_account {hash}
     PBS-->>US: {currency, balance} или 404
-    US->>US: INSERT INTO bank_accounts (hash, name, currency, bank, balance)
-    US->>Redis: DEL bank_accounts:{user_id}  (инвалидация кэша)
-    US->>Redis: XADD domain-events {bank_account.added, user_id, hash, bank_name}
-    US-->>GW: {bank_account_id, bank_account_name, currency, bank, balance}
-```
+    US->>US: INSERT INTO bank_accounts
+    US->>Redis: DEL bank_accounts:{user_id}
+    US->>Redis: XADD domain-events {bank_account.added}
+    US-->>GW: {id, name, currency, bank, balance}
 
-После публикации события `bank_account.added`:
-- `transactions-service` автоматически запускает первичную синхронизацию
-- `history-service` записывает "Счёт {bank_name} добавлен"
+    Note over Redis: 📢 AFTER EVENT:
+    Note over Redis: → transactions-service: sync
+    Note over Redis: → history-service: "Account {bank} added"
+```
 
 ---
 

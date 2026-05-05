@@ -6,29 +6,33 @@
 
 ```mermaid
 graph LR
-    subgraph Services["Микросервисы (8 шт.)"]
-        S1["FastAPI\n/metrics"]
+    subgraph Services["🖥️ Services (8)"]
+        S1["⚡ FastAPI<br/>/metrics"]
     end
 
-    subgraph Logs["Логи"]
-        Docker["Docker\nstdout"]
-        Promtail["Promtail\n(Docker SD)"]
-        Loki["Loki\n:3100"]
+    subgraph Logs["📋 Logs"]
+        Docker["🐳 Docker"]
+        Promtail["🔍 Promtail"]
+        Loki["📊 Loki"]
     end
 
-    subgraph Metrics["Метрики"]
-        Prometheus["Prometheus\n:9090"]
-        K6["k6\n(remote write)"]
+    subgraph Metrics["📈 Metrics"]
+        Prometheus["🔥 Prometheus"]
+        K6["🚀 k6"]
     end
 
-    Grafana["Grafana\n:3000"]
+    Grafana["📉 Grafana"]
 
-    S1 -- "scrape каждые 15с" --> Prometheus
-    Docker -- "collect" --> Promtail
-    Promtail -- "push" --> Loki
-    K6 -- "remote write" --> Prometheus
-    Prometheus --> Grafana
-    Loki --> Grafana
+    S1 -->|scrape| Prometheus
+    Docker -->|collect| Promtail
+    Promtail -->|push| Loki
+    K6 -->|remote write| Prometheus
+    Prometheus -->|query| Grafana
+    Loki -->|query| Grafana
+
+    style Services fill:#e8f5e9,stroke:#2e7d32,stroke-width:1.5px
+    style Logs fill:#e3f2fd,stroke:#1565c0,stroke-width:1.5px
+    style Metrics fill:#fff3e0,stroke:#e65100,stroke-width:1.5px
 ```
 
 ---

@@ -26,12 +26,14 @@
 
 ```mermaid
 sequenceDiagram
-    participant APSched as APScheduler (10 мин)
-    participant TR as transactions-service
-    participant PBS as pseudo-bank-service
-    participant DB as transactions_db
-    participant Redis
+    autonumber
+    participant APSched as ⏱️ APScheduler (10 min)
+    participant TR as 💸 transactions-service
+    participant PBS as 🏦 pseudo-bank-service
+    participant DB as 🗄️ transactions_db
+    participant Redis as 🧠 Redis
 
+    Note over APSched,Redis: 🔄 PERIODIC SYNC
     APSched->>TR: periodic_sync()
     TR->>DB: SELECT активные bank_accounts
     loop Для каждого счёта

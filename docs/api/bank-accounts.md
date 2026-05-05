@@ -6,25 +6,29 @@
 
 ```mermaid
 sequenceDiagram
-    participant C as Клиент
-    participant GW as Gateway
-    participant US as users-service
-    participant PBS as pseudo-bank-service
-    participant TR as transactions-service
-    participant HS as history-service
+    autonumber
+    participant C as 📱 Client
+    participant GW as 🚪 Gateway
+    participant US as 👤 users-service
+    participant PBS as 🏦 pseudo-bank-service
+    participant TR as 💸 transactions-service
+    participant HS as 📜 history-service
+    participant Redis as 🧠 Redis
 
+    Note over C,Redis: ➕ ADD BANK ACCOUNT
     C->>GW: POST /users/me/bank_account
     GW->>US: POST /me/bank_account (Bearer token)
     US->>US: HMAC-SHA256(number) → hash
-    US->>PBS: POST /pseudo_bank/validate_account {hash}
+    US->>PBS: POST /validate_account {hash}
     PBS-->>US: {currency: "RUB", balance: 125450.75}
     US->>US: INSERT INTO bank_accounts
     US->>Redis: XADD domain-events (bank_account.added)
-    US-->>GW: {bank_account_id, name, currency, bank, balance}
+    US-->>GW: {id, name, currency, bank, balance}
     GW-->>C: 200 OK
 
+    Note over Redis,HS: 📢 AUTOMATED HANDLERS
     Redis-->>TR: XREADGROUP → trigger_sync(hash, user_id)
-    Redis-->>HS: XREADGROUP → "Счёт {bank} добавлен"
+    Redis-->>HS: XREADGROUP → "Account {bank} added"
 ```
 
 ---
