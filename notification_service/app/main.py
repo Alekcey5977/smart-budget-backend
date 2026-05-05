@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from app.database import create_tables, shutdown
 from app.event_listener import EventListener
+from app.pubsub_listener import start_pubsub_listener
 from app.routers import notification, websocket
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,22 +22,22 @@ async def life_span(app: FastAPI):
     await cache_client.connect()
     await create_tables()
 
-    # Запускаем прослушиватель событий в фоновом режиме
     event_listener = EventListener()
     listener_task = asyncio.create_task(event_listener.listen())
+    pubsub_task = asyncio.create_task(start_pubsub_listener())
 
-    # Сохраняем ссылку на задачу, чтобы она не была удалена GC
     app.state.listener_task = listener_task
+    app.state.pubsub_task = pubsub_task
 
     yield
 
-    # Отменяем задачу при остановке сервиса
-    if not listener_task.done():
-        listener_task.cancel()
-        try:
-            await listener_task
-        except asyncio.CancelledError:
-            pass
+    for task in (listener_task, pubsub_task):
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
     await cache_client.close()
     await shutdown()

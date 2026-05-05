@@ -6,10 +6,10 @@ import os
 import redis.asyncio as redis
 from app.database import get_db_session
 from app.repository.notification_repository import NotificationRepository
-from app.routers.websocket import active_connections
 from app.schemas import NotificationCreate
 from redis.exceptions import ConnectionError, ResponseError, TimeoutError
 
+from shared.cache import cache_client
 from shared.event_schema import DomainEvent
 
 logger = logging.getLogger(__name__)
@@ -115,43 +115,32 @@ class EventListener:
         "user.registered": "_handle_user_registered",
     }
 
-    async def _send_notification_websocket(self, user_id: int, notification_data: dict):
-        """Отправка уведомления по WebSocket, если есть подключения"""
-        if user_id in active_connections:
-            message = json.dumps(notification_data)
-            disconnected = []
-            for ws in active_connections[user_id]:
-                try:
-                    await ws.send_text(message)
-                except Exception as e:
-                    logger.warning(
-                        f"Ошибка отправки WebSocket пользователю {user_id}: {e}")
-                    disconnected.append(ws)
-
-            # Удаляем разорванные соединения
-            for ws in disconnected:
-                active_connections[user_id].remove(ws)
-            if not active_connections[user_id]:
-                del active_connections[user_id]
-
     async def _create_and_broadcast_notification(self, user_id: int, title: str, body: str):
-        """Создаёт уведомление в БД и рассылает по WebSocket"""
+        """Создаёт уведомление в БД, публикует в Redis Pub/Sub и инвалидирует кэш"""
 
-        # Сохраняем в БД
         async with get_db_session() as db:
             repo = NotificationRepository(db)
             notification_data = NotificationCreate(
                 user_id=user_id, title=title, body=body)
             saved = await repo.create_notification(notification_data)
 
-        # Формируем payload
         ws_payload = self.build_notification_payload(saved, is_read=False)
 
-        # Рассылаем по WebSocket
-        await self._send_notification_websocket(user_id, ws_payload)
+        # Публикуем в Redis — все воркеры получат и отправят в свои локальные WS-соединения
+        try:
+            await cache_client.redis.publish(
+                f"ws:notification:{user_id}", json.dumps(ws_payload)
+            )
+        except Exception as e:
+            logger.warning(f"Не удалось опубликовать в Redis Pub/Sub: {e}")
+
+        try:
+            await cache_client.delete_pattern(f"notifications:{user_id}:*")
+        except Exception as e:
+            logger.warning(f"Не удалось очистить кэш уведомлений: {e}")
 
         logger.info(
-            f"✅ Уведомление сохранено и отправлено пользователю {user_id}")
+            f"Уведомление сохранено и опубликовано для пользователя {user_id}")
 
     def build_notification_payload(self, saved, is_read: bool = False) -> dict:
         """Создание объекта уведомления"""
