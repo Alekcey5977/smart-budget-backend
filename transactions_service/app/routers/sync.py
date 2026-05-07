@@ -1,7 +1,6 @@
 import logging
 
 from app.database import get_db
-from app.dependencies import get_user_id_from_header
 from app.repository.sync_repository import SyncRepository
 from app.routers.transactions import router
 from app.schemas import SyncTriggerRequest
@@ -64,16 +63,6 @@ async def sync_user_accounts(request: SyncUserAccountsRequest, db: AsyncSession 
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sync user accounts failed: {str(e)}")
-
-
-@router.get("/last_sync", summary="Время последней синхронизации счетов")
-async def get_last_sync(
-    user_id: int = Depends(get_user_id_from_header),
-    db: AsyncSession = Depends(get_db),
-):
-    """Возвращает время последней синхронизации для каждого счёта пользователя."""
-    repo = SyncRepository(db)
-    return await repo.get_last_sync_times(user_id)
 
 
 @router.post("/sync_all", summary="Синхронизировать все активные счета")

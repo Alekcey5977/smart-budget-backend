@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 from uuid import uuid4
 
@@ -210,20 +210,18 @@ class SyncRepository:
         }
         logger.info(f"[SYNC] Upsert stats: {stats}")
 
+        newest_time = datetime.now(tz=timezone.utc)
         if transactions:
-            newest_time = None
             for tx in transactions:
-                # created_at уже datetime объект после конвертации выше
                 tx_time = tx["created_at"]
-                if newest_time is None or tx_time > newest_time:
+                if tx_time > newest_time:
                     newest_time = tx_time
 
-            if newest_time:
-                await self.db.execute(
-                    update(Bank_Account)
-                    .where(Bank_Account.bank_account_hash == bank_account_hash)
-                    .values(last_synced_at=newest_time)
-                )
+        await self.db.execute(
+            update(Bank_Account)
+            .where(Bank_Account.bank_account_hash == bank_account_hash)
+            .values(last_synced_at=newest_time)
+        )
 
         await self.db.commit()
 
