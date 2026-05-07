@@ -10,6 +10,62 @@ TRANSACTIONS_SERVICE_URL = os.getenv("TRANSACTIONS_SERVICE_URL", "http://transac
 USERS_SERVICE_URL = os.getenv("USERS_SERVICE_URL", "http://users-service:8001")
 
 
+@router.get(
+    "/last_sync",
+    summary="Время последней синхронизации счетов",
+    description="""
+🔐 **Требует авторизации** | JWT токен в заголовке Authorization
+
+Возвращает время последней синхронизации для каждого банковского счёта пользователя.
+
+## Пример ответа
+
+```json
+{
+    "oldest_synced_at": "2024-01-12T10:00:00+00:00",
+    "accounts": [
+        {
+            "bank_account_hash": "abc123",
+            "bank_account_name": "Основная карта",
+            "last_synced_at": "2024-01-15T14:30:00+00:00"
+        },
+        {
+            "bank_account_hash": "def456",
+            "bank_account_name": "Накопительная",
+            "last_synced_at": null
+        }
+    ]
+}
+```
+
+`oldest_synced_at` — минимальное время среди всех счетов (показывать в UI как "Обновлено: X назад").
+`null` означает, что хотя бы один счёт ещё не синхронизировался.
+""",
+    responses={
+        200: {"description": "Список счетов со временем последней синхронизации"},
+        401: {"description": "Не авторизован"},
+        503: {"description": "Сервис транзакций недоступен"},
+    },
+)
+async def get_last_sync(request: Request, current_user: dict = Depends(get_current_user)):
+    """Получить время последней синхронизации для всех счетов пользователя."""
+    user_id = current_user["user_id"]
+    client = get_http_client()
+    try:
+        response = await client.get(
+            f"{TRANSACTIONS_SERVICE_URL}/transactions/last_sync",
+            headers={"X-User-ID": str(user_id)},
+        )
+        response.raise_for_status()
+        return response.json()
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="Сервис транзакций недоступен")
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Таймаут сервиса транзакций")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+
+
 @router.post(
     "",
     summary="Синхронизировать все счета пользователя",
