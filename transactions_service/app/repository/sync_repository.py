@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 from uuid import uuid4
 
@@ -210,20 +210,18 @@ class SyncRepository:
         }
         logger.info(f"[SYNC] Upsert stats: {stats}")
 
+        newest_time = datetime.now(tz=timezone.utc)
         if transactions:
-            newest_time = None
             for tx in transactions:
-                # created_at уже datetime объект после конвертации выше
                 tx_time = tx["created_at"]
-                if newest_time is None or tx_time > newest_time:
+                if tx_time > newest_time:
                     newest_time = tx_time
 
-            if newest_time:
-                await self.db.execute(
-                    update(Bank_Account)
-                    .where(Bank_Account.bank_account_hash == bank_account_hash)
-                    .values(last_synced_at=newest_time)
-                )
+        await self.db.execute(
+            update(Bank_Account)
+            .where(Bank_Account.bank_account_hash == bank_account_hash)
+            .values(last_synced_at=newest_time)
+        )
 
         await self.db.commit()
 
@@ -240,6 +238,26 @@ class SyncRepository:
         account.bank_account_name = new_name
         await self.db.commit()
         return True
+
+    async def get_last_sync_times(self, user_id: int) -> dict:
+        """Возвращает время последней синхронизации для всех счетов пользователя"""
+        result = await self.db.execute(
+            select(Bank_Account.bank_account_hash, Bank_Account.bank_account_name, Bank_Account.last_synced_at)
+            .where(Bank_Account.user_id == user_id)
+            .where(Bank_Account.is_deleted.is_(False))
+        )
+        rows = result.fetchall()
+        accounts = [
+            {
+                "bank_account_hash": row[0],
+                "bank_account_name": row[1],
+                "last_synced_at": row[2].isoformat() if row[2] else None,
+            }
+            for row in rows
+        ]
+        synced_times = [row[2] for row in rows if row[2] is not None]
+        oldest = min(synced_times).isoformat() if synced_times else None
+        return {"oldest_synced_at": oldest, "accounts": accounts}
 
     async def get_all_active_account_hashes(self) -> list[tuple[str, int]]:
         """Возвращает [(bank_account_hash, user_id)]"""

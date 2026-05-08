@@ -337,3 +337,26 @@ class TestSyncRepository:
 
         assert result["success"] == 0
         mock_publisher.publish.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_get_last_sync_times(self, sync_repository, mock_db_session):
+        """get_last_sync_times возвращает список с хешем, именем и временем синхронизации"""
+        from datetime import datetime, timezone
+
+        synced_at = datetime(2024, 1, 15, 14, 30, 0, tzinfo=timezone.utc)
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = [
+            ("hash1", "Основная карта", synced_at),
+            ("hash2", "Накопительная", None),
+        ]
+        mock_db_session.execute.return_value = mock_result
+
+        result = await sync_repository.get_last_sync_times(123)
+
+        assert result["oldest_synced_at"] == synced_at.isoformat()
+        assert len(result["accounts"]) == 2
+        assert result["accounts"][0]["bank_account_hash"] == "hash1"
+        assert result["accounts"][0]["bank_account_name"] == "Основная карта"
+        assert result["accounts"][0]["last_synced_at"] == synced_at.isoformat()
+        assert result["accounts"][1]["last_synced_at"] is None
+        mock_db_session.execute.assert_awaited_once()
