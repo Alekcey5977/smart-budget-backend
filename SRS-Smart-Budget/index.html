@@ -1,0 +1,3070 @@
+
+<!doctype html>
+<html lang="ru" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Документация бэкенд-сервиса SmartBudget">
+      
+      
+      
+      
+        <link rel="prev" href="../monitoring/logs/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Требования (SRS) - SmartBudget Backend</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#smart-budget" class="md-skip">
+          Перейти к содержанию
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
+    <a href=".." title="SmartBudget Backend" class="md-header__button md-logo" aria-label="SmartBudget Backend" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SmartBudget Backend
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Требования (SRS)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Тёмная тема"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Тёмная тема" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Светлая тема"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Светлая тема" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Поиск" placeholder="Поиск" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Поиск">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Очистить" aria-label="Очистить" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Инициализация поиска
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Вкладки" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Главная
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/overview/" class="md-tabs__link">
+          
+  
+  
+  Архитектура
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../services/gateway/" class="md-tabs__link">
+          
+  
+  
+  Сервисы
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/" class="md-tabs__link">
+          
+  
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../deployment/quickstart/" class="md-tabs__link">
+          
+  
+  
+  Деплой
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../testing/overview/" class="md-tabs__link">
+          
+  
+  
+  Тестирование
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../monitoring/overview/" class="md-tabs__link">
+          
+  
+  
+  Мониторинг
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Требования (SRS)
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Навигация" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SmartBudget Backend" class="md-nav__button md-logo" aria-label="SmartBudget Backend" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    SmartBudget Backend
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Главная
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Архитектура
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Архитектура
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Обзор
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/services-map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Карта сервисов
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Модели данных
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/event-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Система событий
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Сервисы
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Сервисы
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/gateway/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gateway
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/users-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/transactions-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transactions Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/images-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Images Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/pseudo-bank-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pseudo Bank Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/purposes-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Purposes Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/notification-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notification Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/history-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    History Service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Обзор
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Аутентификация
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/bank-accounts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Банковские счета
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/transactions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Транзакции
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/sync/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Синхронизация
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/images/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Изображения
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/purposes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Финансовые цели
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/notifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Уведомления
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    История
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/websocket/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WebSocket
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Деплой
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Деплой
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Быстрый старт
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Конфигурация
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/docker-compose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Compose
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/makefile-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Makefile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Тестирование
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Тестирование
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Стратегия
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/unit-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Unit и интеграционные
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/e2e/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    E2E тесты
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/load-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Нагрузочные тесты
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Мониторинг
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Мониторинг
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monitoring/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Обзор
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monitoring/grafana/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Grafana
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monitoring/logs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Логирование
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Требования (SRS)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Требования (SRS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Содержание">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Авторы: Килин Алексей, Лыков Дмитрий, Оськин Александр, Попов Вадим
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Функциональные требования
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Функциональные требования">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Регистрация пользователей.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Авторизация пользователей
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Редактирование профиля
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Подключение банка к веб-приложению
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление доходами
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление расходами
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление финансовыми целями
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Уведомления
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Панель пользователя (дашборд)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Нефункциональные требования
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Регистрация пользователей
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Авторизация пользователей
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Редактирование профиля
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Привязать счёт
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление доходами
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление расходами
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление финансовыми целями
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Уведомления
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Панель пользователя (дашборд)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#todo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TODO: На будущее
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TODO: На будущее">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Сделать возможность добавлять несколько счетов
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Отвязать карту
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Содержание">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Авторы: Килин Алексей, Лыков Дмитрий, Оськин Александр, Попов Вадим
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Функциональные требования
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Функциональные требования">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Регистрация пользователей.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Авторизация пользователей
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Редактирование профиля
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Подключение банка к веб-приложению
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление доходами
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление расходами
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление финансовыми целями
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Уведомления
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Панель пользователя (дашборд)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Нефункциональные требования
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Регистрация пользователей
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Авторизация пользователей
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Редактирование профиля
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Привязать счёт
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление доходами
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление расходами
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Управление финансовыми целями
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Уведомления
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Панель пользователя (дашборд)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#todo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TODO: На будущее
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TODO: На будущее">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Сделать возможность добавлять несколько счетов
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Отвязать карту
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="smart-budget">Спецификация требований системы проекта “Smart Budget”<a class="headerlink" href="#smart-budget" title="Permanent link">&para;</a></h1>
+<h4 id="_1"><em>Авторы: Килин Алексей, Лыков Дмитрий, Оськин Александр, Попов Вадим</em><a class="headerlink" href="#_1" title="Permanent link">&para;</a></h4>
+<h2 id="_2">Функциональные требования<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h3 id="_3">Регистрация пользователей.<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Регистрация с помощью email, пароля, фамилии, имени;</p>
+</li>
+<li>
+<p>Отчество доступно не обязательно при регистрации;</p>
+</li>
+<li>
+<p>Проверка уникальности email.</p>
+</li>
+</ul>
+<h3 id="_4">Авторизация пользователей<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>С помощью email и пароля.</li>
+</ul>
+<h3 id="_5">Редактирование профиля<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Редактирование персональных данных (имя, фамилия, отчество);</p>
+</li>
+<li>
+<p>Возможность изменить пароль;</p>
+</li>
+</ul>
+<h3 id="-">Подключение банка к веб-приложению<a class="headerlink" href="#-" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Автоматическое подключение к системе "<em>псевдо-банк</em>" при вводе банковского счета.</li>
+</ul>
+<h3 id="_6">Управление доходами<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Автоматическое добавление доходов из "<em>псевдо-банка</em>", при условии подключенного банка;</p>
+</li>
+<li>
+<p>Редактирование категории у доходов;</p>
+</li>
+<li>
+<p>Просмотр общей суммы доходов за выбранный период;</p>
+</li>
+<li>
+<p>Классификация по категориям (зарплата, перевод и т.д.).</p>
+</li>
+</ul>
+<h3 id="_7">Управление расходами<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Автоматическое добавление расходов из "<em>псевдо-банка</em>", при условии подключенного банка;</p>
+</li>
+<li>
+<p>Редактирование категории у расходов;</p>
+</li>
+<li>
+<p>Классификация по категориям (продукты, развлечения и т.д.).</p>
+</li>
+</ul>
+<h3 id="_8">Управление финансовыми целями<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Создание цели;</p>
+</li>
+<li>
+<p>Указание целевой суммы и дедлайна;</p>
+</li>
+<li>
+<p>Автоматический расчёт рекомендуемого взноса;</p>
+</li>
+<li>
+<p>Отображение прогресса выполнения цели;</p>
+</li>
+<li>
+<p>Уведомление при достижении 80% цели.</p>
+</li>
+</ul>
+<h3 id="_9">Уведомления<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Создание уведомлений выполнении (невыполнении) цели;</p>
+</li>
+<li>
+<p>Просмотр уведомлений в центре уведомлений веб-приложения.</p>
+</li>
+</ul>
+<h3 id="_10">Панель пользователя (дашборд)<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>Отображение графиков расходов и доходов по категориям;</p>
+</li>
+<li>
+<p>Общая сводка по балансу, дохода, расходам целям;</p>
+</li>
+<li>
+<p>Вывод последний транзакций;</p>
+</li>
+<li>
+<p>Фото профиля;</p>
+</li>
+<li>
+<p>Интерактивное обновление данных без перезагрузки страницы.</p>
+</li>
+</ul>
+<h2 id="_11">Нефункциональные требования<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p>Устойчивость в нагрузке;</p>
+</li>
+<li>
+<p>Безопасность данных пользователей;</p>
+</li>
+<li>
+<p>Кроссплатформенность и совместимость;</p>
+</li>
+</ul>
+<h2 id="use-cases">Use Cases<a class="headerlink" href="#use-cases" title="Permanent link">&para;</a></h2>
+<h3 id="_12">Регистрация пользователей<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Новый пользователь.</p>
+<p><strong>Предусловия:</strong> Пользователь не зарегистрирован и находится на странице "<em>Регистрация</em>".</p>
+<p><strong>Основной сценарий:</strong></p>
+<ol>
+<li>
+<p>Пользователь открывает веб-приложение и нажимает кнопку "<em>Регистрация</em>".</p>
+</li>
+<li>
+<p>Система отображает форму с полями:</p>
+<ul>
+<li>email;</li>
+<li>пароль;</li>
+<li>подтверждение пароля.</li>
+</ul>
+</li>
+<li>
+<p>Пользователь вводит данные.</p>
+</li>
+<li>
+<p>Система проверяет:</p>
+<ul>
+<li>корректность email-формата;</li>
+<li>совпадение паролей;</li>
+<li>уникальность email.</li>
+</ul>
+</li>
+<li>
+<p>Если email уже зарегистрирован - отображается сообщение: "<em>Пользователь с таким email уже существует</em>".</p>
+</li>
+<li>
+<p>Если всё корректно - открывается еще одна страница регистрации.</p>
+</li>
+<li>
+<p>Система отображает форму с полями:</p>
+<ul>
+<li>Фамилия;</li>
+<li>Имя;</li>
+<li>Отчество. </li>
+</ul>
+</li>
+<li>
+<p>Пользователь вводит данные.</p>
+</li>
+<li>
+<p>Если всё корректно (обязательно введены имя, фамилия, а отчество - не обязательно) - система: сохраняет нового пользователя.</p>
+</li>
+<li>
+<p>Пользователя перенаправляет на дашборд.</p>
+</li>
+</ol>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>
+<p>Пользователь активирован в системе;</p>
+</li>
+<li>
+<p>Доступна авторизация.</p>
+</li>
+</ul>
+<h3 id="_13">Авторизация пользователей<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Зарегистрированный пользователь.</p>
+<p><strong>Цель:</strong> Пользователь входит в систему под своим email и паролем.</p>
+<p><strong>Предусловия:</strong> Пользователь уже зарегистрирован в системе.</p>
+<p><strong>Основной сценарий:</strong></p>
+<ol>
+<li>
+<p>Пользователь нажимает кнопку "<em>Вход</em>".</p>
+</li>
+<li>
+<p>Система отображает форму с полями: email и пароль.</p>
+</li>
+<li>
+<p>Пользователь вводит данные и нажимает "<em>Войти</em>".</p>
+</li>
+<li>
+<p>Система:</p>
+<ul>
+<li>
+<p>проверяет наличие пользователя;</p>
+</li>
+<li>
+<p>сверяет пароль;</p>
+</li>
+<li>
+<p>при успехе выдаёт JWT-токен доступа и refresh-токен.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Пользователь перенаправляется на главную страницу дашборда.</p>
+</li>
+<li>
+<p>Если пароль неверный - система выводит сообщение: "<em>Неправильный логин или пароль</em>".</p>
+</li>
+</ol>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>Пользователь входит в систему и имеет доступ к функционалу.</li>
+</ul>
+<h3 id="_14">Редактирование профиля<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Авторизованный пользователь.</p>
+<p><strong>Предусловия:</strong> Пользователь находится на странице "<em>Профиль</em>".</p>
+<p><strong>Цель:</strong> Отредактировать персональные данные.</p>
+<p><strong>Основной сценарий:</strong></p>
+<ol>
+<li>
+<p>Пользователь открывает раздел "<em>Профиль</em>".</p>
+</li>
+<li>
+<p>В профиле отображаются текущие данные: имя, фамилия, отчество, email, аватарка.</p>
+</li>
+<li>
+<p>Вводит новые значения (имя, фамилия, отчетсво).</p>
+</li>
+<li>
+<p>Email - не можем менять. </p>
+</li>
+<li>
+<p>Пользователь нажимает "<em>Сохранить</em>".</p>
+</li>
+<li>
+<p>Также пользователь может изменить аватарку из предзагруженного списка изображений. </p>
+</li>
+<li>
+<p>Система обновляет данные в БД и отображает сообщение: "<em>Изменения успешно сохранены</em>".</p>
+</li>
+</ol>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>
+<p>Данные пользователя обновлены в базе данных;</p>
+</li>
+<li>
+<p>В системе зафиксировано изменение профиля;</p>
+</li>
+<li>
+<p>Новые данные отображаются во всех связанных модулях системы;</p>
+</li>
+<li>
+<p>Пользователь перенаправлен на страницу профиля с обновленными данными;</p>
+</li>
+</ul>
+<h3 id="_15">Привязать счёт<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Авторизованный пользователь.</p>
+<p><strong>Предусловия:</strong> Пользователь находится на дашборде.</p>
+<p><strong>Цель:</strong> Пользователь подключает карту (псевдо-банк) для автоматического импорта транзакций.</p>
+<p><strong>Основной сценарий:</strong></p>
+<ol>
+<li>
+<p>Пользователь видит на дашборде поле - добавить счет.</p>
+</li>
+<li>
+<p>Нажимает кнопку "<em>Подключить счет</em>".</p>
+</li>
+<li>
+<p>Вводит:</p>
+<ul>
+<li>номер счета;</li>
+</ul>
+</li>
+<li>
+<p>Система обращается к Mock Bank API для проверки.</p>
+</li>
+<li>
+<p>При успешной проверке создается связка с пользователем.</p>
+</li>
+<li>
+<p>Система запускает задачу импорта транзакций.</p>
+</li>
+<li>
+<p>Пользователь видит сообщение: "<em>Банк успешно подключен. Данные будут обновляться автоматически</em>".</p>
+</li>
+</ol>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>
+<p>Пользователь подключил новую карту;</p>
+</li>
+<li>
+<p>Данные о транзакциях будут обновляться автоматически.</p>
+</li>
+</ul>
+<h3 id="_16">Управление доходами<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Авторизованный пользователь.</p>
+<p><strong>Предусловия:</strong> Пользователь находится на странице "<em>История операций</em>".</p>
+<p><strong>Цель:</strong> Пользователь добавляет, редактирует и просматривает доходы.</p>
+<p><strong>Основной сценарий:</strong></p>
+<ul>
+<li>
+<p>Автоматическое добавление дохода:</p>
+<ol>
+<li>
+<p>При подключённом банке система получает транзакции.</p>
+</li>
+<li>
+<p>Транзакции автоматически попадают в раздел "<em>История операций</em>".</p>
+</li>
+<li>
+<p>Пользователь может открыть запись и изменить категорию при необходимости.</p>
+</li>
+</ol>
+</li>
+<li>
+<p>Просмотр доходов:</p>
+<ul>
+<li>
+<p>На странице "<em>История операций</em>" отображается таблица с фильтрацией по дате и категории.</p>
+</li>
+<li>
+<p>Пользователь может использовать фильтрацию по дате, сумме транзакции, категории.  </p>
+</li>
+<li>
+<p>В верхней части - сумма всех доходов и расходов.</p>
+</li>
+</ul>
+</li>
+</ul>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>
+<p>Дашборд обновлён: общая сумма доходов за период корректно пересчитана;</p>
+</li>
+<li>
+<p>При автоматическом импорте транзакций из "псевдо-банка" каждая запись о доходе сохранена без дублирования;</p>
+</li>
+</ul>
+<h3 id="_17">Управление расходами<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Авторизованный пользователь.</p>
+<p><strong>Предусловия:</strong> Пользователь находится на странице "<em>История операций</em>".</p>
+<p><strong>Цель:</strong> Ведение и контроль расходов.</p>
+<p><strong>Основной сценарий:</strong></p>
+<ul>
+<li>
+<p>Автоматический добавление расходов:</p>
+<ol>
+<li>
+<p>При подключённом банке система получает транзакции с отрицательной суммой.</p>
+</li>
+<li>
+<p>Классифицирует их по MCC-кодам.</p>
+</li>
+<li>
+<p>Добавляет их в список расходов.</p>
+</li>
+<li>
+<p>Пользователь может открыть запись и изменить категорию при необходимости.</p>
+</li>
+</ol>
+</li>
+</ul>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>
+<p>Дашборд обновлён: общая сумма расходов за период корректно пересчитана;</p>
+</li>
+<li>
+<p>При автоматическом импорте транзакций из "псевдо-банка" каждая запись о доходе сохранена без дублирования;</p>
+</li>
+</ul>
+<h3 id="_18">Управление финансовыми целями<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Авторизованный пользователь.</p>
+<p><strong>Предусловия:</strong> Пользователь находится на дашборде.</p>
+<p><strong>Цель:</strong> Пользователь создаёт и отслеживает цели накопления.</p>
+<p><strong>Основной сценарий:</strong></p>
+<ul>
+<li>
+<p>Создание цели:</p>
+<ol>
+<li>
+<p>Пользователь открывает раздел "<em>Цели</em>".</p>
+</li>
+<li>
+<p>Нажимает "<em>Создать цель</em>".</p>
+</li>
+<li>
+<p>Заполняет поля:</p>
+<ul>
+<li>
+<p>название цели;</p>
+</li>
+<li>
+<p>целевая сумма;</p>
+</li>
+<li>
+<p>дедлайн.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Система рассчитывает рекомендуемый ежемесячный взнос.</p>
+</li>
+<li>
+<p>Пользователь сохраняет цель, и она появляется в списке с прогресс-баром.</p>
+</li>
+<li>
+<p>Пользователь может вручную добавить взнос (N рублей) на определенную цель.</p>
+</li>
+</ol>
+</li>
+<li>
+<p>Отслеживание:</p>
+<ol>
+<li>
+<p>На странице цели отображается прогресс (% выполнено).</p>
+</li>
+<li>
+<p>При достижении 80% система формирует уведомление: "<em>Цель 'Новый ноутбук' достигнута на 80%</em>".</p>
+</li>
+</ol>
+</li>
+</ul>
+<p><strong>Постусловия:</strong> </p>
+<ul>
+<li>
+<p>Пользователь создал новую цель;</p>
+</li>
+<li>
+<p>Пользователь видит прогресс по созданной цели.</p>
+</li>
+<li>
+<p>У пользователя есть возможность добавить взнос (N рублей) на цель.</p>
+</li>
+</ul>
+<h3 id="_19">Уведомления<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Зарегистрированный, либо авторизованный пользователь.</p>
+<p><strong>Предусловия:</strong> Произошел один или несколько сценариев.</p>
+<p><strong>Цель:</strong> Пользователь получает системные уведомления.</p>
+<p><strong>Основной сценарий:</strong></p>
+<ol>
+<li>
+<p>При достижении цели система создаёт запись в таблице уведомлений.</p>
+</li>
+<li>
+<p>На фронтенде в правом верхнем углу загорается иконка уведомления (колокольчик).</p>
+</li>
+<li>
+<p>Пользователь кликает на иконку и открывает "<em>Центр уведомлений</em>".</p>
+</li>
+<li>
+<p>В списке отображаются:</p>
+<ul>
+<li>
+<p>тип (инфо, предупреждение, цель);</p>
+</li>
+<li>
+<p>дата;</p>
+</li>
+<li>
+<p>текст уведомления.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Все уведомления можно отметить как "<em>прочитанное</em>" нажав галочку в вверхнем правом углу.</p>
+</li>
+</ol>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>
+<p>Уведомление создано и сохранено в системе;</p>
+</li>
+<li>
+<p>Иконка уведомлений отображает наличие непрочитанных сообщений;</p>
+</li>
+<li>
+<p>Пользователь может просмотреть, прочитать и перейти по уведомлению;</p>
+</li>
+<li>
+<p>Уведомления отметились как "<em>прочитанное</em>".</p>
+</li>
+</ul>
+<h3 id="_20">Панель пользователя (дашборд)<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Авторизованный пользователь.</p>
+<p><strong>Предусловия:</strong> Пользователь находится на главном экране.</p>
+<p><strong>Цель:</strong> Предоставить пользователю визуальное представление бюджета.</p>
+<p><strong>Основной сценарий:</strong></p>
+<ol>
+<li>
+<p>После входа система открывает "<em>Дашборд</em>".</p>
+</li>
+<li>
+<p>Отображается:</p>
+<ul>
+<li>
+<p>баланс;</p>
+</li>
+<li>
+<p>график расходов по категориям;</p>
+</li>
+<li>
+<p>статус целей и лимитов;</p>
+</li>
+<li>
+<p>последние транзакции.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Пользователь может:</p>
+<ul>
+<li>перейти к разделу "<em>История операций</em>";</li>
+<li>перейти к разделу "<em>Цели</em>";</li>
+<li>перейти к разделу "<em>Уведомления</em>".</li>
+<li>перейти к разделу "<em>Прифиль</em>".</li>
+<li>посмотреть последние транзакции.</li>
+</ul>
+</li>
+<li>
+<p>Все данные обновляются динамически без перезагрузки.</p>
+</li>
+</ol>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>
+<p>Дашборд отображает актуальные данные по балансу, расходам, целям и лимитам;</p>
+</li>
+<li>
+<p>Переходы в другие разделы работают корректно и сохраняют контекст пользователя.</p>
+</li>
+</ul>
+<h2 id="todo">TODO: На будущее<a class="headerlink" href="#todo" title="Permanent link">&para;</a></h2>
+<h3 id="_21">Сделать возможность добавлять несколько счетов<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h3>
+<h3 id="_22">Отвязать карту<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h3>
+<p><strong>Актор:</strong> Авторизованный пользователь.</p>
+<p><strong>Предусловия:</strong> Пользователь находится на главном экране, у пользователя есть минимум одна подключенная карта в разделе "<em>Мои банки</em>".</p>
+<p><strong>Цель:</strong> Пользователь отвязывает карту (псевдо-банк).</p>
+<p><strong>Основной сценарий:</strong></p>
+<ol>
+<li>
+<p>Пользователь открывает раздел "<em>Мои банки</em>".</p>
+</li>
+<li>
+<p>Рядом с подключенной картой нажимает кнопку "Отвязать" (или иконку корзины).</p>
+</li>
+<li>
+<p>Система открывает модальное окно с предупреждением:</p>
+<ul>
+<li>
+<p>текст: "<em>Вы уверены, что хотите отвязать карту .... 1234? Автоматический импорт будет остановлен. Импортированные ранее транзакции останутся (по умолчанию).</em>";</p>
+</li>
+<li>
+<p>чекбокс: "<em>Удалить все транзакции, связанные с этой картой</em>" (по умолчанию - OFF);</p>
+</li>
+<li>
+<p>поле для ввода пароля: "<em>Подтвердите действие, введите пароль</em>";</p>
+</li>
+<li>
+<p>кнопки: "<em>Отвязать</em>" (красная) и "<em>Отмена</em>".</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Пользователь отмечает/снимает чекбокс (если хочет удалить транзакции), вводит пароль и нажимает "<strong>Отвязать</strong>".</p>
+</li>
+<li>
+<p>Показывается уведомление: "<em>Банк успешно отвязан</em>" и обновляет список банков.</p>
+</li>
+<li>
+<p>Система отправляет email-подтверждение:</p>
+<ul>
+<li>
+<p>тема: "<em>Банк отвязан</em>";</p>
+</li>
+<li>
+<p>тело: "<em>Вы отвязали карту ... 1234 в аккаунте example@mail.com. Если это были не вы - обратитесь в поддержку.</em>".</p>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>Постусловия:</strong></p>
+<ul>
+<li>Пользователь отвязал карту.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  К началу
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
