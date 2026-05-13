@@ -285,6 +285,18 @@ async def get_category_by_id(
         raise HTTPException(500, f"Internal server error: {str(e)}")
 
 
+@router.get("/last_sync", summary="Время последней синхронизации счетов")
+async def get_last_sync(
+    user_id: int = Depends(get_user_id_from_header),
+    db: AsyncSession = Depends(get_db),
+):
+    """Возвращает время последней синхронизации для каждого счёта пользователя."""
+    from app.repository.sync_repository import SyncRepository
+
+    repo = SyncRepository(db)
+    return await repo.get_last_sync_times(user_id)
+
+
 @router.get(
     "/{transaction_id}",
     response_model=TransactionResponse,

@@ -218,9 +218,13 @@ class TestSyncIntegration:
             mock_client.__aenter__.return_value = mock_client
             await repo.sync_by_account(acc_hash, 123)
 
-        # 3. Проверка времени
+        # 3. Проверка времени: last_synced_at обновляется до текущего момента
+        from datetime import timezone as tz
+
         await db_session.refresh(acc)
         assert acc.last_synced_at is not None
 
-        expected_time = datetime.fromisoformat(tx_time_str.replace("Z", "+00:00"))
-        assert acc.last_synced_at.replace(tzinfo=None) == expected_time.replace(tzinfo=None)
+        now = datetime.now(tz=tz.utc)
+        synced = acc.last_synced_at if acc.last_synced_at.tzinfo else acc.last_synced_at.replace(tzinfo=tz.utc)
+        diff = abs((synced - now).total_seconds())
+        assert diff < 5

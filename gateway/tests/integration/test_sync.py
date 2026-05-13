@@ -168,3 +168,51 @@ class TestSyncSingleAccount:
     async def test_no_token_returns_401(self, client_no_auth):
         response = await client_no_auth.post("/sync/1")
         assert response.status_code == 401
+
+
+# ──────────────────────────────────────────────────────────────
+# GET /sync/last_sync  — время последней синхронизации
+# ──────────────────────────────────────────────────────────────
+LAST_SYNC_DATA = {
+    "oldest_synced_at": "2024-01-12T10:00:00+00:00",
+    "accounts": [
+        {"bank_account_hash": "abc123", "bank_account_name": "Основная карта", "last_synced_at": "2024-01-15T14:30:00+00:00"},
+        {"bank_account_hash": "def456", "bank_account_name": "Накопительная", "last_synced_at": "2024-01-12T10:00:00+00:00"},
+    ],
+}
+
+
+class TestGetLastSync:
+    async def test_success_returns_structure(self, client):
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=LAST_SYNC_DATA)
+        with patch("app.routers.sync.get_http_client", return_value=mock_http):
+            response = await client.get("/sync/last_sync")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "oldest_synced_at" in data
+        assert "accounts" in data
+        assert data["oldest_synced_at"] == "2024-01-12T10:00:00+00:00"
+        assert len(data["accounts"]) == 2
+
+    async def test_x_user_id_header_passed_to_downstream(self, client):
+        mock_http = AsyncMock()
+        mock_http.get.return_value = make_mock_http_response(200, json_data=LAST_SYNC_DATA)
+        with patch("app.routers.sync.get_http_client", return_value=mock_http):
+            await client.get("/sync/last_sync")
+
+        call_kwargs = mock_http.get.call_args.kwargs
+        assert call_kwargs["headers"]["X-User-ID"] == "1"
+
+    async def test_connect_error_returns_503(self, client):
+        mock_http = AsyncMock()
+        mock_http.get.side_effect = httpx.ConnectError("Connection refused")
+        with patch("app.routers.sync.get_http_client", return_value=mock_http):
+            response = await client.get("/sync/last_sync")
+
+        assert response.status_code == 503
+
+    async def test_no_token_returns_401(self, client_no_auth):
+        response = await client_no_auth.get("/sync/last_sync")
+        assert response.status_code == 401

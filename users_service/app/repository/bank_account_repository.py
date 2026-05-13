@@ -169,7 +169,10 @@ class Bank_AccountRepository:
         from sqlalchemy.orm import selectinload
 
         result = await self.db.execute(
-            select(Bank_Accounts).options(selectinload(Bank_Accounts.bank)).where(Bank_Accounts.user_id == user_id)
+            select(Bank_Accounts)
+            .options(selectinload(Bank_Accounts.bank))
+            .where(Bank_Accounts.user_id == user_id)
+            .order_by(Bank_Accounts.bank_account_id)
         )
         return result.scalars().all()
 
