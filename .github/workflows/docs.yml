@@ -21,6 +21,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - run: pip install mkdocs-material pymdownx
+      - run: pip install mkdocs-material pymdown-extensions
 
       - run: mkdocs gh-deploy --force
