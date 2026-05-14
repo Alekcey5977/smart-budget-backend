@@ -9,7 +9,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 
-[📚 Documentation](https://alekcey5977.github.io/smart-budget-backend/) · [🔍 API Reference](https://alekcey5977.github.io/smart-budget-backend/api/index/)
+[📚 Documentation](https://alekcey5977.github.io/smart-budget-backend/) · [🔍 API Reference](https://alekcey5977.github.io/smart-budget-backend/api/) · [🖥 Frontend](https://github.com/Alekcey5977/smart-budget-frontend)
 
 </div>
 
